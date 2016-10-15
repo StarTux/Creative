@@ -1,0 +1,23 @@
+package com.winthier.creative;
+
+import com.winthier.creative.util.Msg;
+import lombok.RequiredArgsConstructor;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+
+@RequiredArgsConstructor
+public class WTPCommand implements CommandExecutor {
+    final CreativePlugin plugin;
+
+    @Override
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length != 1) return false;
+        Player player = sender instanceof Player ? (Player)sender : null;
+        if (player == null) return false;
+        String cmd = args.length > 0 ? args[0] : null;
+        plugin.worldCommand.worldTeleport(player, cmd);
+        return true;
+    }
+}

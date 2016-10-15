@@ -1,0 +1,27 @@
+name: Creative
+description: Manage Creative Worlds
+author: StarTux
+version: 0.1
+main: com.winthier.creative.CreativePlugin
+depend: [ PlayerCache ]
+commands:
+  world:
+    aliases: [ worlds ]
+    description: User interface
+    permission: creative.world
+    usage: |-
+      /world list - List your worlds
+  wtp:
+    description: World Teleport
+    permission: creative.world
+    usage: /wtp <world>
+  creativeadmin:
+    description: Admin Interface
+    permission: creative.admin
+permissions:
+  creative.world:
+    descrption: Use /world and /wtp
+    default: op
+  creative.admin:
+    description: Use /CreativeAdmin
+    default: op
