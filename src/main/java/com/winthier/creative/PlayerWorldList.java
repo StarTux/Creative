@@ -11,4 +11,12 @@ public class PlayerWorldList {
     int count() {
         return owner.size() + build.size() + visit.size();
     }
+
+    List<BuildWorld> all() {
+        List<BuildWorld> result = new ArrayList<>();
+        result.addAll(owner);
+        result.addAll(build);
+        result.addAll(visit);
+        return result;
+    }
 }

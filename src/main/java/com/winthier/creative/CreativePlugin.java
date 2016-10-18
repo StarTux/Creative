@@ -17,6 +17,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 @Getter
 public class CreativePlugin extends JavaPlugin {
     private List<BuildWorld> buildWorlds;
+    private YamlConfiguration logoutLocations = null;
     final WorldCommand worldCommand = new WorldCommand(this);
     @Getter static CreativePlugin instance = null;
 
@@ -33,6 +34,11 @@ public class CreativePlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+    }
+
+    void reloadAllConfigs() {
+        buildWorlds = null;
+        logoutLocations = null;
     }
 
     // Build Worlds
@@ -95,5 +101,23 @@ public class CreativePlugin extends JavaPlugin {
             }
         }
         return result;
+    }
+
+    ConfigurationSection getLogoutLocations() {
+        if (logoutLocations == null) {
+            File file = new File(getDataFolder(), "logouts.yml");
+            logoutLocations = YamlConfiguration.loadConfiguration(file);
+        }
+        return logoutLocations;
+    }
+
+    void saveLogoutLocations() {
+        if (logoutLocations == null) return;
+        File file = new File(getDataFolder(), "logouts.yml");
+        try {
+            logoutLocations.save(file);
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
     }
 }

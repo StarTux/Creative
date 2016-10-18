@@ -2,6 +2,7 @@ package com.winthier.creative;
 
 import com.winthier.creative.util.Msg;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -10,12 +11,12 @@ import lombok.RequiredArgsConstructor;
 import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 
 @RequiredArgsConstructor
-public class WorldCommand implements CommandExecutor {
+public class WorldCommand implements TabExecutor {
     final CreativePlugin plugin;
 
     static class CommandException extends RuntimeException {
@@ -51,6 +52,21 @@ public class WorldCommand implements CommandExecutor {
                 teleportToSpawn(player);
             } else if (cmd.equals("setspawn")) {
                 setWorldSpawn(player);
+            } else if (cmd.equals("trust")) {
+                if (args.length < 2 || args.length > 3) return false;
+                String target = args[1];
+                Trust trust;
+                if (args.length >= 3) {
+                    trust = Trust.of(args[2]);
+                } else {
+                    trust = Trust.VISIT;
+                }
+                if (trust == Trust.NONE) return false;
+                trust(player, target, trust);
+            } else if (cmd.equals("untrust")) {
+                if (args.length < 2) return false;
+                String target = args[1];
+                trust(player, target, Trust.NONE);
             } else {
                 return false;
             }
@@ -60,17 +76,43 @@ public class WorldCommand implements CommandExecutor {
         return true;
     }
 
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
+        Player player = sender instanceof Player ? (Player)sender : null;
+        if (player == null) return null;
+        if (args.length == 0) {
+            return null;
+        } else if (args.length == 1) {
+            return Arrays.asList("tp", "list", "time", "spawn", "setspawn", "trust", "untrust");
+        } else {
+            String cmd = args[0].toLowerCase();
+            if (cmd.equals("trust")) {
+                if (args.length == 3) {
+                    List<String> result = new ArrayList<>();
+                    for (Trust trust: Trust.values()) {
+                        if (trust != Trust.NONE) {
+                            result.add(trust.name().toLowerCase());
+                        }
+                    }
+                    return result;
+                }
+            }
+        }
+        return null;
+    }
+
     boolean worldTeleport(Player player, String worldName) {
         BuildWorld buildWorld = plugin.getBuildWorldByPath(worldName);
         if (buildWorld == null) {
             Msg.warn(player, "World not found: %s", worldName);
             return false;
         }
-        Trust trust = buildWorld.getTrust(player.getUniqueId());
-        if (trust == null || trust == Trust.NONE) {
+        UUID uuid = player.getUniqueId();
+        if (!buildWorld.getTrust(uuid).canVisit()) {
             Msg.warn(player, "World not found: %s", worldName);
             return false;
         }
+        buildWorld.loadWorld();
         buildWorld.teleportToSpawn(player);
         Msg.info(player, "Teleported to %s.", buildWorld.getName());
         return true;
@@ -169,7 +211,7 @@ public class WorldCommand implements CommandExecutor {
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(player.getWorld());
         UUID uuid = player.getUniqueId();
         if (buildWorld == null) {
-            player.teleport(player.getWorld().getSpawnLocation());
+            CommandException.noPerm();
         } else if (!buildWorld.getTrust(uuid).canVisit()) {
             CommandException.noPerm();
         } else {
@@ -185,5 +227,36 @@ public class WorldCommand implements CommandExecutor {
         buildWorld.setSpawnLocation(player.getLocation());
         buildWorld.saveWorldConfig();
         Msg.info(player, "World spawn was set to your current location.");
+    }
+
+    void trust(Player player, String target, Trust trust) {
+        BuildWorld buildWorld = plugin.getBuildWorldByWorld(player.getWorld());
+        if (buildWorld == null || !buildWorld.getTrust(player.getUniqueId()).isOwner()) {
+            CommandException.noPerm();
+        }
+        if (target.equals("*")) {
+            buildWorld.setPublicTrust(trust);
+            plugin.saveBuildWorlds();
+            if (trust == Trust.NONE) {
+                Msg.info(player, "Revoked public trust.");
+            } else {
+                Msg.info(player, "Changed public trust to %s", trust.nice());
+            }
+        } else {
+            Builder builder = Builder.find(target);
+            if (builder == null) throw new CommandException("Player not found: %s.", target);
+            if (buildWorld.getTrust(builder.getUuid()) == Trust.NONE) {
+                throw new CommandException("%s is not trusted in this world.", builder.getName());
+            }
+            if (!buildWorld.trustBuilder(builder, trust)) {
+                throw new CommandException("Could not change trust level of %s.", builder.getName());
+            }
+            plugin.saveBuildWorlds();
+            if (trust == Trust.NONE) {
+                Msg.info(player, "Revoked trust of %s.", builder.getName());
+            } else {
+                Msg.info(player, "Gave %s trust to %s.", trust.nice(), builder.getName());
+            }
+        }
     }
 }

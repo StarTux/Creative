@@ -26,6 +26,7 @@ public class BuildWorld {
     String path; // Key
     Builder owner;
     final Map<UUID, Trusted> trusted = new HashMap<>();
+    Trust publicTrust = Trust.NONE;
     YamlConfiguration worldConfig = null;
 
     public final static Comparator<BuildWorld> NAME_SORT = new Comparator<BuildWorld>() {
@@ -57,8 +58,20 @@ public class BuildWorld {
     Trust getTrust(UUID uuid) {
         if (owner != null && owner.getUuid().equals(uuid)) return Trust.OWNER;
         Trusted t = trusted.get(uuid);
-        if (t == null) return Trust.NONE;
-        return t.getTrust();
+        if (t == null) return publicTrust;
+        Trust result = t.getTrust();
+        if (publicTrust.priority > result.priority) return publicTrust;
+        return result;
+    }
+
+    boolean trustBuilder(Builder builder, Trust trust) {
+        if (trust == Trust.NONE) {
+            return trusted.remove(builder.getUuid()) != null;
+        } else {
+            if (owner != null && owner.getUuid().equals(builder.getUuid())) return false;
+            trusted.put(builder.getUuid(), new Trusted(builder, trust));
+            return true;
+        }
     }
 
     String getOwnerName() {
@@ -175,6 +188,7 @@ public class BuildWorld {
         }
         Map<String, Object> trustedMap = new HashMap<>();
         result.put("trusted", trustedMap);
+        result.put("publicTrust", publicTrust.name());
         for (Map.Entry<UUID, Trusted> e: this.trusted.entrySet()) {
             trustedMap.put(e.getKey().toString(), e.getValue().serialize());
         }
@@ -194,6 +208,7 @@ public class BuildWorld {
                 result.trusted.put(uuid, trusted);
             }
         }
+        result.publicTrust = Trust.of(config.getString("publicTrust", "NONE"));
         return result;
     }
 }

@@ -2,7 +2,9 @@ package com.winthier.creative;
 
 import com.winthier.creative.util.Msg;
 import lombok.RequiredArgsConstructor;
+import org.bukkit.ChatColor;
 import org.bukkit.World;
+import org.bukkit.WorldCreator;
 import org.bukkit.WorldType;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -19,6 +21,9 @@ public class AdminCommand implements CommandExecutor {
         String cmd = args.length > 0 ? args[0].toLowerCase() : null;
         if (cmd == null) {
             return false;
+        } else if (cmd.equals("reload")) {
+            plugin.reloadAllConfigs();
+            sender.sendMessage("Configs reloaded");
         } else if (cmd.equals("listunregistered")) {
             sender.sendMessage("Unregistered worlds:");
             int count = 0;
@@ -53,6 +58,17 @@ public class AdminCommand implements CommandExecutor {
                 for (BuildWorld bw: list.visit) Msg.send(sender, "%s (%s)", bw.getName(), bw.getPath());
                 Msg.send(sender, "total (%d)", list.count());
             }
+        } else if (cmd.equals("listloaded")) {
+            int count = 0;
+            for (World world: plugin.getServer().getWorlds()) {
+                if (plugin.getBuildWorldByWorld(world) == null) {
+                    sender.sendMessage(ChatColor.RED + world.getName() + ChatColor.RESET + " (unregistered");
+                } else {
+                    sender.sendMessage(ChatColor.GREEN + world.getName() + ChatColor.RESET + " (registered)");
+                }
+                count += 1;
+            }
+            sender.sendMessage("" + count + " worlds are currently loaded.");
         } else if (cmd.equals("tp")) {
             if (args.length != 2) return false;
             if (player == null) return false;
@@ -62,6 +78,7 @@ public class AdminCommand implements CommandExecutor {
                 sender.sendMessage("World not found: " + name);
                 return true;
             }
+            bw.loadWorld();
             bw.teleportToSpawn(player);
             sender.sendMessage("Teleported to world " + bw.getName());
         } else if (cmd.equals("nosave")) {
@@ -132,6 +149,31 @@ public class AdminCommand implements CommandExecutor {
             sender.sendMessage("Made " + owner.getName() + " the owner of world " + buildWorld.getPath());
         } else if (cmd.equals("create")) {
             createWorld(sender, args);
+        } else if (cmd.equals("import")) {
+            if (args.length != 3) return false;
+            String name = args[1];
+            String generator = args[2];
+            World world = plugin.getServer().getWorld(name);
+            if (world == null) {
+                sender.sendMessage("World not found: " + name);
+                return true;
+            }
+            name = world.getName();
+            if (plugin.getBuildWorldByPath(name) != null) {
+                sender.sendMessage("Build world already exists: " + name);
+                return true;
+            }
+            WorldCreator creator = WorldCreator.name(name);
+            creator.copy(world);
+            BuildWorld buildWorld = new BuildWorld(name, name, null);
+            plugin.getBuildWorlds().add(buildWorld);
+            plugin.saveBuildWorlds();
+            buildWorld.getWorldConfig().set("world.Generator", generator);
+            buildWorld.getWorldConfig().set("world.Seed", creator.seed());
+            buildWorld.getWorldConfig().set("world.WorldType", creator.type().name());
+            buildWorld.getWorldConfig().set("world.Environment", creator.environment().name());
+            buildWorld.saveWorldConfig();
+            sender.sendMessage("World '" + name + "' imported.");
         } else if (cmd.equals("load")) {
             if (args.length != 2) return false;
             String name = args[1];
