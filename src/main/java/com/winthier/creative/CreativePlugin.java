@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import lombok.Getter;
+import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.MemoryConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -17,14 +18,17 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class CreativePlugin extends JavaPlugin {
     private List<BuildWorld> buildWorlds;
     final WorldCommand worldCommand = new WorldCommand(this);
+    @Getter static CreativePlugin instance = null;
 
     @Override
     public void onEnable() {
+        instance = this;
         reloadConfig();
         saveDefaultConfig();
         getCommand("World").setExecutor(worldCommand);
         getCommand("wtp").setExecutor(new WTPCommand(this));
         getCommand("CreativeAdmin").setExecutor(new AdminCommand(this));
+        getServer().getPluginManager().registerEvents(new CreativeListener(this), this);
     }
 
     @Override
@@ -64,22 +68,18 @@ public class CreativePlugin extends JavaPlugin {
         }
     }
 
-    public BuildWorld buildWorldByName(String name) {
-        for (BuildWorld buildWorld: getBuildWorlds()) {
-            if (name.equals(buildWorld.getName())) {
-                return buildWorld;
-            }
-        }
-        return null;
-    }
-
-    public BuildWorld buildWorldByPath(String path) {
+    public BuildWorld getBuildWorldByPath(String path) {
         for (BuildWorld buildWorld: getBuildWorlds()) {
             if (path.equalsIgnoreCase(buildWorld.getPath())) {
                 return buildWorld;
             }
         }
         return null;
+    }
+
+    public BuildWorld getBuildWorldByWorld(World world) {
+        if (world == null) return null;
+        return getBuildWorldByPath(world.getName());
     }
 
     public PlayerWorldList getPlayerWorldList(UUID uuid) {

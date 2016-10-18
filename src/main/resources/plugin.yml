@@ -11,6 +11,9 @@ commands:
     permission: creative.world
     usage: |-
       /world list - List your worlds
+      /world spawn - Teleport to spawn
+      /world setspawn - Set world spawn
+      /world time [time] - Get or set the world time
   wtp:
     description: World Teleport
     permission: creative.world

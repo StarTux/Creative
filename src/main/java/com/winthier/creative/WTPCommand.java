@@ -17,7 +17,11 @@ public class WTPCommand implements CommandExecutor {
         Player player = sender instanceof Player ? (Player)sender : null;
         if (player == null) return false;
         String cmd = args.length > 0 ? args[0] : null;
-        plugin.worldCommand.worldTeleport(player, cmd);
+        try {
+            plugin.worldCommand.worldTeleport(player, cmd);
+        } catch (WorldCommand.CommandException ce) {
+            Msg.warn(player, "%s", ce.getMessage());
+        }
         return true;
     }
 }
