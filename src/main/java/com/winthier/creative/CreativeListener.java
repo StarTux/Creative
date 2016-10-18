@@ -36,7 +36,9 @@ public class CreativeListener implements Listener {
     public void onPlayerSpawnLocation(PlayerSpawnLocationEvent event) {
         UUID uuid = event.getPlayer().getUniqueId();
         Location loc = findBuildWorldSpawnLocation(uuid);
-        if (loc == null) return;
+        if (loc == null) {
+            loc = plugin.getServer().getWorlds().get(0).getSpawnLocation();
+        }
         event.setSpawnLocation(loc);
     }
 
@@ -55,12 +57,15 @@ public class CreativeListener implements Listener {
     public void onPlayerJoin(PlayerJoinEvent event) {
         UUID uuid = event.getPlayer().getUniqueId();
         ConfigurationSection config = plugin.getLogoutLocations().getConfigurationSection(uuid.toString());
-        if (config == null) return;
         GameMode gamemode;
-        try {
-            gamemode = GameMode.valueOf(config.getString("gamemode", "CREATIVE"));
-        } catch (IllegalArgumentException iae) {
-            return;
+        if (config == null) {
+            gamemode = GameMode.CREATIVE;
+        } else {
+            try {
+                gamemode = GameMode.valueOf(config.getString("gamemode", "CREATIVE"));
+            } catch (IllegalArgumentException iae) {
+                gamemode = GameMode.CREATIVE;
+            }
         }
         event.getPlayer().setGameMode(gamemode);
     }
