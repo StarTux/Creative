@@ -49,8 +49,14 @@ public class CreativeListener implements Listener {
         BuildWorld buildWorld = plugin.getBuildWorldByPath(worldName);
         if (buildWorld == null) return null;
         if (!buildWorld.getTrust(uuid).canVisit()) return null;
-        buildWorld.loadWorld();
-        return buildWorld.getSpawnLocation();
+        World world = buildWorld.loadWorld();
+        if (world == null) return null;
+        double x = config.getDouble("x");
+        double y = config.getDouble("y");
+        double z = config.getDouble("z");
+        float yaw = (float)config.getDouble("yaw");
+        float pitch = (float)config.getDouble("pitch");
+        return new Location(world, x, y, z, yaw, pitch);
     }
 
     @EventHandler
