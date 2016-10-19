@@ -102,6 +102,17 @@ public class AdminCommand implements CommandExecutor {
                 }
                 Msg.send(sender, "&7Total (&r%d&7)", list.count());
             }
+        } else if (cmd.equals("who")) {
+            Msg.send(sender, "&eWorld Player List");
+            for (World world: plugin.getServer().getWorlds()) {
+                List<Player> players = world.getPlayers();
+                if (players.isEmpty()) continue;
+                StringBuilder sb = new StringBuilder(Msg.format("&7%s &8(&r%d&8)&r", world.getName(), players.size()));
+                for (Player p: players) {
+                    sb.append(" ").append(p.getName());
+                }
+                sender.sendMessage(sb.toString());
+            }
         } else if (cmd.equals("listloaded")) {
             int count = 0;
             for (World world: plugin.getServer().getWorlds()) {
