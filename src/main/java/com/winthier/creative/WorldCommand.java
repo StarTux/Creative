@@ -79,6 +79,15 @@ public class WorldCommand implements TabExecutor {
         return true;
     }
 
+    List<String> filterStartsWith(String term, List<String> in) {
+        term = term.toLowerCase();
+        List<String> out = new ArrayList<>();
+        for (String i: in) {
+            if (i.toLowerCase().startsWith(term)) out.add(i);
+        }
+        return out;
+    }
+
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
         Player player = sender instanceof Player ? (Player)sender : null;
@@ -86,15 +95,18 @@ public class WorldCommand implements TabExecutor {
         if (args.length == 0) {
             return null;
         } else if (args.length == 1) {
-            return Arrays.asList("tp", "list", "time", "spawn", "setspawn", "trust", "untrust");
+            return filterStartsWith(args[0], Arrays.asList("list", "info", "time", "spawn", "setspawn", "trust", "untrust"));
         } else {
             String cmd = args[0].toLowerCase();
             if (cmd.equals("trust")) {
                 if (args.length == 3) {
                     List<String> result = new ArrayList<>();
+                    String term = args[2].toLowerCase();
                     for (Trust trust: Trust.values()) {
                         if (trust != Trust.NONE) {
-                            result.add(trust.name().toLowerCase());
+                            if (trust.name().toLowerCase().startsWith(term)) {
+                                result.add(trust.name().toLowerCase());
+                            }
                         }
                     }
                     return result;
