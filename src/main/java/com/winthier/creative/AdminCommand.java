@@ -171,6 +171,8 @@ public class AdminCommand implements CommandExecutor {
             }
             plugin.saveBuildWorlds();
             sender.sendMessage("Given " + trust.name() + " to " + builder.getName() + " in " + buildWorld.getPath());
+            World world = buildWorld.getWorld();
+            if (world != null) plugin.permission.updatePermissions(world);
         } else if (cmd.equals("resetowner")) {
             if (args.length != 2) return false;
             String worldKey = args[1];

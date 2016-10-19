@@ -74,7 +74,8 @@ public class CreativeListener implements Listener {
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
-        UUID uuid = event.getPlayer().getUniqueId();
+        Player player = event.getPlayer();
+        UUID uuid = player.getUniqueId();
         ConfigurationSection config = plugin.getLogoutLocations().getConfigurationSection(uuid.toString());
         GameMode gamemode;
         if (config == null) {
@@ -86,7 +87,9 @@ public class CreativeListener implements Listener {
                 gamemode = GameMode.CREATIVE;
             }
         }
-        event.getPlayer().setGameMode(gamemode);
+        player.setGameMode(gamemode);
+        // Update Permission
+        plugin.permission.updatePermissions(player);
     }
 
     @EventHandler

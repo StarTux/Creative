@@ -1,11 +1,12 @@
 package com.winthier.creative;
 
-import org.bukkit.permissions.PermissionAttachment;
-import org.bukkit.permissions.PermissionAttachmentInfo;
-import org.bukkit.entity.Player;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.bukkit.World;
+import org.bukkit.entity.Player;
+import org.bukkit.permissions.PermissionAttachment;
+import org.bukkit.permissions.PermissionAttachmentInfo;
 
 @RequiredArgsConstructor
 public class Permission {
@@ -18,6 +19,12 @@ public class Permission {
         Trust trust = buildWorld.getTrust(player.getUniqueId());
         if (trust.canUseWorldEdit() && player.hasPermission("creative.worldedit")) {
             givePermission(player, "worldedit.*");
+        }
+    }
+
+    void updatePermissions(World world) {
+        for (Player player: world.getPlayers()) {
+            updatePermissions(player);
         }
     }
 

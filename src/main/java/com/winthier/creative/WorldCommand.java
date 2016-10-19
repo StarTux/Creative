@@ -273,6 +273,7 @@ public class WorldCommand implements TabExecutor {
                 Msg.info(player, "Gave %s trust to %s.", trust.nice(), builder.getName());
             }
         }
+        plugin.permission.updatePermissions(player.getWorld());
     }
 
     void listTrusted(Player player, BuildWorld buildWorld, Trust trust) {
