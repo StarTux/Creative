@@ -164,9 +164,24 @@ public class AdminCommand implements CommandExecutor {
                 sender.sendMessage("Bad trust arg: " + trustArg);
                 return true;
             }
-            buildWorld.trusted.put(builder.getUuid(), new Trusted(builder, trust));
+            if (trust == Trust.NONE) {
+                buildWorld.trusted.remove(builder.getUuid());
+            } else {
+                buildWorld.trusted.put(builder.getUuid(), new Trusted(builder, trust));
+            }
             plugin.saveBuildWorlds();
             sender.sendMessage("Given " + trust.name() + " to " + builder.getName() + " in " + buildWorld.getPath());
+        } else if (cmd.equals("resetowner")) {
+            if (args.length != 2) return false;
+            String worldKey = args[1];
+            BuildWorld buildWorld = plugin.getBuildWorldByPath(worldKey);
+            if (buildWorld == null) {
+                sender.sendMessage("World not found: " + worldKey);
+                return true;
+            }
+            buildWorld.setOwner(null);
+            plugin.saveBuildWorlds();
+            sender.sendMessage("Removed owner of world " + buildWorld.getPath());
         } else if (cmd.equals("setowner")) {
             if (args.length != 3) return false;
             String worldKey = args[1];

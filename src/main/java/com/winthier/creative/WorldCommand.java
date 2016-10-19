@@ -45,6 +45,9 @@ public class WorldCommand implements TabExecutor {
             } else if (cmd.equals("ls") || cmd.equals("list")) {
                 if (args.length != 1) return false;
                 listWorlds(player);
+            } else if (cmd.equals("info")) {
+                if (args.length != 1) return false;
+                worldInfo(player);
             } else if (cmd.equals("time")) {
                 String arg = args.length >= 2 ? args[1] : null;
                 worldTime(player, arg);
@@ -257,6 +260,51 @@ public class WorldCommand implements TabExecutor {
             } else {
                 Msg.info(player, "Gave %s trust to %s.", trust.nice(), builder.getName());
             }
+        }
+    }
+
+    void listTrusted(Player player, BuildWorld buildWorld, Trust trust) {
+        List<String> names = new ArrayList<>();
+        for (Builder builder: buildWorld.listTrusted(trust)) names.add(builder.getName());
+        if (trust == Trust.OWNER && buildWorld.getOwner() != null) names.add(buildWorld.getOwnerName());
+        if (names.isEmpty()) return;
+        Collections.sort(names);
+        List<Object> json = new ArrayList<>();
+        if (trust == Trust.OWNER) {
+            json.add(Msg.format(" &3&o%s Trust", trust.nice()));
+        } else {
+            json.add(Msg.format(" &3&o%s", trust.nice()));
+        }
+        Trust playerTrust = buildWorld.getTrust(player.getUniqueId());
+        for (String name: names) {
+            json.add(" ");
+            if (playerTrust.isOwner()) {
+                json.add(Msg.button(
+                             ChatColor.WHITE,
+                             name, "Untrust " + name,
+                             "/world untrust " + name));
+            } else {
+                json.add(Msg.button(
+                             ChatColor.WHITE,
+                             name, name + " is a " + trust.nice(),
+                             null));
+            }
+        }
+        Msg.raw(player, json);
+    }
+
+    void worldInfo(Player player) {
+        BuildWorld buildWorld = plugin.getBuildWorldByWorld(player.getWorld());
+        if (buildWorld == null) CommandException.noPerm();
+        Trust playerTrust = buildWorld.getTrust(player.getUniqueId());
+        if (!playerTrust.canVisit()) CommandException.noPerm();
+        Msg.info(player, "&l%s &3World Info", buildWorld.getName());
+        listTrusted(player, buildWorld, Trust.OWNER);
+        listTrusted(player, buildWorld, Trust.WORLD_EDIT);
+        listTrusted(player, buildWorld, Trust.BUILD);
+        listTrusted(player, buildWorld, Trust.VISIT);
+        if (buildWorld.getPublicTrust() != null && buildWorld.getPublicTrust() != Trust.NONE) {
+            Msg.send(player, " &3&oPublic Trust &r%s", buildWorld.getPublicTrust().nice());
         }
     }
 }

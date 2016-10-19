@@ -11,6 +11,7 @@ commands:
     permission: creative.world
     usage: |-
       /world list - List your worlds
+      /world info - Get world info
       /world spawn - Teleport to spawn
       /world setspawn - Set world spawn
       /world time [time] - Get or set the world time
@@ -32,6 +33,7 @@ commands:
       /ca debug
       /ca remove <world>
       /ca trust <world> <player> <trust>
+      /ca resetowner <world>
       /ca setowner <world> <player>
       /ca create n:name p:path o:owner g:generator G:generatorSettings e:environment t:worldType s:seed S:generateStructures
       /ca import <world>
