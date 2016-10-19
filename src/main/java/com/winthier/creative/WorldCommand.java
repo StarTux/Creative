@@ -21,12 +21,20 @@ public class WorldCommand implements TabExecutor {
 
     static class CommandException extends RuntimeException {
         @Getter final String message;
+        boolean usage = false;
         CommandException(String msg, Object... o) {
             if (o.length > 0) msg = String.format(msg, o);
             this.message = msg;
         }
+        CommandException(boolean usage) {
+            this.message = null;
+            this.usage = usage;
+        }
         static void noPerm() {
             throw new CommandException("You don't have permission.");
+        }
+        static void usage() {
+            throw new CommandException(true);
         }
     }
 
@@ -37,16 +45,16 @@ public class WorldCommand implements TabExecutor {
         String cmd = args.length > 0 ? args[0].toLowerCase() : null;
         try {
             if (cmd == null) {
-                return false;
+                usage(player);
             } else if (cmd.equals("tp")) {
-                if (args.length != 2) return false;
+                if (args.length != 2) CommandException.usage();
                 String worldName = args[1];
                 worldTeleport(player, worldName);
             } else if (cmd.equals("ls") || cmd.equals("list")) {
-                if (args.length != 1) return false;
+                if (args.length != 1) CommandException.usage();
                 listWorlds(player);
             } else if (cmd.equals("info")) {
-                if (args.length != 1) return false;
+                if (args.length != 1) CommandException.usage();
                 worldInfo(player);
             } else if (cmd.equals("time")) {
                 String arg = args.length >= 2 ? args[1] : null;
@@ -56,7 +64,7 @@ public class WorldCommand implements TabExecutor {
             } else if (cmd.equals("setspawn")) {
                 setWorldSpawn(player);
             } else if (cmd.equals("trust")) {
-                if (args.length < 2 || args.length > 3) return false;
+                if (args.length < 2 || args.length > 3) CommandException.usage();
                 String target = args[1];
                 Trust trust;
                 if (args.length >= 3) {
@@ -64,17 +72,21 @@ public class WorldCommand implements TabExecutor {
                 } else {
                     trust = Trust.VISIT;
                 }
-                if (trust == Trust.NONE) return false;
+                if (trust == Trust.NONE) CommandException.usage();
                 trust(player, target, trust);
             } else if (cmd.equals("untrust")) {
-                if (args.length < 2) return false;
+                if (args.length < 2) CommandException.usage();
                 String target = args[1];
                 trust(player, target, Trust.NONE);
             } else {
-                return false;
+                CommandException.usage();
             }
         } catch (CommandException ce) {
-            Msg.warn(player, "%s", ce.getMessage());
+            if (ce.usage) {
+                usage(player);
+            } else {
+                Msg.warn(player, "%s", ce.getMessage());
+            }
         }
         return true;
     }
@@ -319,5 +331,28 @@ public class WorldCommand implements TabExecutor {
         if (buildWorld.getPublicTrust() != null && buildWorld.getPublicTrust() != Trust.NONE) {
             Msg.send(player, " &3&oPublic Trust &r%s", buildWorld.getPublicTrust().nice());
         }
+    }
+
+    void commandUsage(Player player, String sub, String args, String description) {
+        String cmd = "/World " + sub;
+        Msg.raw(player, Msg.button(
+                    ChatColor.WHITE,
+                    cmd + " &o" + args,
+                    "&a" + cmd + " &2" + args + "\n" + description,
+                    cmd + " "),
+                Msg.format("&8 - &7%s.", description));
+    }
+
+    void usage(Player player) {
+        Msg.info(player, "&lWorld&3 Command Usage");
+        commandUsage(player, "List", "", "List your Worlds");
+        commandUsage(player, "Info", "", "Get World Info");
+        commandUsage(player, "Spawn", "", "Warp to World Spawn");
+        commandUsage(player, "SetSpawn", "", "Set World Spawn");
+        commandUsage(player, "Time", "", "Set World Spawn");
+        commandUsage(player, "SetSpawn", "", "Set World Spawn");
+        commandUsage(player, "Time", "[Time]", "Get or set World Time");
+        commandUsage(player, "Trust", "<Player> [Time]", "Trust someone");
+        commandUsage(player, "UnTrust", "<Player>", "Revoke Trust");
     }
 }
