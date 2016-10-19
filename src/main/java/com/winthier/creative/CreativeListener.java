@@ -7,10 +7,17 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
+import org.bukkit.event.player.PlayerInteractAtEntityEvent;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.spigotmc.event.player.PlayerSpawnLocationEvent;
@@ -90,6 +97,53 @@ public class CreativeListener implements Listener {
             if (plugin.getServer().unloadWorld(from, true)) {
                 plugin.getLogger().info("Unloaded world " + from.getName());
             }
+        }
+    }
+
+    // Build Permission Check
+
+    void checkBuildEvent(Player player, Cancellable event) {
+        if (player.isOp()) return;
+        BuildWorld buildWorld = plugin.getBuildWorldByWorld(player.getWorld());
+        if (buildWorld == null) {
+            event.setCancelled(true);
+            return;
+        }
+        if (!buildWorld.getTrust(player.getUniqueId()).canBuild()) {
+            event.setCancelled(true);
+            return;
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOW)
+    public void onBlockBreak(BlockBreakEvent event) {
+        checkBuildEvent(event.getPlayer(), event);
+    }
+
+    @EventHandler(priority = EventPriority.LOW)
+    public void onBlockPlace(BlockPlaceEvent event) {
+        checkBuildEvent(event.getPlayer(), event);
+    }
+
+    @EventHandler(priority = EventPriority.LOW)
+    public void onPlayerInteract(PlayerInteractEvent event) {
+        checkBuildEvent(event.getPlayer(), event);
+    }
+
+    @EventHandler(priority = EventPriority.LOW)
+    public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
+        checkBuildEvent(event.getPlayer(), event);
+    }
+
+    @EventHandler(priority = EventPriority.LOW)
+    public void onPlayerInteractEntity(PlayerInteractAtEntityEvent event) {
+        checkBuildEvent(event.getPlayer(), event);
+    }
+
+    @EventHandler(priority = EventPriority.LOW)
+    public void onEntityChangeBlock(EntityChangeBlockEvent event) {
+        if (event.getEntity() instanceof Player) {
+            checkBuildEvent((Player)event.getEntity(), event);
         }
     }
 }
