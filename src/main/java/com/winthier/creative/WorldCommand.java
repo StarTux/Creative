@@ -271,9 +271,9 @@ public class WorldCommand implements TabExecutor {
         Collections.sort(names);
         List<Object> json = new ArrayList<>();
         if (trust == Trust.OWNER) {
-            json.add(Msg.format(" &3&o%s Trust", trust.nice()));
-        } else {
             json.add(Msg.format(" &3&o%s", trust.nice()));
+        } else {
+            json.add(Msg.format(" &3&o%s Trust", trust.nice()));
         }
         Trust playerTrust = buildWorld.getTrust(player.getUniqueId());
         for (String name: names) {
