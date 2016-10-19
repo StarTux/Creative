@@ -1,6 +1,7 @@
 package com.winthier.creative;
 
 import com.winthier.creative.util.Msg;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.ChatColor;
 import org.bukkit.World;
@@ -9,6 +10,7 @@ import org.bukkit.WorldType;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 
 @RequiredArgsConstructor
@@ -24,6 +26,41 @@ public class AdminCommand implements CommandExecutor {
         } else if (cmd.equals("reload")) {
             plugin.reloadAllConfigs();
             sender.sendMessage("Configs reloaded");
+        } else if (cmd.equals("info")) {
+            if (args.length != 2) return false;
+            String name = args[1];
+            BuildWorld buildWorld = plugin.getBuildWorldByPath(name);
+            if (buildWorld == null) {
+                sender.sendMessage("World not found: " + name);
+                return true;
+            }
+            sender.sendMessage("World Name: " + buildWorld.getName());
+            sender.sendMessage("World Path: " + buildWorld.getPath());
+            sender.sendMessage("Owner: " + buildWorld.getOwnerName());
+            for (Trust trust: Trust.values()) {
+                StringBuilder sb = new StringBuilder(trust.name());
+                List<Builder> trusted = buildWorld.listTrusted(trust);
+                if (trusted.isEmpty()) continue;
+                sb.append("(").append(trusted.size()).append(")");
+                for (Builder builder: trusted) {
+                    sb.append(" ").append(builder.getName());
+                }
+                sender.sendMessage(sb.toString());
+            }
+            sender.sendMessage("Public Trust: " + buildWorld.getPublicTrust());
+        } else if (cmd.equals("config")) {
+            if (args.length != 2) return false;
+            String name = args[1];
+            BuildWorld buildWorld = plugin.getBuildWorldByPath(name);
+            if (buildWorld == null) {
+                sender.sendMessage("World not found: " + name);
+                return true;
+            }
+            for (String key: buildWorld.getWorldConfig().getKeys(true)) {
+                Object o = buildWorld.getWorldConfig().get(key);
+                if (o instanceof ConfigurationSection) continue;
+                sender.sendMessage(key + "='" + o + "'");
+            }
         } else if (cmd.equals("listunregistered")) {
             sender.sendMessage("Unregistered worlds:");
             int count = 0;
