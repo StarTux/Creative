@@ -27,9 +27,9 @@ commands:
     permission: creative.admin
     usage: |-
       /ca info <world>
-      /ca listworlds <player>
+      /ca list <player>
       /ca listloaded
-      /ca tp <world>
+      /ca tp [player] <world>
       /ca debug
       /ca remove <world>
       /ca trust <world> <player> <trust>

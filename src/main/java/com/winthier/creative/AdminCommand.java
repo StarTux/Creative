@@ -71,7 +71,7 @@ public class AdminCommand implements CommandExecutor {
                 }
             }
             sender.sendMessage("" + count + " worlds listed.");
-        } else if (cmd.equals("listworlds")) {
+        } else if (cmd.equals("list")) {
             if (args.length == 1) {
                 int count = 0;
                 for (BuildWorld buildWorld: plugin.getBuildWorlds()) {
@@ -87,13 +87,20 @@ public class AdminCommand implements CommandExecutor {
                     return true;
                 }
                 PlayerWorldList list = plugin.getPlayerWorldList(builder.getUuid());
-                Msg.send(sender, "Owner (%d)", list.owner.size());
-                for (BuildWorld bw: list.owner) Msg.send(sender, "%s (%s)", bw.getName(), bw.getPath());
-                Msg.send(sender, "Build (%d)", list.build.size());
-                for (BuildWorld bw: list.build) Msg.send(sender, "%s (%s)", bw.getName(), bw.getPath());
-                Msg.send(sender, "Visit (%d)", list.visit.size());
-                for (BuildWorld bw: list.visit) Msg.send(sender, "%s (%s)", bw.getName(), bw.getPath());
-                Msg.send(sender, "total (%d)", list.count());
+                Msg.send(sender, "&e%s World List", builder.getName());
+                if (!list.owner.isEmpty()) {
+                    Msg.send(sender, "&7Owner (&r%d&7)", list.owner.size());
+                    for (BuildWorld bw: list.owner) Msg.send(sender, "&a%s &8/%s", bw.getPath(), bw.getName());
+                }
+                if (!list.build.isEmpty()) {
+                    Msg.send(sender, "&7Build (&r%d&7)", list.build.size());
+                    for (BuildWorld bw: list.build) Msg.send(sender, "&a%s &8/%s", bw.getPath(), bw.getName());
+                }
+                if (!list.visit.isEmpty()) {
+                    Msg.send(sender, "&7Visit (&r%d&7)", list.visit.size());
+                    for (BuildWorld bw: list.visit) Msg.send(sender, "&a%s &8/%s", bw.getPath(), bw.getName());
+                }
+                Msg.send(sender, "&7Total (&r%d&7)", list.count());
             }
         } else if (cmd.equals("listloaded")) {
             int count = 0;
@@ -107,17 +114,31 @@ public class AdminCommand implements CommandExecutor {
             }
             sender.sendMessage("" + count + " worlds are currently loaded.");
         } else if (cmd.equals("tp")) {
-            if (args.length != 2) return false;
-            if (player == null) return false;
-            String name = args[1];
-            BuildWorld bw = plugin.getBuildWorldByPath(name);
-            if (bw == null) {
-                sender.sendMessage("World not found: " + name);
+            String worldName;
+            Player target;
+            if (args.length == 2) {
+                if (player == null) return false;
+                target = player;
+                worldName = args[1];
+            } else if (args.length == 3) {
+                String targetName = args[1];
+                target = plugin.getServer().getPlayerExact(targetName);
+                if (target == null) {
+                    sender.sendMessage("Player not found: " + targetName);
+                    return true;
+                }
+                worldName = args[2];
+            } else {
+                return false;
+            }
+            BuildWorld buildWorld = plugin.getBuildWorldByPath(worldName);
+            if (buildWorld == null) {
+                sender.sendMessage("World not found: " + worldName);
                 return true;
             }
-            bw.loadWorld();
-            bw.teleportToSpawn(player);
-            sender.sendMessage("Teleported to world " + bw.getName());
+            buildWorld.loadWorld();
+            buildWorld.teleportToSpawn(target);
+            Msg.send(sender, "&eTeleported %s to world %s.", target.getName(), buildWorld.getName());
         } else if (cmd.equals("nosave")) {
             if (player == null) return false;
             World world = player.getWorld();
