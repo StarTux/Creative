@@ -19,6 +19,7 @@ public class CreativePlugin extends JavaPlugin {
     private List<BuildWorld> buildWorlds;
     private YamlConfiguration logoutLocations = null;
     final WorldCommand worldCommand = new WorldCommand(this);
+    final Permission permission = new Permission(this);
     @Getter static CreativePlugin instance = null;
 
     @Override
@@ -30,10 +31,16 @@ public class CreativePlugin extends JavaPlugin {
         getCommand("wtp").setExecutor(new WTPCommand(this));
         getCommand("CreativeAdmin").setExecutor(new AdminCommand(this));
         getServer().getPluginManager().registerEvents(new CreativeListener(this), this);
+        for (Player player: getServer().getOnlinePlayers()) {
+            permission.updatePermissions(player);
+        }
     }
 
     @Override
     public void onDisable() {
+        for (Player player: getServer().getOnlinePlayers()) {
+            permission.resetPermissions(player);
+        }
     }
 
     void reloadAllConfigs() {

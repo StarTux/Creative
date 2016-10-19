@@ -6,9 +6,11 @@ import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.spigotmc.event.player.PlayerSpawnLocationEvent;
@@ -19,8 +21,10 @@ public class CreativeListener implements Listener {
     
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
-        UUID uuid = event.getPlayer().getUniqueId();
-        Location loc = event.getPlayer().getLocation();
+        // Store Logout Location
+        Player player = event.getPlayer();
+        UUID uuid = player.getUniqueId();
+        Location loc = player.getLocation();
         ConfigurationSection config = plugin.getLogoutLocations().createSection(uuid.toString());
         config.set("world", loc.getWorld().getName());;
         config.set("x", loc.getX());
@@ -28,8 +32,10 @@ public class CreativeListener implements Listener {
         config.set("z", loc.getZ());
         config.set("yaw", loc.getYaw());
         config.set("pitch", loc.getPitch());
-        config.set("gamemode", event.getPlayer().getGameMode().name());
+        config.set("gamemode", player.getGameMode().name());
         plugin.saveLogoutLocations();
+        // Reset Permissions
+        plugin.permission.resetPermissions(player);
     }
 
     @EventHandler
@@ -74,5 +80,16 @@ public class CreativeListener implements Listener {
             }
         }
         event.getPlayer().setGameMode(gamemode);
+    }
+
+    @EventHandler
+    public void onPlayerChangedWorld(PlayerChangedWorldEvent event) {
+        plugin.permission.updatePermissions(event.getPlayer());
+        World from = event.getFrom();
+        if (from.getPlayers().isEmpty()) {
+            if (plugin.getServer().unloadWorld(from, true)) {
+                plugin.getLogger().info("Unloaded world " + from.getName());
+            }
+        }
     }
 }

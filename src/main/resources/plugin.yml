@@ -25,6 +25,7 @@ commands:
     description: Admin Interface
     permission: creative.admin
     usage: |-
+      /ca info <world>
       /ca listworlds <player>
       /ca listloaded
       /ca tp <world>
@@ -42,4 +43,7 @@ permissions:
     default: op
   creative.admin:
     description: Use /CreativeAdmin
+    default: op
+  creative.worldedit:
+    description: Use WorldEdit in the appropriate worlds
     default: op
