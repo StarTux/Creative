@@ -116,7 +116,6 @@ public class BuildWorld {
             if (tmp != null) worldType = WorldType.valueOf(tmp);
         } catch (IllegalArgumentException iae) {}
         creator.type(worldType);
-        System.out.println(creator);
         result = creator.createWorld();
         return result;
     }
