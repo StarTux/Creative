@@ -20,6 +20,7 @@ import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.spigotmc.event.player.PlayerSpawnLocationEvent;
 
 @RequiredArgsConstructor
@@ -43,6 +44,8 @@ public class CreativeListener implements Listener {
         plugin.saveLogoutLocations();
         // Reset Permissions
         plugin.permission.resetPermissions(player);
+        // Unload Empty World
+        unloadEmptyWorld(player.getWorld());
     }
 
     @EventHandler
@@ -95,12 +98,21 @@ public class CreativeListener implements Listener {
     @EventHandler
     public void onPlayerChangedWorld(PlayerChangedWorldEvent event) {
         plugin.permission.updatePermissions(event.getPlayer());
-        World from = event.getFrom();
-        if (from.getPlayers().isEmpty()) {
-            if (plugin.getServer().unloadWorld(from, true)) {
-                plugin.getLogger().info("Unloaded world " + from.getName());
+        unloadEmptyWorld(event.getFrom());
+    }
+
+    void unloadEmptyWorld(World world) {
+        if (!plugin.isEnabled()) return;
+        final String name = world.getName();
+        new BukkitRunnable() {
+            @Override public void run() {
+                World world = plugin.getServer().getWorld(name);
+                if (world == null) return;
+                if (!world.getPlayers().isEmpty()) return;
+                if (!plugin.getServer().unloadWorld(world, true)) return;
+                plugin.getLogger().info("Unloaded world " + name);
             }
-        }
+        }.runTaskLater(plugin, 1L);
     }
 
     // Build Permission Check
