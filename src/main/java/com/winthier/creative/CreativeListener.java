@@ -19,6 +19,7 @@ import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.spigotmc.event.player.PlayerSpawnLocationEvent;
@@ -29,18 +30,21 @@ public class CreativeListener implements Listener {
     
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
-        // Store Logout Location
         Player player = event.getPlayer();
-        UUID uuid = player.getUniqueId();
-        Location loc = player.getLocation();
-        ConfigurationSection config = plugin.getLogoutLocations().createSection(uuid.toString());
-        config.set("world", loc.getWorld().getName());;
-        config.set("x", loc.getX());
-        config.set("y", loc.getY());
-        config.set("z", loc.getZ());
-        config.set("yaw", loc.getYaw());
-        config.set("pitch", loc.getPitch());
-        config.set("gamemode", player.getGameMode().name());
+        // Store Logout Location
+        storeLogoutLocation(player);
+        plugin.saveLogoutLocations();
+        // Reset Permissions
+        plugin.permission.resetPermissions(player);
+        // Unload Empty World
+        unloadEmptyWorld(player.getWorld());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onPlayerKick(PlayerKickEvent event) {
+        Player player = event.getPlayer();
+        // Store Logout Location
+        storeLogoutLocation(player);
         plugin.saveLogoutLocations();
         // Reset Permissions
         plugin.permission.resetPermissions(player);
@@ -56,6 +60,19 @@ public class CreativeListener implements Listener {
             loc = plugin.getServer().getWorlds().get(0).getSpawnLocation();
         }
         event.setSpawnLocation(loc);
+    }
+
+    void storeLogoutLocation(Player player) {
+        UUID uuid = player.getUniqueId();
+        Location loc = player.getLocation();
+        ConfigurationSection config = plugin.getLogoutLocations().createSection(uuid.toString());
+        config.set("world", loc.getWorld().getName());;
+        config.set("x", loc.getX());
+        config.set("y", loc.getY());
+        config.set("z", loc.getZ());
+        config.set("yaw", loc.getYaw());
+        config.set("pitch", loc.getPitch());
+        config.set("gamemode", player.getGameMode().name());
     }
 
     Location findBuildWorldSpawnLocation(UUID uuid) {
