@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import lombok.Getter;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.MemoryConfiguration;
@@ -40,7 +41,9 @@ public class CreativePlugin extends JavaPlugin {
     public void onDisable() {
         for (Player player: getServer().getOnlinePlayers()) {
             permission.resetPermissions(player);
+            storeLogoutLocation(player);
         }
+        saveLogoutLocations();
     }
 
     void reloadAllConfigs() {
@@ -126,5 +129,35 @@ public class CreativePlugin extends JavaPlugin {
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
+    }
+
+    void storeLogoutLocation(Player player) {
+        UUID uuid = player.getUniqueId();
+        Location loc = player.getLocation();
+        ConfigurationSection config = getLogoutLocations().createSection(uuid.toString());
+        config.set("world", loc.getWorld().getName());;
+        config.set("x", loc.getX());
+        config.set("y", loc.getY());
+        config.set("z", loc.getZ());
+        config.set("yaw", loc.getYaw());
+        config.set("pitch", loc.getPitch());
+        config.set("gamemode", player.getGameMode().name());
+    }
+
+    Location findSpawnLocation(UUID uuid) {
+        ConfigurationSection config = getLogoutLocations().getConfigurationSection(uuid.toString());
+        if (config == null) return null;
+        String worldName = config.getString("world");
+        BuildWorld buildWorld = getBuildWorldByPath(worldName);
+        if (buildWorld == null) return null;
+        if (!buildWorld.getTrust(uuid).canVisit()) return null;
+        World world = buildWorld.loadWorld();
+        if (world == null) return null;
+        double x = config.getDouble("x");
+        double y = config.getDouble("y");
+        double z = config.getDouble("z");
+        float yaw = (float)config.getDouble("yaw");
+        float pitch = (float)config.getDouble("pitch");
+        return new Location(world, x, y, z, yaw, pitch);
     }
 }
