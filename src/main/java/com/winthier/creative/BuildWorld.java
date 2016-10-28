@@ -11,6 +11,7 @@ import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Bukkit;
+import org.bukkit.Difficulty;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.WorldCreator;
@@ -117,6 +118,8 @@ public class BuildWorld {
         } catch (IllegalArgumentException iae) {}
         creator.type(worldType);
         result = creator.createWorld();
+        result.setDifficulty(Difficulty.PEACEFUL); // TODO
+        result.setSpawnFlags(false, false); // TODO
         return result;
     }
 
