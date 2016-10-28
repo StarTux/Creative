@@ -144,13 +144,14 @@ public class CreativePlugin extends JavaPlugin {
         config.set("gamemode", player.getGameMode().name());
     }
 
-    Location findSpawnLocation(UUID uuid) {
+    Location findSpawnLocation(Player player) {
+        UUID uuid = player.getUniqueId();
         ConfigurationSection config = getLogoutLocations().getConfigurationSection(uuid.toString());
         if (config == null) return null;
         String worldName = config.getString("world");
         BuildWorld buildWorld = getBuildWorldByPath(worldName);
         if (buildWorld == null) return null;
-        if (!buildWorld.getTrust(uuid).canVisit()) return null;
+        if (!player.isOp() && !buildWorld.getTrust(uuid).canVisit()) return null;
         World world = buildWorld.loadWorld();
         if (world == null) return null;
         double x = config.getDouble("x");

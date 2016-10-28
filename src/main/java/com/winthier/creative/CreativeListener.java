@@ -54,8 +54,7 @@ public class CreativeListener implements Listener {
 
     @EventHandler
     public void onPlayerSpawnLocation(PlayerSpawnLocationEvent event) {
-        UUID uuid = event.getPlayer().getUniqueId();
-        Location loc = plugin.findSpawnLocation(uuid);
+        Location loc = plugin.findSpawnLocation(event.getPlayer());
         if (loc == null) {
             loc = plugin.getServer().getWorlds().get(0).getSpawnLocation();
         }
