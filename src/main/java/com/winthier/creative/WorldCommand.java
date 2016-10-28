@@ -272,8 +272,12 @@ public class WorldCommand implements TabExecutor {
         } else {
             Builder builder = Builder.find(target);
             if (builder == null) throw new CommandException("Player not found: %s.", target);
-            if (buildWorld.getTrust(builder.getUuid()) == Trust.NONE) {
-                throw new CommandException("%s is not trusted in this world.", builder.getName());
+            if (buildWorld.getTrust(builder.getUuid()) == trust) {
+                if (trust == Trust.NONE) {
+                    throw new CommandException("%s is not trusted in this world.", builder.getName());
+                } else {
+                    throw new CommandException("%s is already trusted in this world.", builder.getName());
+                }
             }
             if (!buildWorld.trustBuilder(builder, trust)) {
                 throw new CommandException("Could not change trust level of %s.", builder.getName());
@@ -311,7 +315,8 @@ public class WorldCommand implements TabExecutor {
             } else {
                 json.add(Msg.button(
                              ChatColor.WHITE,
-                             name, name + " is a " + trust.nice(),
+                             name,
+                             null,
                              null));
             }
         }
@@ -352,7 +357,7 @@ public class WorldCommand implements TabExecutor {
         commandUsage(player, "Time", "", "Set World Spawn");
         commandUsage(player, "SetSpawn", "", "Set World Spawn");
         commandUsage(player, "Time", "[Time]", "Get or set World Time");
-        commandUsage(player, "Trust", "<Player> [Time]", "Trust someone");
+        commandUsage(player, "Trust", "<Player> [Trust]", "Trust someone");
         commandUsage(player, "UnTrust", "<Player>", "Revoke Trust");
     }
 }
