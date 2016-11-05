@@ -120,6 +120,8 @@ public class BuildWorld {
         result = creator.createWorld();
         result.setDifficulty(Difficulty.PEACEFUL); // TODO
         result.setSpawnFlags(false, false); // TODO
+        result.setGameRuleValue("doMobSpawning", "false");
+        result.setGameRuleValue("mobGriefing", "false");
         return result;
     }
 
