@@ -78,6 +78,15 @@ public class WorldCommand implements TabExecutor {
                 if (args.length < 2) CommandException.usage();
                 String target = args[1];
                 trust(player, target, Trust.NONE);
+            } else if (cmd.equals("save")) {
+                World world = player.getWorld();
+                BuildWorld buildWorld = plugin.getBuildWorldByWorld(world);
+                if (buildWorld == null || !buildWorld.getTrust(player.getUniqueId()).isOwner()) {
+                    Msg.warn(player, "You don't have permission.");
+                    return true;
+                }
+                world.save();
+                Msg.info(player, "Saved your current world to disk.");
             } else {
                 CommandException.usage();
             }
@@ -358,5 +367,6 @@ public class WorldCommand implements TabExecutor {
         commandUsage(player, "Time", "[Time]", "Get or set World Time");
         commandUsage(player, "Trust", "<Player> [Trust]", "Trust someone");
         commandUsage(player, "UnTrust", "<Player>", "Revoke Trust");
+        commandUsage(player, "Save", "", "Save the world to disk");
     }
 }
