@@ -82,11 +82,25 @@ public class WorldCommand implements TabExecutor {
                 World world = player.getWorld();
                 BuildWorld buildWorld = plugin.getBuildWorldByWorld(world);
                 if (buildWorld == null || !buildWorld.getTrust(player.getUniqueId()).isOwner()) {
-                    Msg.warn(player, "You don't have permission.");
-                    return true;
+                    CommandException.noPerm();
                 }
                 world.save();
                 Msg.info(player, "Saved your current world to disk.");
+            } else if (cmd.equals("rename")) {
+                if (args.length < 2) CommandException.usage();
+                World world = player.getWorld();
+                BuildWorld buildWorld = plugin.getBuildWorldByWorld(world);
+                if (buildWorld == null || !buildWorld.getTrust(player.getUniqueId()).isOwner()) {
+                    CommandException.noPerm();
+                }
+                StringBuilder sb = new StringBuilder(args[1]);
+                for (int i = 2; i < args.length; ++i) {
+                    sb.append(" ").append(args[i]);
+                }
+                String name = sb.toString();
+                buildWorld.setName(name);
+                plugin.saveBuildWorlds();
+                Msg.info(player, "Renamed your current world to '%s'.", name);
             } else {
                 CommandException.usage();
             }
@@ -367,6 +381,7 @@ public class WorldCommand implements TabExecutor {
         commandUsage(player, "Time", "[Time]", "Get or set World Time");
         commandUsage(player, "Trust", "<Player> [Trust]", "Trust someone");
         commandUsage(player, "UnTrust", "<Player>", "Revoke Trust");
-        commandUsage(player, "Save", "", "Save the world to disk");
+        commandUsage(player, "Save", "", "Save your world to disk");
+        commandUsage(player, "Rename", "<Name>", "Rename your world");
     }
 }
