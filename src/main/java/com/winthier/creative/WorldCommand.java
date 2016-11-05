@@ -355,7 +355,6 @@ public class WorldCommand implements TabExecutor {
         commandUsage(player, "Spawn", "", "Warp to World Spawn");
         commandUsage(player, "SetSpawn", "", "Set World Spawn");
         commandUsage(player, "Time", "", "Set World Spawn");
-        commandUsage(player, "SetSpawn", "", "Set World Spawn");
         commandUsage(player, "Time", "[Time]", "Get or set World Time");
         commandUsage(player, "Trust", "<Player> [Trust]", "Trust someone");
         commandUsage(player, "UnTrust", "<Player>", "Revoke Trust");
