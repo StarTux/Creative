@@ -3,6 +3,7 @@ package com.winthier.creative;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +21,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 @Getter
 public class CreativePlugin extends JavaPlugin {
     private List<BuildWorld> buildWorlds;
+    private Map<String, Warp> warps;
     private YamlConfiguration logoutLocations = null;
     final WorldCommand worldCommand = new WorldCommand(this);
     final Permission permission = new Permission(this);
@@ -34,6 +36,7 @@ public class CreativePlugin extends JavaPlugin {
         getCommand("World").setExecutor(worldCommand);
         getCommand("wtp").setExecutor(new WTPCommand(this));
         getCommand("CreativeAdmin").setExecutor(new AdminCommand(this));
+        getCommand("Warp").setExecutor(new WarpCommand(this));
         getServer().getPluginManager().registerEvents(new CreativeListener(this), this);
         for (Player player: getServer().getOnlinePlayers()) {
             permission.updatePermissions(player);
@@ -51,6 +54,7 @@ public class CreativePlugin extends JavaPlugin {
 
     void reloadAllConfigs() {
         buildWorlds = null;
+        warps = null;
         logoutLocations = null;
     }
 
@@ -182,5 +186,33 @@ public class CreativePlugin extends JavaPlugin {
 
     public boolean doesIgnore(UUID uuid) {
         return ignores.contains(uuid);
+    }
+
+    public Map<String, Warp> getWarps() {
+        if (warps == null) {
+            warps = new HashMap<>();
+            File file = new File(getDataFolder(), "warps.yml");
+            YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+            for (String key: config.getKeys(false)) {
+                Warp warp = Warp.deserialize(key, config.getConfigurationSection(key));
+                warps.put(warp.getName(), warp);
+            }
+        }
+        return warps;
+    }
+
+    public void saveWarps() {
+        if (warps == null) return;
+        YamlConfiguration config = new YamlConfiguration();
+        for (Warp warp: warps.values()) {
+            ConfigurationSection section = config.createSection(warp.getName());
+            warp.serialize(section);
+        }
+        File file = new File(getDataFolder(), "warps.yml");
+        try {
+            config.save(file);
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
     }
 }

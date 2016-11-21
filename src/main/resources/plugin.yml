@@ -40,9 +40,17 @@ commands:
       /ca load <world>
       /ca unload <world>
       /ca ignore
+  warp:
+    description: Warps
+    permission: creative.warp
+    usage: |-
+      /warp [name]
 permissions:
   creative.world:
     descrption: Use /world and /wtp
+    default: op
+  creative.warp:
+    descrption: Use /warp
     default: op
   creative.admin:
     description: Use /CreativeAdmin

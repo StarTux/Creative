@@ -4,6 +4,7 @@ import com.winthier.creative.util.Msg;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.WorldCreator;
 import org.bukkit.WorldType;
@@ -312,6 +313,37 @@ public class AdminCommand implements CommandExecutor {
                 Msg.info(player, "No longer ignoring world perms");
             }
             plugin.getPermission().updatePermissions(player);
+        } else if (cmd.equals("warp") && args.length > 1) {
+            if (player == null) return false;
+            StringBuilder sb = new StringBuilder(args[1]);
+            for (int i = 2; i < args.length; ++i) {
+                sb.append(" ").append(args[i]);
+            }
+            String name = sb.toString();
+            Warp warp = plugin.getWarps().get(name);
+            if (warp == null) {
+                Msg.warn(player, "Warp not found: %s", name);
+                return true;
+            }
+            Location loc = warp.getLocation();
+            if (loc == null) {
+                Msg.warn(player, "Warp not found: %s", warp.getName());
+                return true;
+            }
+            player.teleport(loc);
+            Msg.info(player, "Warped to %s", warp.getName());
+        } else if (cmd.equals("setwarp") && args.length > 1) {
+            if (player == null) return false;
+            StringBuilder sb = new StringBuilder(args[1]);
+            for (int i = 2; i < args.length; ++i) {
+                sb.append(" ").append(args[i]);
+            }
+            String name = sb.toString();
+            Location loc = player.getLocation();
+            Warp warp = Warp.of(name, loc);
+            plugin.getWarps().put(name, warp);
+            plugin.saveWarps();
+            Msg.info(player, "Created warp '%s'", name);
         }
         return true;
     }
