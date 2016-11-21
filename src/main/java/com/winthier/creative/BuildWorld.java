@@ -128,6 +128,7 @@ public class BuildWorld {
         result.setGameRuleValue("mobGriefing", "false");
         result.setGameRuleValue("randomTickSpeed", "0");
         result.setGameRuleValue("showDeathMessages", "false");
+        result.setGameRuleValue("spawnRadius", "0");
         return result;
     }
 
