@@ -224,6 +224,14 @@ public class WorldCommand implements TabExecutor {
                 time = 6000;
             } else if ("midnight".equalsIgnoreCase(arg)) {
                 time = 18000;
+            } else if ("lock".equalsIgnoreCase(arg)) {
+                player.getWorld().setGameRuleValue("doDaylightCycle", "false");
+                Msg.info(player, "Time locked");
+                return;
+            } else if ("unlock".equalsIgnoreCase(arg)) {
+                player.getWorld().setGameRuleValue("doDaylightCycle", "true");
+                Msg.info(player, "Time unlocked");
+                return;
             } else if (arg.contains(":")) {
                 String[] arr = arg.split(":");
                 if (arr.length != 2) throw new CommandException("Time expected: %s", arg);
@@ -387,7 +395,7 @@ public class WorldCommand implements TabExecutor {
         commandUsage(player, "Spawn", "", "Warp to World Spawn");
         commandUsage(player, "SetSpawn", "", "Set World Spawn");
         commandUsage(player, "Time", "", "Set World Spawn");
-        commandUsage(player, "Time", "[Time]", "Get or set World Time");
+        commandUsage(player, "Time", "[Time|Lock|Unlock]", "Get or set World Time");
         commandUsage(player, "Trust", "<Player> [Trust]", "Trust someone");
         commandUsage(player, "UnTrust", "<Player>", "Revoke Trust");
         commandUsage(player, "Save", "", "Save your world to disk");
