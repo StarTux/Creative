@@ -3,8 +3,10 @@ package com.winthier.creative;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import lombok.Getter;
 import org.bukkit.Location;
@@ -21,6 +23,7 @@ public class CreativePlugin extends JavaPlugin {
     private YamlConfiguration logoutLocations = null;
     final WorldCommand worldCommand = new WorldCommand(this);
     final Permission permission = new Permission(this);
+    private final Set<UUID> ignores = new HashSet<>();
     @Getter static CreativePlugin instance = null;
 
     @Override
@@ -151,7 +154,7 @@ public class CreativePlugin extends JavaPlugin {
         String worldName = config.getString("world");
         BuildWorld buildWorld = getBuildWorldByPath(worldName);
         if (buildWorld == null) return null;
-        if (!player.isOp() && !buildWorld.getTrust(uuid).canVisit()) return null;
+        if (!doesIgnore(uuid) && !buildWorld.getTrust(uuid).canVisit()) return null;
         World world = buildWorld.loadWorld();
         if (world == null) return null;
         double x = config.getDouble("x");
@@ -160,5 +163,24 @@ public class CreativePlugin extends JavaPlugin {
         float yaw = (float)config.getDouble("yaw");
         float pitch = (float)config.getDouble("pitch");
         return new Location(world, x, y, z, yaw, pitch);
+    }
+
+    public boolean toggleIgnore(Player player) {
+        UUID uuid = player.getUniqueId();
+        if (ignores.remove(uuid)) {
+            return false;
+        } else {
+            ignores.add(uuid);
+            return true;
+        }
+    }
+
+    public boolean doesIgnore(Player player) {
+        UUID uuid = player.getUniqueId();
+        return ignores.contains(uuid);
+    }
+
+    public boolean doesIgnore(UUID uuid) {
+        return ignores.contains(uuid);
     }
 }

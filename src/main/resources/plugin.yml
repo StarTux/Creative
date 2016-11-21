@@ -39,6 +39,7 @@ commands:
       /ca import <world>
       /ca load <world>
       /ca unload <world>
+      /ca ignore
 permissions:
   creative.world:
     descrption: Use /world and /wtp

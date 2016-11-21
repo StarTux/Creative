@@ -57,6 +57,7 @@ public class BuildWorld {
     }
 
     Trust getTrust(UUID uuid) {
+        if (getPlugin().doesIgnore(uuid)) return Trust.OWNER;
         if (owner != null && owner.getUuid().equals(uuid)) return Trust.OWNER;
         Trusted t = trusted.get(uuid);
         if (t == null) return publicTrust;

@@ -304,6 +304,14 @@ public class AdminCommand implements CommandExecutor {
             } else {
                 sender.sendMessage("Could not unload world: " + buildWorld.getPath());
             }
+        } else if (cmd.equals("ignore")) {
+            if (player == null) return false;
+            if (plugin.toggleIgnore(player)) {
+                Msg.info(player, "Ignoring world perms");
+            } else {
+                Msg.info(player, "No longer ignoring world perms");
+            }
+            plugin.getPermission().updatePermissions(player);
         }
         return true;
     }

@@ -104,7 +104,7 @@ public class CreativeListener implements Listener {
     // Build Permission Check
 
     void checkBuildEvent(Player player, Cancellable event) {
-        if (player.isOp()) return;
+        if (plugin.doesIgnore(player)) return;
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(player.getWorld());
         if (buildWorld == null) {
             event.setCancelled(true);
