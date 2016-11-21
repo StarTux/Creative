@@ -121,11 +121,12 @@ public class BuildWorld {
         result = creator.createWorld();
         result.setDifficulty(Difficulty.PEACEFUL); // TODO
         result.setSpawnFlags(false, false); // TODO
+        result.setGameRuleValue("doMobLoot", "false");
         result.setGameRuleValue("doMobSpawning", "false");
+        result.setGameRuleValue("doTileDrops", "false");
+        result.setGameRuleValue("doWeatherCycle", "false");
         result.setGameRuleValue("mobGriefing", "false");
         result.setGameRuleValue("randomTickSpeed", "0");
-        result.setGameRuleValue("doMobLoot", "false");
-        result.setGameRuleValue("doTileDrops", "false");
         result.setGameRuleValue("showDeathMessages", "false");
         return result;
     }
