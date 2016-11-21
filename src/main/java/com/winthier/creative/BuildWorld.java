@@ -122,6 +122,10 @@ public class BuildWorld {
         result.setSpawnFlags(false, false); // TODO
         result.setGameRuleValue("doMobSpawning", "false");
         result.setGameRuleValue("mobGriefing", "false");
+        result.setGameRuleValue("randomTickSpeed", "0");
+        result.setGameRuleValue("doMobLoot", "false");
+        result.setGameRuleValue("doTileDrops", "false");
+        result.setGameRuleValue("showDeathMessages", "false");
         return result;
     }
 
