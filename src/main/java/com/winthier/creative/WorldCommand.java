@@ -188,14 +188,23 @@ public class WorldCommand implements TabExecutor {
         Collections.sort(list, BuildWorld.NAME_SORT);
         List<Object> json = new ArrayList<>();
         json.add(Msg.button(ChatColor.WHITE, prefix, null, null));
+        int count = 1;
         for (BuildWorld buildWorld: list) {
             json.add(" ");
             json.add(Msg.button(ChatColor.GREEN,
                                 "&f[&a" + buildWorld.getName() + "&r]",
                                 "Teleport to " + buildWorld.getName(),
                                 "/wtp " + buildWorld.getPath()));
+            count += 1;
+            if (count >= 3 && !json.isEmpty()) {
+                count = 0;
+                Msg.raw(player, json);
+                json.clear();
+            }
         }
-        Msg.raw(player, json);
+        if (!json.isEmpty()) {
+            Msg.raw(player, json);
+        }
     }
 
     void worldTime(Player player, String arg) {
