@@ -64,20 +64,20 @@ public class WorldCommand implements TabExecutor {
             } else if (cmd.equals("setspawn")) {
                 setWorldSpawn(player);
             } else if (cmd.equals("trust")) {
-                if (args.length < 2 || args.length > 3) CommandException.usage();
-                String target = args[1];
-                Trust trust;
-                if (args.length >= 3) {
-                    trust = Trust.of(args[2]);
-                } else {
-                    trust = Trust.VISIT;
-                }
-                if (trust == Trust.NONE) CommandException.usage();
-                trust(player, target, trust);
+                if (args.length != 2) CommandException.usage();
+                trustCommand(player, args[1], Trust.BUILD);
+            } else if (cmd.equals("wetrust")) {
+                if (args.length != 2) CommandException.usage();
+                trustCommand(player, args[1], Trust.WORLD_EDIT);
+            } else if (cmd.equals("visittrust")) {
+                if (args.length != 2) CommandException.usage();
+                trustCommand(player, args[1], Trust.VISIT);
+            } else if (cmd.equals("ownertrust")) {
+                if (args.length != 2) CommandException.usage();
+                trustCommand(player, args[1], Trust.OWNER);
             } else if (cmd.equals("untrust")) {
-                if (args.length < 2) CommandException.usage();
-                String target = args[1];
-                trust(player, target, Trust.NONE);
+                if (args.length != 2) CommandException.usage();
+                trustCommand(player, args[1], Trust.NONE);
             } else if (cmd.equals("save")) {
                 World world = player.getWorld();
                 BuildWorld buildWorld = plugin.getBuildWorldByWorld(world);
@@ -139,22 +139,6 @@ public class WorldCommand implements TabExecutor {
             return null;
         } else if (args.length == 1) {
             return filterStartsWith(args[0], Arrays.asList("list", "info", "time", "spawn", "setspawn", "trust", "untrust"));
-        } else {
-            String cmd = args[0].toLowerCase();
-            if (cmd.equals("trust")) {
-                if (args.length == 3) {
-                    List<String> result = new ArrayList<>();
-                    String term = args[2].toLowerCase();
-                    for (Trust trust: Trust.values()) {
-                        if (trust != Trust.NONE) {
-                            if (trust.name().toLowerCase().startsWith(term)) {
-                                result.add(trust.name().toLowerCase());
-                            }
-                        }
-                    }
-                    return result;
-                }
-            }
         }
         return null;
     }
@@ -304,7 +288,7 @@ public class WorldCommand implements TabExecutor {
         Msg.info(player, "World spawn was set to your current location.");
     }
 
-    void trust(Player player, String target, Trust trust) {
+    void trustCommand(Player player, String target, Trust trust) {
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(player.getWorld());
         if (buildWorld == null || !buildWorld.getTrust(player.getUniqueId()).isOwner()) {
             CommandException.noPerm();
@@ -320,13 +304,6 @@ public class WorldCommand implements TabExecutor {
         } else {
             Builder builder = Builder.find(target);
             if (builder == null) throw new CommandException("Player not found: %s.", target);
-            if (buildWorld.getTrust(builder.getUuid()) == trust) {
-                if (trust == Trust.NONE) {
-                    throw new CommandException("%s is not trusted in this world.", builder.getName());
-                } else {
-                    throw new CommandException("%s is already trusted in this world.", builder.getName());
-                }
-            }
             if (!buildWorld.trustBuilder(builder, trust)) {
                 throw new CommandException("Could not change trust level of %s.", builder.getName());
             }
@@ -395,13 +372,17 @@ public class WorldCommand implements TabExecutor {
     }
 
     void commandUsage(Player player, String sub, String args, String description) {
-        String cmd = "/World " + sub;
-        Msg.raw(player, Msg.button(
-                    ChatColor.WHITE,
-                    cmd + " &o" + args,
-                    "&a" + cmd + " &2" + args + "\n" + description,
-                    cmd + " "),
-                Msg.format("&8 - &7%s.", description));
+        String cmd = "/World " + sub + " ";
+        String tooltip = "&a" + cmd + " &2" + args + "\n" + description;
+        Msg.raw(player,
+                Msg.button(ChatColor.WHITE,
+                           cmd + " &o" + args,
+                           tooltip,
+                           cmd),
+                Msg.button(ChatColor.GRAY,
+                           "&8 - &7" + description,
+                           tooltip,
+                           cmd));
     }
 
     void usage(Player player) {
@@ -412,10 +393,13 @@ public class WorldCommand implements TabExecutor {
         commandUsage(player, "SetSpawn", "", "Set World Spawn");
         commandUsage(player, "Time", "", "Set World Spawn");
         commandUsage(player, "Time", "[Time|Lock|Unlock]", "Get or set World Time");
-        commandUsage(player, "Trust", "<Player> [Trust]", "Trust someone");
-        commandUsage(player, "UnTrust", "<Player>", "Revoke Trust");
+        commandUsage(player, "Trust", "<Player>", "Trust someone to build");
+        commandUsage(player, "WETrust", "<Player>", "Trust someone to use WorldEdit");
+        commandUsage(player, "VisitTrust", "<Player>", "Trust someone to visit");
+        commandUsage(player, "OwnerTrust", "<Player>", "Add a world owner");
+        commandUsage(player, "Untrust", "<Player>", "Revoke Trust");
         commandUsage(player, "Save", "", "Save your world to disk");
-        commandUsage(player, "Set", "<Name|Description|Authors> [...]", "Change world settings");
+        commandUsage(player, "Set", "<Name|Description|Authors> [...]", "World settings");
     }
 
     void changeWorldSetting(Player player, BuildWorld buildWorld, String key, List<String> args) {

@@ -67,13 +67,13 @@ public class BuildWorld {
     }
 
     boolean trustBuilder(Builder builder, Trust trust) {
+        if (owner != null && owner.getUuid().equals(builder.getUuid())) return false;
         if (trust == Trust.NONE) {
-            return trusted.remove(builder.getUuid()) != null;
+            trusted.remove(builder.getUuid());
         } else {
-            if (owner != null && owner.getUuid().equals(builder.getUuid())) return false;
             trusted.put(builder.getUuid(), new Trusted(builder, trust));
-            return true;
         }
+        return true;
     }
 
     String getOwnerName() {
