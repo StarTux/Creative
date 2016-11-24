@@ -103,4 +103,37 @@ public class Msg {
             return json.toString();
         }
     }
+
+
+    public static String wrap(String what, int maxLineLength, String endl) {
+        String[] words = what.split(" ");
+        if (words.length == 0) return "";
+        List<String> lines = new ArrayList<>();
+        StringBuilder line = new StringBuilder(words[0]);
+        int i = 1;
+        while (i < words.length) {
+            String word = words[i++];
+            if (line.length() + word.length() > maxLineLength) {
+                lines.add(line.toString());
+                line = new StringBuilder(word);
+            } else {
+                line.append(" ");
+                line.append(word);
+            }
+        }
+        if (line.length() > 0) lines.add(line.toString());
+        if (lines.isEmpty()) return "";
+        line = new StringBuilder(lines.get(0));
+        for (i = 1; i < lines.size(); ++i) {
+            line.append(endl).append(lines.get(i));
+        }
+        return line.toString();
+    }
+
+    public static String fold(List<String> ls, String glue) {
+        if (ls.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder(ls.get(0));
+        for (int i = 1; i < ls.size(); ++i) sb.append(glue).append(ls.get(i));
+        return sb.toString();
+    }
 }

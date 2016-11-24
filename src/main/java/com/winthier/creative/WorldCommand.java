@@ -101,6 +101,14 @@ public class WorldCommand implements TabExecutor {
                 buildWorld.setName(name);
                 plugin.saveBuildWorlds();
                 Msg.info(player, "Renamed your current world to '%s'.", name);
+            } else if (cmd.equals("set")) {
+                if (args.length < 3) CommandException.usage();
+                World world = player.getWorld();
+                BuildWorld buildWorld = plugin.getBuildWorldByWorld(world);
+                if (buildWorld == null || !buildWorld.getTrust(player.getUniqueId()).isOwner()) {
+                    CommandException.noPerm();
+                }
+                changeWorldSetting(player, buildWorld, args[1].toLowerCase(), Arrays.asList(Arrays.copyOfRange(args, 2, args.length)));
             } else {
                 CommandException.usage();
             }
@@ -376,6 +384,14 @@ public class WorldCommand implements TabExecutor {
         if (buildWorld.getPublicTrust() != null && buildWorld.getPublicTrust() != Trust.NONE) {
             Msg.send(player, " &3&oPublic Trust &r%s", buildWorld.getPublicTrust().nice());
         }
+        String description = buildWorld.getWorldConfig().getString("user.Description");
+        if (description != null && !description.isEmpty()) {
+            Msg.send(player, " &3&oDescription &r%s", description);
+        }
+        List<String> authors = buildWorld.getWorldConfig().getStringList("user.Authors");
+        if (!authors.isEmpty()) {
+            Msg.send(player, " &3&oAuthors &r%s", Msg.fold(authors, ", "));
+        }
     }
 
     void commandUsage(Player player, String sub, String args, String description) {
@@ -399,6 +415,25 @@ public class WorldCommand implements TabExecutor {
         commandUsage(player, "Trust", "<Player> [Trust]", "Trust someone");
         commandUsage(player, "UnTrust", "<Player>", "Revoke Trust");
         commandUsage(player, "Save", "", "Save your world to disk");
-        commandUsage(player, "Rename", "<Name>", "Rename your world");
+        commandUsage(player, "Set", "<Name|Description|Authors> [...]", "Change world settings");
+    }
+
+    void changeWorldSetting(Player player, BuildWorld buildWorld, String key, List<String> args) {
+        if (key.equals("name")) {
+            String name = Msg.fold(args, " ");
+            buildWorld.getWorldConfig().set("user.Name", name);
+            buildWorld.setName(name);
+            buildWorld.saveWorldConfig();
+            plugin.saveBuildWorlds();
+            Msg.info(player, "Set world name to '%s'.", Msg.fold(args, " "));
+        } else if (key.equals("description")) {
+            buildWorld.getWorldConfig().set("user.Description", Msg.fold(args, " "));
+            buildWorld.saveWorldConfig();
+            Msg.info(player, "Set world description to '%s'.", Msg.fold(args, " "));
+        } else if (key.equals("authors")) {
+            buildWorld.getWorldConfig().set("user.Authors", args);
+            buildWorld.saveWorldConfig();
+            Msg.info(player, "Set world authors to %s.", Msg.fold(args, ", "));
+        }
     }
 }
