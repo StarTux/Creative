@@ -121,6 +121,8 @@ public class BuildWorld {
         result = creator.createWorld();
         result.setDifficulty(Difficulty.PEACEFUL); // TODO
         result.setSpawnFlags(false, false); // TODO
+        result.setTicksPerAnimalSpawns(999999999);
+        result.setTicksPerMonsterSpawns(999999999);
         result.setGameRuleValue("doMobLoot", "false");
         result.setGameRuleValue("doMobSpawning", "false");
         result.setGameRuleValue("doTileDrops", "false");
