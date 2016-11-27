@@ -20,6 +20,11 @@ public class Permission {
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(player.getWorld());
         if (buildWorld == null);
         Trust trust = buildWorld.getTrust(player.getUniqueId());
+        if (trust.canBuild()) {
+            for (String perm: getPermissionsFile().getStringList("Build")) {
+                givePermission(player, perm);
+            }
+        }
         if (trust.canUseWorldEdit() && player.hasPermission("creative.worldedit")) {
             for (String perm: getPermissionsFile().getStringList("WorldEdit")) {
                 givePermission(player, perm);
@@ -72,5 +77,8 @@ public class Permission {
 
     void reload() {
         permissionsFile = null;
+        for (Player player: plugin.getServer().getOnlinePlayers()) {
+            updatePermissions(player);
+        }
     }
 }
