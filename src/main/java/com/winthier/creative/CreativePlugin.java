@@ -33,6 +33,7 @@ public class CreativePlugin extends JavaPlugin {
         instance = this;
         reloadConfig();
         saveDefaultConfig();
+        saveResource("permissions.yml", false);
         getCommand("World").setExecutor(worldCommand);
         getCommand("wtp").setExecutor(new WTPCommand(this));
         getCommand("CreativeAdmin").setExecutor(new AdminCommand(this));
@@ -56,6 +57,7 @@ public class CreativePlugin extends JavaPlugin {
         buildWorlds = null;
         warps = null;
         logoutLocations = null;
+        permission.reload();
     }
 
     // Build Worlds

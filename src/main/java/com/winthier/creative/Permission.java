@@ -1,9 +1,11 @@
 package com.winthier.creative;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.World;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.PermissionAttachment;
 import org.bukkit.permissions.PermissionAttachmentInfo;
@@ -11,6 +13,7 @@ import org.bukkit.permissions.PermissionAttachmentInfo;
 @RequiredArgsConstructor
 public class Permission {
     final CreativePlugin plugin;
+    YamlConfiguration permissionsFile = null;
 
     void updatePermissions(Player player) {
         resetPermissions(player);
@@ -18,7 +21,12 @@ public class Permission {
         if (buildWorld == null);
         Trust trust = buildWorld.getTrust(player.getUniqueId());
         if (trust.canUseWorldEdit() && player.hasPermission("creative.worldedit")) {
-            givePermission(player, "worldedit.*");
+            for (String perm: getPermissionsFile().getStringList("WorldEdit")) {
+                givePermission(player, perm);
+            }
+            for (String perm: getPermissionsFile().getStringList("VoxelSniper")) {
+                givePermission(player, perm);
+            }
         }
         if (trust.isOwner() && player.hasPermission("creative.minigames")) {
             givePermission(player, "adventure.test");
@@ -53,5 +61,16 @@ public class Permission {
         for (PermissionAttachment attach: list) {
             player.removeAttachment(attach);
         }
+    }
+
+    YamlConfiguration getPermissionsFile() {
+        if (permissionsFile == null) {
+            permissionsFile = YamlConfiguration.loadConfiguration(new File(plugin.getDataFolder(), "permissions.yml"));
+        }
+        return permissionsFile;
+    }
+
+    void reload() {
+        permissionsFile = null;
     }
 }
