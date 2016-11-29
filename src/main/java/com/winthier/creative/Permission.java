@@ -43,6 +43,11 @@ public class Permission {
             givePermission(player, "enderball.test");
             givePermission(player, "pvp.test");
         }
+        if (player.hasPermission("creative.Dangerous")) {
+            for (String perm: getPermissionsFile().getStringList("Dangerous")) {
+                givePermission(player, perm);
+            }
+        }
     }
 
     void updatePermissions(World world) {
