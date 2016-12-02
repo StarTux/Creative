@@ -394,17 +394,17 @@ public class WorldCommand implements TabExecutor {
     void usage(Player player) {
         Msg.info(player, "&lWorld&3 Command Usage");
         commandUsage(player, "List", null, "List your worlds");
-        commandUsage(player, "Info", null, "Get world Info");
-        commandUsage(player, "Spawn", null, "Warp to world Spawn");
-        commandUsage(player, "SetSpawn", null, "Set world Spawn");
-        commandUsage(player, "Time", "[Time|Lock|Unlock]", "Get or set world Time");
+        commandUsage(player, "Info", null, "Get world info");
+        commandUsage(player, "Spawn", null, "Warp to world spawn");
+        commandUsage(player, "SetSpawn", null, "Set world spawn");
+        commandUsage(player, "Time", "[Time|Lock|Unlock]", "Get or set world time");
         commandUsage(player, "Trust", "<Player>", "Trust someone to build");
-        commandUsage(player, "WETrust", "<Player>", "Trust someone to use worldEdit");
+        commandUsage(player, "WETrust", "<Player>", "Give someone WorldEdit trust");
         commandUsage(player, "VisitTrust", "<Player>", "Trust someone to visit");
         commandUsage(player, "OwnerTrust", "<Player>", "Add a world owner");
-        commandUsage(player, "Untrust", "<Player>", "Revoke Trust");
+        commandUsage(player, "Untrust", "<Player>", "Revoke trust");
         commandUsage(player, "Save", null, "Save your world to disk");
-        commandUsage(player, "Set", "<Name|Description|Authors> [...]", "world settings");
+        commandUsage(player, "Set", "<Name|Description|Authors> [...]", "World settings");
     }
 
     void changeWorldSetting(Player player, BuildWorld buildWorld, String key, List<String> args) {
