@@ -372,34 +372,39 @@ public class WorldCommand implements TabExecutor {
     }
 
     void commandUsage(Player player, String sub, String args, String description) {
-        String cmd = "/World " + sub + " ";
-        String tooltip = "&a" + cmd + " &2" + args + "\n" + description;
+        String cmd;
+        if (args == null) {
+            cmd = "/World " + sub;
+        } else {
+            cmd = "/World " + sub + " &o" + args;
+        }
+        String tooltip = "&a" + cmd + "\n" + description;
         Msg.raw(player,
                 Msg.button(ChatColor.WHITE,
-                           cmd + " &o" + args,
+                           cmd,
                            tooltip,
                            cmd),
+                Msg.format("&8 - &7"),
                 Msg.button(ChatColor.GRAY,
-                           "&8 - &7" + description,
+                           description,
                            tooltip,
                            cmd));
     }
 
     void usage(Player player) {
         Msg.info(player, "&lWorld&3 Command Usage");
-        commandUsage(player, "List", "", "List your Worlds");
-        commandUsage(player, "Info", "", "Get World Info");
-        commandUsage(player, "Spawn", "", "Warp to World Spawn");
-        commandUsage(player, "SetSpawn", "", "Set World Spawn");
-        commandUsage(player, "Time", "", "Set World Spawn");
-        commandUsage(player, "Time", "[Time|Lock|Unlock]", "Get or set World Time");
+        commandUsage(player, "List", null, "List your worlds");
+        commandUsage(player, "Info", null, "Get world Info");
+        commandUsage(player, "Spawn", null, "Warp to world Spawn");
+        commandUsage(player, "SetSpawn", null, "Set world Spawn");
+        commandUsage(player, "Time", "[Time|Lock|Unlock]", "Get or set world Time");
         commandUsage(player, "Trust", "<Player>", "Trust someone to build");
-        commandUsage(player, "WETrust", "<Player>", "Trust someone to use WorldEdit");
+        commandUsage(player, "WETrust", "<Player>", "Trust someone to use worldEdit");
         commandUsage(player, "VisitTrust", "<Player>", "Trust someone to visit");
         commandUsage(player, "OwnerTrust", "<Player>", "Add a world owner");
         commandUsage(player, "Untrust", "<Player>", "Revoke Trust");
-        commandUsage(player, "Save", "", "Save your world to disk");
-        commandUsage(player, "Set", "<Name|Description|Authors> [...]", "World settings");
+        commandUsage(player, "Save", null, "Save your world to disk");
+        commandUsage(player, "Set", "<Name|Description|Authors> [...]", "world settings");
     }
 
     void changeWorldSetting(Player player, BuildWorld buildWorld, String key, List<String> args) {
