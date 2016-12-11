@@ -88,17 +88,18 @@ public class CreativeListener implements Listener {
     }
 
     void unloadEmptyWorld(World world) {
-        // if (!plugin.isEnabled()) return;
-        // final String name = world.getName();
-        // new BukkitRunnable() {
-        //     @Override public void run() {
-        //         World world = plugin.getServer().getWorld(name);
-        //         if (world == null) return;
-        //         if (!world.getPlayers().isEmpty()) return;
-        //         if (!plugin.getServer().unloadWorld(world, true)) return;
-        //         plugin.getLogger().info("Unloaded world " + name);
-        //     }
-        // }.runTaskLater(plugin, 1L);
+        if (!plugin.isEnabled()) return;
+        if (world.getEnvironment() == World.Environment.THE_END) return;
+        final String name = world.getName();
+        new BukkitRunnable() {
+            @Override public void run() {
+                World world = plugin.getServer().getWorld(name);
+                if (world == null) return;
+                if (!world.getPlayers().isEmpty()) return;
+                if (!plugin.getServer().unloadWorld(world, true)) return;
+                plugin.getLogger().info("Unloaded world " + name);
+            }
+        }.runTaskLater(plugin, 1L);
     }
 
     // Build Permission Check
