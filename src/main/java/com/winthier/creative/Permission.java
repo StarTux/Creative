@@ -29,8 +29,10 @@ public class Permission {
             for (String perm: getPermissionsFile().getStringList("WorldEdit")) {
                 givePermission(player, perm);
             }
-            for (String perm: getPermissionsFile().getStringList("VoxelSniper")) {
-                givePermission(player, perm);
+            if (buildWorld.isVoxelSniper()) {
+                for (String perm: getPermissionsFile().getStringList("VoxelSniper")) {
+                    givePermission(player, perm);
+                }
             }
         }
         if (trust.isOwner() && player.hasPermission("creative.minigames")) {

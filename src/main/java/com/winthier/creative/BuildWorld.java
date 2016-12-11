@@ -29,6 +29,7 @@ public class BuildWorld {
     final Map<UUID, Trusted> trusted = new HashMap<>();
     Trust publicTrust = Trust.NONE;
     YamlConfiguration worldConfig = null;
+    boolean voxelSniper = true;
 
     public final static Comparator<BuildWorld> NAME_SORT = new Comparator<BuildWorld>() {
         @Override public int compare(BuildWorld a, BuildWorld b) {
@@ -205,6 +206,7 @@ public class BuildWorld {
         for (Map.Entry<UUID, Trusted> e: this.trusted.entrySet()) {
             trustedMap.put(e.getKey().toString(), e.getValue().serialize());
         }
+        result.put("VoxelSniper", voxelSniper);
         return result;
     }
 
@@ -222,6 +224,7 @@ public class BuildWorld {
             }
         }
         result.publicTrust = Trust.of(config.getString("publicTrust", "NONE"));
+        result.voxelSniper = config.getBoolean("VoxelSniper", result.voxelSniper);
         return result;
     }
 }
