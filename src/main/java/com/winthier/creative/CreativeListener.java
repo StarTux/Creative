@@ -78,13 +78,21 @@ public class CreativeListener implements Listener {
         }
         player.setGameMode(gamemode);
         // Update Permission
-        plugin.permission.updatePermissions(player);
+        updatePermissions(player);
     }
 
     @EventHandler
     public void onPlayerChangedWorld(PlayerChangedWorldEvent event) {
-        plugin.permission.updatePermissions(event.getPlayer());
+        updatePermissions(event.getPlayer());
         unloadEmptyWorld(event.getFrom());
+    }
+
+    void updatePermissions(Player player) {
+        new BukkitRunnable() {
+            @Override public void run() {
+                plugin.permission.updatePermissions(player);
+            }
+        }.runTask(plugin);
     }
 
     void unloadEmptyWorld(World world) {
