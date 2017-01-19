@@ -438,6 +438,7 @@ public class AdminCommand implements CommandExecutor {
         BuildWorld buildWorld = new BuildWorld(name, path, owner);
         plugin.getBuildWorlds().add(buildWorld);
         plugin.saveBuildWorlds();
+        // getWorldConfig() calls mkdirs()
         buildWorld.getWorldConfig().set("world.Generator", generator);
         buildWorld.getWorldConfig().set("world.GenerateStructures", generateStructures);
         buildWorld.getWorldConfig().set("world.GeneratorSettings", generatorSettings);
