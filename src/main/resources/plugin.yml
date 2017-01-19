@@ -15,6 +15,7 @@ commands:
       /world spawn - Teleport to spawn
       /world setspawn - Set world spawn
       /world time [time] - Get or set the world time
+      /world difficulty [time] - Difficulty setting
       /world trust <player> [trust] - Trust someone
       /world untrust <player> - Revoke trust
   wtp:

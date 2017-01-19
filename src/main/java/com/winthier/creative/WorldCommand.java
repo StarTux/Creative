@@ -9,6 +9,7 @@ import java.util.UUID;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.ChatColor;
+import org.bukkit.Difficulty;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -59,6 +60,27 @@ public class WorldCommand implements TabExecutor {
             } else if (cmd.equals("time")) {
                 String arg = args.length >= 2 ? args[1] : null;
                 worldTime(player, arg);
+            } else if (cmd.equals("difficulty")) {
+                World world = player.getWorld();
+                BuildWorld buildWorld = plugin.getBuildWorldByWorld(world);
+                if (buildWorld == null || !buildWorld.getTrust(player.getUniqueId()).isOwner()) {
+                    CommandException.noPerm();
+                }
+                if (args.length < 2) {
+                    Difficulty difficulty = player.getWorld().getDifficulty();
+                    Msg.info(player, "World difficulty is %s.", Msg.camelCase(difficulty.name()));
+                } else if (args.length == 2) {
+                    Difficulty difficulty;
+                    try {
+                        difficulty = Difficulty.valueOf(args[1]);
+                    } catch (IllegalArgumentException iae) {
+                        throw new CommandException("Unknown difficulty: %s", args[1]);
+                    }
+                    world.setDifficulty(difficulty);
+                    Msg.info(player, "World difficulty set to %s.", Msg.camelCase(difficulty.name()));
+                } else {
+                    CommandException.usage();
+                }
             } else if (cmd.equals("spawn")) {
                 teleportToSpawn(player);
             } else if (cmd.equals("setspawn")) {
@@ -138,7 +160,7 @@ public class WorldCommand implements TabExecutor {
         if (args.length == 0) {
             return null;
         } else if (args.length == 1) {
-            return filterStartsWith(args[0], Arrays.asList("list", "info", "time", "spawn", "setspawn", "trust", "untrust"));
+            return filterStartsWith(args[0], Arrays.asList("list", "info", "time", "spawn", "setspawn", "difficulty", "trust", "untrust"));
         }
         return null;
     }
@@ -398,6 +420,7 @@ public class WorldCommand implements TabExecutor {
         commandUsage(player, "Spawn", null, "Warp to world spawn");
         commandUsage(player, "SetSpawn", null, "Set world spawn");
         commandUsage(player, "Time", "[Time|Lock|Unlock]", "Get or set world time");
+        commandUsage(player, "Difficulty", "Easy|Hard|Normal|Peaceful", "Get or set world time");
         commandUsage(player, "Trust", "<Player>", "Trust someone to build");
         commandUsage(player, "WETrust", "<Player>", "Give someone WorldEdit trust");
         commandUsage(player, "VisitTrust", "<Player>", "Trust someone to visit");
