@@ -161,6 +161,10 @@ public class WorldCommand implements TabExecutor {
             return null;
         } else if (args.length == 1) {
             return filterStartsWith(args[0], Arrays.asList("list", "info", "time", "spawn", "setspawn", "difficulty", "trust", "untrust"));
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("set")) {
+            return filterStartsWith(args[1], Arrays.asList("name", "description", "authors"));
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("difficulty")) {
+            return filterStartsWith(args[1], Arrays.asList("easy", "normal", "hard", "peaceful"));
         }
         return null;
     }
@@ -393,7 +397,7 @@ public class WorldCommand implements TabExecutor {
         }
     }
 
-    void commandUsage(Player player, String sub, String args, String description) {
+    void commandUsage(Player player, String sub, String args, String description, String suggestion) {
         String cmd;
         if (args == null) {
             cmd = "/World " + sub;
@@ -405,29 +409,29 @@ public class WorldCommand implements TabExecutor {
                 Msg.button(ChatColor.WHITE,
                            cmd,
                            tooltip,
-                           cmd),
+                           suggestion),
                 Msg.format("&8 - &7"),
                 Msg.button(ChatColor.GRAY,
                            description,
                            tooltip,
-                           cmd));
+                           suggestion));
     }
 
     void usage(Player player) {
         Msg.info(player, "&lWorld&3 Command Usage");
-        commandUsage(player, "List", null, "List your worlds");
-        commandUsage(player, "Info", null, "Get world info");
-        commandUsage(player, "Spawn", null, "Warp to world spawn");
-        commandUsage(player, "SetSpawn", null, "Set world spawn");
-        commandUsage(player, "Time", "[Time|Lock|Unlock]", "Get or set world time");
-        commandUsage(player, "Difficulty", "Easy|Hard|Normal|Peaceful", "Get or set world time");
-        commandUsage(player, "Trust", "<Player>", "Trust someone to build");
-        commandUsage(player, "WETrust", "<Player>", "Give someone WorldEdit trust");
-        commandUsage(player, "VisitTrust", "<Player>", "Trust someone to visit");
-        commandUsage(player, "OwnerTrust", "<Player>", "Add a world owner");
-        commandUsage(player, "Untrust", "<Player>", "Revoke trust");
-        commandUsage(player, "Save", null, "Save your world to disk");
-        commandUsage(player, "Set", "<Name|Description|Authors> [...]", "World settings");
+        commandUsage(player, "List", null, "List your worlds", "/world list");
+        commandUsage(player, "Info", null, "Get world info", "/world info");
+        commandUsage(player, "Spawn", null, "Warp to world spawn", "/world spawn");
+        commandUsage(player, "SetSpawn", null, "Set world spawn", "/world setspawn ");
+        commandUsage(player, "Time", "[Time|Lock|Unlock]", "Get or set world time", "/world time");
+        commandUsage(player, "Difficulty", "Easy|Normal|Hard|Peaceful", "Get or set world time", "/world difficulty ");
+        commandUsage(player, "Trust", "<Player>", "Trust someone to build", "/world trust ");
+        commandUsage(player, "WETrust", "<Player>", "Give someone WorldEdit trust", "/world wetrust ");
+        commandUsage(player, "VisitTrust", "<Player>", "Trust someone to visit", "/world visittrust ");
+        commandUsage(player, "OwnerTrust", "<Player>", "Add a world owner", "/world ownertrust ");
+        commandUsage(player, "Untrust", "<Player>", "Revoke trust", "/world untrust ");
+        commandUsage(player, "Save", null, "Save your world to disk", "/world save");
+        commandUsage(player, "Set", "<Name|Description|Authors> [...]", "World settings", "/world set ");
     }
 
     void changeWorldSetting(Player player, BuildWorld buildWorld, String key, List<String> args) {
