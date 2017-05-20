@@ -56,8 +56,8 @@ public class WarpCommand implements TabExecutor {
         for (Warp warp: warps) {
             json.add(" ");
             json.add(Msg.button(ChatColor.GREEN,
-                                "&f[&a" + warp.getName() + "&r]",
-                                "Warp to " + warp.getName(),
+                                "&f[&a" + warp.getDisplayName() + "&r]",
+                                "Warp to " + warp.getDisplayName(),
                                 "/warp " + warp.getName()));
             count += 1;
             if (count >= 3 && !json.isEmpty()) {

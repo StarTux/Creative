@@ -19,6 +19,7 @@ public class Warp {
     final double x, y ,z;
     final float pitch, yaw;
     String permission = null;
+    String displayName = null;
 
     static Warp of(String name, Location location) {
         String world = location.getWorld().getName();
@@ -27,7 +28,9 @@ public class Warp {
         double z = location.getZ();
         float yaw = location.getYaw();
         float pitch = location.getPitch();
-        return new Warp(name, world, x, y, z, pitch, yaw);
+        Warp result = new Warp(name, world, x, y, z, pitch, yaw);
+        result.setDisplayName(name);
+        return result;
     }
 
     static Warp deserialize(String name, ConfigurationSection config) {
@@ -38,8 +41,10 @@ public class Warp {
         float yaw = (float)config.getDouble("yaw");
         float pitch = (float)config.getDouble("pitch");
         String permission = config.getString("permission", null);
+        String displayName = config.getString("display_name", name);
         Warp warp = new Warp(name, world, x, y, z, pitch, yaw);
         warp.setPermission(permission);
+        warp.setDisplayName(displayName);
         return warp;
     }
 
@@ -50,9 +55,10 @@ public class Warp {
         config.set("z", z);
         config.set("yaw", yaw);
         config.set("pitch", pitch);
+        config.set("display_name", displayName);
     }
 
-    Location getLocation() {
+    public Location getLocation() {
         BuildWorld buildWorld = CreativePlugin.getInstance().getBuildWorldByPath(world);
         World world;
         if (buildWorld == null) {
