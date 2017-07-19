@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -30,6 +31,8 @@ public class BuildWorld {
     Trust publicTrust = Trust.NONE;
     YamlConfiguration worldConfig = null;
     boolean voxelSniper = true;
+    boolean explosion = false;
+    boolean leafDecay = false;
 
     public final static Comparator<BuildWorld> NAME_SORT = new Comparator<BuildWorld>() {
         @Override public int compare(BuildWorld a, BuildWorld b) {
@@ -131,6 +134,7 @@ public class BuildWorld {
         result.setGameRuleValue("randomTickSpeed", "0");
         result.setGameRuleValue("showDeathMessages", "false");
         result.setGameRuleValue("spawnRadius", "0");
+        result.setGameRuleValue("doFireTick", "0");
         return result;
     }
 
@@ -193,19 +197,21 @@ public class BuildWorld {
     // Serialization
 
     Map<String, Object> serialize() {
-        Map<String, Object> result = new HashMap<>();
+        Map<String, Object> result = new LinkedHashMap<>();
         result.put("name", name);
         result.put("path", path);
         if (owner != null) {
             result.put("owner", owner.serialize());
         }
-        Map<String, Object> trustedMap = new HashMap<>();
+        Map<String, Object> trustedMap = new LinkedHashMap<>();
         result.put("trusted", trustedMap);
         result.put("publicTrust", publicTrust.name());
         for (Map.Entry<UUID, Trusted> e: this.trusted.entrySet()) {
             trustedMap.put(e.getKey().toString(), e.getValue().serialize());
         }
         result.put("VoxelSniper", voxelSniper);
+        result.put("Explosion", explosion);
+        result.put("LeafDecay", leafDecay);
         return result;
     }
 
@@ -224,6 +230,8 @@ public class BuildWorld {
         }
         result.publicTrust = Trust.of(config.getString("publicTrust", "NONE"));
         result.voxelSniper = config.getBoolean("VoxelSniper", result.voxelSniper);
+        result.explosion = config.getBoolean("Explosion", result.explosion);
+        result.leafDecay = config.getBoolean("LeafDecay", result.leafDecay);
         return result;
     }
 }

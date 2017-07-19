@@ -12,8 +12,11 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.block.LeavesDecayEvent;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
@@ -27,7 +30,7 @@ import org.spigotmc.event.player.PlayerSpawnLocationEvent;
 @RequiredArgsConstructor
 public class CreativeListener implements Listener {
     final CreativePlugin plugin;
-    
+
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
@@ -154,6 +157,37 @@ public class CreativeListener implements Listener {
     public void onEntityChangeBlock(EntityChangeBlockEvent event) {
         if (event.getEntity() instanceof Player) {
             checkBuildEvent((Player)event.getEntity(), event);
+        }
+    }
+
+    // Explosion
+
+    @EventHandler(priority = EventPriority.LOW)
+    public void onEntityExplode(EntityExplodeEvent event) {
+        BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getEntity().getWorld());
+        if (buildWorld == null) return;
+        if (!buildWorld.isExplosion()) {
+            event.setCancelled(true);
+            event.blockList().clear();
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOW)
+    public void onBlockExplode(BlockExplodeEvent event) {
+        BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getBlock().getWorld());
+        if (buildWorld == null) return;
+        if (!buildWorld.isExplosion()) {
+            event.setCancelled(true);
+            event.blockList().clear();
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOW)
+    public void onLeavesDecay(LeavesDecayEvent event) {
+        BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getBlock().getWorld());
+        if (buildWorld == null) return;
+        if (!buildWorld.isLeafDecay()) {
+            event.setCancelled(true);
         }
     }
 }
