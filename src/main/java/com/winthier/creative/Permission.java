@@ -18,7 +18,7 @@ public class Permission {
     void updatePermissions(Player player) {
         resetPermissions(player);
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(player.getWorld());
-        if (buildWorld == null);
+        if (buildWorld == null) return;
         Trust trust = buildWorld.getTrust(player.getUniqueId());
         if (trust.canBuild()) {
             for (String perm: getPermissionsFile().getStringList("Build")) {
@@ -63,16 +63,21 @@ public class Permission {
     }
 
     void resetPermissions(Player player) {
-        List<PermissionAttachment> list = new ArrayList<>();
-        for (PermissionAttachmentInfo info: player.getEffectivePermissions()) {
-            PermissionAttachment attach = info.getAttachment();
-            if (attach != null && attach.getPlugin() == plugin) {
-                list.add(info.getAttachment());
+        boolean found;
+        do {
+            found = false;
+            List<PermissionAttachment> list = new ArrayList<>();
+            for (PermissionAttachmentInfo info: player.getEffectivePermissions()) {
+                PermissionAttachment attach = info.getAttachment();
+                if (attach != null && attach.getPlugin() == plugin) {
+                    list.add(info.getAttachment());
+                    found = true;
+                }
             }
-        }
-        for (PermissionAttachment attach: list) {
-            player.removeAttachment(attach);
-        }
+            for (PermissionAttachment attach: list) {
+                player.removeAttachment(attach);
+            }
+        } while (found);
     }
 
     YamlConfiguration getPermissionsFile() {
