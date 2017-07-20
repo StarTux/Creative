@@ -22,7 +22,6 @@ import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.spigotmc.event.player.PlayerSpawnLocationEvent;
@@ -33,18 +32,6 @@ public class CreativeListener implements Listener {
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
-        Player player = event.getPlayer();
-        // Store Logout Location
-        plugin.storeLogoutLocation(player);
-        plugin.saveLogoutLocations();
-        // Reset Permissions
-        plugin.permission.resetPermissions(player);
-        // Unload Empty World
-        unloadEmptyWorld(player.getWorld());
-    }
-
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onPlayerKick(PlayerKickEvent event) {
         Player player = event.getPlayer();
         // Store Logout Location
         plugin.storeLogoutLocation(player);
