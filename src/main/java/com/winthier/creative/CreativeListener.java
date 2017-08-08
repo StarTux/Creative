@@ -1,5 +1,7 @@
 package com.winthier.creative;
 
+import com.winthier.generic_events.PlayerCanBuildEvent;
+import com.winthier.generic_events.PlayerCanGriefEvent;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.GameMode;
@@ -184,5 +186,15 @@ public class CreativeListener implements Listener {
         if (!buildWorld.isLeafDecay()) {
             event.setCancelled(true);
         }
+    }
+
+    @EventHandler
+    public void playerCanBuild(PlayerCanBuildEvent event) {
+        event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void playerCanGrief(PlayerCanGriefEvent event) {
+        event.setCancelled(true);
     }
 }

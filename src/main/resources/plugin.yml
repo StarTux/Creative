@@ -3,7 +3,7 @@ description: Manage Creative Worlds
 author: StarTux
 version: 0.1
 main: com.winthier.creative.CreativePlugin
-depend: [ PlayerCache ]
+depend: [ PlayerCache, GenericEvents ]
 commands:
   world:
     aliases: [ worlds ]
