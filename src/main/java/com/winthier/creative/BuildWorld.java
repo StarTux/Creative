@@ -12,7 +12,6 @@ import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Bukkit;
-import org.bukkit.Difficulty;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.WorldCreator;
@@ -23,18 +22,18 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
 @Getter @Setter
-public class BuildWorld {
-    String name;
-    String path; // Key
-    Builder owner;
-    final Map<UUID, Trusted> trusted = new HashMap<>();
-    Trust publicTrust = Trust.NONE;
-    YamlConfiguration worldConfig = null;
-    boolean voxelSniper = true;
-    boolean explosion = false;
-    boolean leafDecay = false;
+final class BuildWorld {
+    private String name;
+    private String path; // Key
+    private Builder owner;
+    private final Map<UUID, Trusted> trusted = new HashMap<>();
+    private Trust publicTrust = Trust.NONE;
+    private YamlConfiguration worldConfig = null;
+    private boolean voxelSniper = true;
+    private boolean explosion = false;
+    private boolean leafDecay = false;
 
-    public final static Comparator<BuildWorld> NAME_SORT = new Comparator<BuildWorld>() {
+    public static final Comparator<BuildWorld> NAME_SORT = new Comparator<BuildWorld>() {
         @Override public int compare(BuildWorld a, BuildWorld b) {
             return a.name.compareTo(b.name);
         }
@@ -109,7 +108,7 @@ public class BuildWorld {
         try {
             String tmp = getWorldConfig().getString("world.Environment");
             if (tmp != null) environment = World.Environment.valueOf(tmp);
-        } catch (IllegalArgumentException iae) {}
+        } catch (IllegalArgumentException iae) { }
         creator.environment(environment);
         creator.generateStructures(getWorldConfig().getBoolean("world.GenerateStructures", true));
         creator.generator(getWorldConfig().getString("world.Generator"));
@@ -120,7 +119,7 @@ public class BuildWorld {
         try {
             String tmp = getWorldConfig().getString("world.WorldType");
             if (tmp != null) worldType = WorldType.valueOf(tmp);
-        } catch (IllegalArgumentException iae) {}
+        } catch (IllegalArgumentException iae) { }
         creator.type(worldType);
         result = creator.createWorld();
         result.setSpawnFlags(true, true); // TODO

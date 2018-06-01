@@ -15,7 +15,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 
 @RequiredArgsConstructor
-public class AdminCommand implements CommandExecutor {
+final class AdminCommand implements CommandExecutor {
     final CreativePlugin plugin;
 
     @Override
@@ -198,14 +198,14 @@ public class AdminCommand implements CommandExecutor {
                 return true;
             }
             if (trust == Trust.NONE) {
-                buildWorld.trusted.remove(builder.getUuid());
+                buildWorld.getTrusted().remove(builder.getUuid());
             } else {
-                buildWorld.trusted.put(builder.getUuid(), new Trusted(builder, trust));
+                buildWorld.getTrusted().put(builder.getUuid(), new Trusted(builder, trust));
             }
             plugin.saveBuildWorlds();
             sender.sendMessage("Given " + trust.name() + " to " + builder.getName() + " in " + buildWorld.getPath());
             World world = buildWorld.getWorld();
-            if (world != null) plugin.permission.updatePermissions(world);
+            if (world != null) plugin.getPermission().updatePermissions(world);
         } else if (cmd.equals("resetowner")) {
             if (args.length != 2) return false;
             String worldKey = args[1];
@@ -423,6 +423,7 @@ public class AdminCommand implements CommandExecutor {
                     sender.sendMessage("Unknown environment: '" + value + "'");
                     return;
                 }
+            default: break;
             }
         }
         if (path == null) path = name;

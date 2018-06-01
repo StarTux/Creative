@@ -8,18 +8,18 @@ import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 
 @Data
-public class Warp {
-    public final static Comparator<Warp> NAME_SORT = new Comparator<Warp>() {
+final class Warp {
+    public static final Comparator<Warp> NAME_SORT = new Comparator<Warp>() {
         @Override public int compare(Warp a, Warp b) {
             return a.name.compareTo(b.name);
         }
     };
 
-    final String name, world;
-    final double x, y ,z;
-    final float pitch, yaw;
-    String permission = null;
-    String displayName = null;
+    private final String name, world;
+    private final double x, y, z;
+    private final float pitch, yaw;
+    private String permission = null;
+    private String displayName = null;
 
     static Warp of(String name, Location location) {
         String world = location.getWorld().getName();
@@ -60,13 +60,13 @@ public class Warp {
 
     public Location getLocation() {
         BuildWorld buildWorld = CreativePlugin.getInstance().getBuildWorldByPath(world);
-        World world;
+        World bukkitWorld;
         if (buildWorld == null) {
-            world = Bukkit.getServer().getWorld(this.world);
+            bukkitWorld = Bukkit.getServer().getWorld(world);
         } else {
-            world = buildWorld.loadWorld();
+            bukkitWorld = buildWorld.loadWorld();
         }
-        if (world == null) return null;
-        return new Location(world, x, y, z, yaw, pitch);
+        if (bukkitWorld == null) return null;
+        return new Location(bukkitWorld, x, y, z, yaw, pitch);
     }
 }

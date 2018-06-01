@@ -9,8 +9,8 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 
 @Value
-public class Builder {
-    UUID uuid;
+final class Builder {
+    private UUID uuid;
 
     String getName() {
         return PlayerCache.nameForUuid(uuid);

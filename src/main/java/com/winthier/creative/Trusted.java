@@ -6,9 +6,9 @@ import lombok.Value;
 import org.bukkit.configuration.ConfigurationSection;
 
 @Value
-public class Trusted {
-    Builder builder;
-    Trust trust;
+final class Trusted {
+    private Builder builder;
+    private Trust trust;
 
     Map<String, Object> serialize() {
         Map<String, Object> result = new HashMap<>();

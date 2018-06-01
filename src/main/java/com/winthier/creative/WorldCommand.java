@@ -18,12 +18,12 @@ import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 
 @RequiredArgsConstructor
-public class WorldCommand implements TabExecutor {
+final class WorldCommand implements TabExecutor {
     final CreativePlugin plugin;
 
-    static class CommandException extends RuntimeException {
+    static final class CommandException extends RuntimeException {
         @Getter final String message;
-        boolean usage = false;
+        private boolean usage = false;
         CommandException(String msg, Object... o) {
             if (o.length > 0) msg = String.format(msg, o);
             this.message = msg;
@@ -363,7 +363,7 @@ public class WorldCommand implements TabExecutor {
                 Msg.info(player, "Gave %s trust to %s.", trust.nice(), builder.getName());
             }
         }
-        plugin.permission.updatePermissions(player.getWorld());
+        plugin.getPermission().updatePermissions(player.getWorld());
     }
 
     void listTrusted(Player player, BuildWorld buildWorld, Trust trust) {

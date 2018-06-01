@@ -11,9 +11,9 @@ import org.bukkit.permissions.PermissionAttachment;
 import org.bukkit.permissions.PermissionAttachmentInfo;
 
 @RequiredArgsConstructor
-public class Permission {
-    final CreativePlugin plugin;
-    YamlConfiguration permissionsFile = null;
+final class Permission {
+    private final CreativePlugin plugin;
+    private YamlConfiguration permissionsFile = null;
 
     void updatePermissions(Player player) {
         resetPermissions(player);

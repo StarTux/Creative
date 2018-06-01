@@ -1,12 +1,11 @@
 package com.winthier.creative;
 
-public enum Trust {
+enum Trust {
     OWNER(4),
     WORLD_EDIT(3),
     BUILD(2),
     VISIT(1),
-    NONE(0),
-    ;
+    NONE(0);
 
     final int priority;
 
@@ -18,7 +17,7 @@ public enum Trust {
         name = name.toUpperCase();
         try {
             return valueOf(name);
-        } catch (IllegalArgumentException iae) {}
+        } catch (IllegalArgumentException iae) { }
         for (Trust trust: values()) {
             if (trust.name().replace("_", "").equals(name)) return trust;
         }

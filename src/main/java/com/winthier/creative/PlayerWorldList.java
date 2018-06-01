@@ -1,9 +1,9 @@
 package com.winthier.creative;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
-public class PlayerWorldList {
+final class PlayerWorldList {
     final List<BuildWorld> owner = new ArrayList<>();
     final List<BuildWorld> build = new ArrayList<>();
     final List<BuildWorld> visit = new ArrayList<>();

@@ -31,7 +31,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.spigotmc.event.player.PlayerSpawnLocationEvent;
 
 @RequiredArgsConstructor
-public class CreativeListener implements Listener {
+public final class CreativeListener implements Listener {
     final CreativePlugin plugin;
 
     @EventHandler
@@ -41,7 +41,7 @@ public class CreativeListener implements Listener {
         plugin.storeLogoutLocation(player);
         plugin.saveLogoutLocations();
         // Reset Permissions
-        plugin.permission.resetPermissions(player);
+        plugin.getPermission().resetPermissions(player);
         // Unload Empty World
         unloadEmptyWorld(player.getWorld());
     }
@@ -84,7 +84,7 @@ public class CreativeListener implements Listener {
     void updatePermissions(Player player) {
         new BukkitRunnable() {
             @Override public void run() {
-                plugin.permission.updatePermissions(player);
+                plugin.getPermission().updatePermissions(player);
             }
         }.runTask(plugin);
     }

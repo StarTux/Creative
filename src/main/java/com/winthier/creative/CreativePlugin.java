@@ -19,14 +19,14 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 @Getter
-public class CreativePlugin extends JavaPlugin {
+public final class CreativePlugin extends JavaPlugin {
     private List<BuildWorld> buildWorlds;
     private Map<String, Warp> warps;
     private YamlConfiguration logoutLocations = null;
-    final WorldCommand worldCommand = new WorldCommand(this);
-    final Permission permission = new Permission(this);
+    private final WorldCommand worldCommand = new WorldCommand(this);
+    private final Permission permission = new Permission(this);
     private final Set<UUID> ignores = new HashSet<>();
-    @Getter static CreativePlugin instance = null;
+    @Getter private static CreativePlugin instance = null;
 
     @Override
     public void onEnable() {
@@ -148,7 +148,7 @@ public class CreativePlugin extends JavaPlugin {
         UUID uuid = player.getUniqueId();
         Location loc = player.getLocation();
         ConfigurationSection config = getLogoutLocations().createSection(uuid.toString());
-        config.set("world", loc.getWorld().getName());;
+        config.set("world", loc.getWorld().getName());
         config.set("x", loc.getX());
         config.set("y", loc.getY());
         config.set("z", loc.getZ());
