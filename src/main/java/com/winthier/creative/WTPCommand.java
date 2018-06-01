@@ -1,6 +1,5 @@
 package com.winthier.creative;
 
-import com.winthier.creative.util.Msg;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;

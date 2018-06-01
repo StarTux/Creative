@@ -1,6 +1,5 @@
 package com.winthier.creative;
 
-import com.winthier.creative.util.Msg;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.ChatColor;
