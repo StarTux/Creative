@@ -33,7 +33,11 @@ public class CreativePlugin extends JavaPlugin {
         instance = this;
         reloadConfig();
         saveDefaultConfig();
-        saveResource("permissions.yml", false);
+        try {
+            saveResource("permissions.yml", false);
+        } catch (IllegalArgumentException iae) {
+            iae.printStackTrace();
+        }
         getCommand("World").setExecutor(worldCommand);
         getCommand("wtp").setExecutor(new WTPCommand(this));
         getCommand("CreativeAdmin").setExecutor(new AdminCommand(this));

@@ -10,6 +10,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.ChatColor;
 import org.bukkit.Difficulty;
+import org.bukkit.GameMode;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -46,7 +47,11 @@ public class WorldCommand implements TabExecutor {
         String cmd = args.length > 0 ? args[0].toLowerCase() : null;
         try {
             if (cmd == null) {
-                usage(player);
+                if (label.equalsIgnoreCase("worlds")) {
+                    listWorlds(player);
+                } else {
+                    usage(player);
+                }
             } else if (cmd.equals("tp")) {
                 if (args.length != 2) CommandException.usage();
                 String worldName = args[1];
@@ -123,6 +128,24 @@ public class WorldCommand implements TabExecutor {
                 buildWorld.setName(name);
                 plugin.saveBuildWorlds();
                 Msg.info(player, "Renamed your current world to '%s'.", name);
+            } else if ((cmd.equals("gamemode") || cmd.equals("gm")) && args.length == 2) {
+                GameMode newGM;
+                switch (args[1].toLowerCase()) {
+                case "0": newGM = GameMode.SURVIVAL; break;
+                case "1": newGM = GameMode.CREATIVE; break;
+                case "2": newGM = GameMode.ADVENTURE; break;
+                case "survival": newGM = GameMode.SURVIVAL; break;
+                case "creative": newGM = GameMode.CREATIVE; break;
+                case "adventure": newGM = GameMode.ADVENTURE; break;
+                default:
+                    newGM = null;
+                }
+                if (newGM == null) {
+                    Msg.warn(player, "Invalid GameMode: %s", args[1]);
+                } else {
+                    player.setGameMode(newGM);
+                    Msg.info(player, "Set GameMode to %s", newGM.name());
+                }
             } else if (cmd.equals("set")) {
                 if (args.length < 3) CommandException.usage();
                 World world = player.getWorld();
@@ -425,6 +448,7 @@ public class WorldCommand implements TabExecutor {
         commandUsage(player, "SetSpawn", null, "Set world spawn", "/world setspawn ");
         commandUsage(player, "Time", "[Time|Lock|Unlock]", "Get or set world time", "/world time");
         commandUsage(player, "Difficulty", "Easy|Normal|Hard|Peaceful", "Get or set world time", "/world difficulty ");
+        commandUsage(player, "GameMode|GM", "<Mode>", "Change your GameMode", "/world gamemode ");
         commandUsage(player, "Trust", "<Player>", "Trust someone to build", "/world trust ");
         commandUsage(player, "WETrust", "<Player>", "Give someone WorldEdit trust", "/world wetrust ");
         commandUsage(player, "VisitTrust", "<Player>", "Trust someone to visit", "/world visittrust ");
