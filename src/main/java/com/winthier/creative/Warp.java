@@ -8,7 +8,7 @@ import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 
 @Data
-final class Warp {
+public final class Warp {
     public static final Comparator<Warp> NAME_SORT = new Comparator<Warp>() {
         @Override public int compare(Warp a, Warp b) {
             return a.name.compareTo(b.name);
