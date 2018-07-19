@@ -133,7 +133,7 @@ public final class CreativeListener implements Listener {
     public void onPlayerInteract(PlayerInteractEvent event) {
         if (event.getAction() == Action.PHYSICAL
             && event.hasBlock()
-            && event.getClickedBlock().getType() == Material.SOIL) {
+            && event.getClickedBlock().getType() == Material.FARMLAND) {
             event.setCancelled(true);
             return;
         }

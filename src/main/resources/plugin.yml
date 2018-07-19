@@ -2,6 +2,8 @@ name: Creative
 description: Manage Creative Worlds
 author: StarTux
 version: 0.1
+website: https://cavetale.com
+api-version: 1.13
 main: com.winthier.creative.CreativePlugin
 depend: [ PlayerCache, GenericEvents ]
 commands:
