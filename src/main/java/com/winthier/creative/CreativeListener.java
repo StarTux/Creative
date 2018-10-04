@@ -1,7 +1,6 @@
 package com.winthier.creative;
 
 import com.winthier.generic_events.PlayerCanBuildEvent;
-import com.winthier.generic_events.PlayerCanGriefEvent;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.GameMode;
@@ -190,11 +189,6 @@ public final class CreativeListener implements Listener {
 
     @EventHandler
     public void playerCanBuild(PlayerCanBuildEvent event) {
-        event.setCancelled(true);
-    }
-
-    @EventHandler
-    public void playerCanGrief(PlayerCanGriefEvent event) {
         event.setCancelled(true);
     }
 }
