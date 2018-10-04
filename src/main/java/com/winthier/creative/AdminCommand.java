@@ -7,15 +7,18 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.WorldCreator;
 import org.bukkit.WorldType;
+import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
 
 @RequiredArgsConstructor
 final class AdminCommand implements CommandExecutor {
     final CreativePlugin plugin;
+    private BukkitRunnable updateTask;
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -343,6 +346,41 @@ final class AdminCommand implements CommandExecutor {
             plugin.getWarps().put(name, warp);
             plugin.saveWarps();
             Msg.info(player, "Created warp '%s'", name);
+        } else if (cmd.equals("update13")) {
+            if (updateTask != null) {
+                updateTask.cancel();
+                updateTask = null;
+                sender.sendMessage("Update cancelled");
+                return true;
+            }
+            updateTask = new BukkitRunnable() {
+                    int index = 0;
+                    boolean state = false;
+                    World world;
+                    @Override
+                    public void run() {
+                        if (index >= plugin.getBuildWorlds().size()) {
+                            cancel();
+                            plugin.getLogger().info("Update task finished");
+                            return;
+                        }
+                        if (!state) {
+                            BuildWorld buildWorld = plugin.getBuildWorlds().get(index++);
+                            plugin.getLogger().info("Update task updating world `" + buildWorld.getPath() + "`...");
+                            world = buildWorld.loadWorld();
+                            Block spawnBlock = buildWorld.getSpawnLocation().getBlock();
+                            System.out.println("[Creative] Update task: " + spawnBlock.getType());
+                            world.loadChunk(spawnBlock.getX() >> 4, spawnBlock.getZ() >> 4);
+                            if (player != null) player.teleport(world.getSpawnLocation());
+                        } else {
+                            world.save();
+                            plugin.getServer().unloadWorld(world, true);
+                        }
+                        state = !state;
+                    }
+                };
+            updateTask.runTaskTimer(plugin, 40L, 40L);
+            plugin.getLogger().info("Update task started");
         }
         return true;
     }
