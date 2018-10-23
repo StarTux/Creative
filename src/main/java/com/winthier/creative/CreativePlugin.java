@@ -46,6 +46,7 @@ public final class CreativePlugin extends JavaPlugin {
         for (Player player: getServer().getOnlinePlayers()) {
             permission.updatePermissions(player);
         }
+        getBuildWorlds();
     }
 
     @Override
@@ -76,6 +77,7 @@ public final class CreativePlugin extends JavaPlugin {
                 ConfigurationSection section = mem.createSection("tmp", map);
                 BuildWorld buildWorld = BuildWorld.deserialize(section);
                 buildWorlds.add(buildWorld);
+                if (buildWorld.isKeepInMemory()) buildWorld.loadWorld();
             }
         }
         return buildWorlds;
