@@ -32,6 +32,7 @@ final class BuildWorld {
     private boolean voxelSniper = true;
     private boolean explosion = false;
     private boolean leafDecay = false;
+    private boolean keepInMemory = false;
 
     public static final Comparator<BuildWorld> NAME_SORT = new Comparator<BuildWorld>() {
         @Override public int compare(BuildWorld a, BuildWorld b) {
@@ -211,6 +212,7 @@ final class BuildWorld {
         result.put("VoxelSniper", voxelSniper);
         result.put("Explosion", explosion);
         result.put("LeafDecay", leafDecay);
+        result.put("KeepInMemory", keepInMemory);
         return result;
     }
 
@@ -231,6 +233,7 @@ final class BuildWorld {
         result.voxelSniper = config.getBoolean("VoxelSniper", result.voxelSniper);
         result.explosion = config.getBoolean("Explosion", result.explosion);
         result.leafDecay = config.getBoolean("LeafDecay", result.leafDecay);
+        result.keepInMemory = config.getBoolean("KeepInMemory", result.keepInMemory);
         return result;
     }
 }
