@@ -2,7 +2,7 @@ name: Creative
 description: Manage Creative Worlds
 author: StarTux
 version: 0.1
-website: https://cavetale.com
+website: https://github.com/StarTux/Creative
 api-version: 1.13
 main: com.winthier.creative.CreativePlugin
 depend: [ PlayerCache, GenericEvents ]
@@ -13,6 +13,7 @@ commands:
     permission: creative.world
     usage: |-
       /world list - List your worlds
+      /world visit - List worlds you can join
       /world info - Get world info
       /world spawn - Teleport to spawn
       /world setspawn - Set world spawn
