@@ -512,7 +512,7 @@ final class WorldCommand implements TabExecutor {
         commandUsage(player, "Spawn", null, "Warp to world spawn", "/world spawn");
         commandUsage(player, "SetSpawn", null, "Set world spawn", "/world setspawn ");
         commandUsage(player, "Time", "[Time|Lock|Unlock]", "Get or set world time", "/world time ");
-        commandUsage(player, "Difficulty", "Easy|Normal|Hard|Peaceful", "Get or set world time",
+        commandUsage(player, "Difficulty", "Easy|Normal|Hard|Peaceful", "Get or set world difficulty",
                      "/world difficulty ");
         commandUsage(player, "GameMode|GM", "<Mode>", "Change your GameMode", "/world gamemode ");
         commandUsage(player, "Trust", "<Player>", "Trust someone to build", "/world trust ");
