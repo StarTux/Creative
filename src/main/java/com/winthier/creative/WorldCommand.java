@@ -487,9 +487,9 @@ final class WorldCommand implements TabExecutor {
                       String description, String suggestion) {
         String cmd;
         if (args == null) {
-            cmd = "/World " + sub;
+            cmd = "/world " + sub;
         } else {
-            cmd = "/World " + sub + " &o" + args;
+            cmd = "/world " + sub + " &o" + args;
         }
         String tooltip = "&a" + cmd + "\n" + description;
         Msg.raw(player,
@@ -506,24 +506,24 @@ final class WorldCommand implements TabExecutor {
 
     void usage(Player player) {
         Msg.info(player, "&lWorld&3 Command Usage");
-        commandUsage(player, "List", null, "List your worlds", "/world list");
-        commandUsage(player, "Visit", null, "List worlds you can visit", "/world visit");
-        commandUsage(player, "Info", null, "Get world info", "/world info");
-        commandUsage(player, "Spawn", null, "Warp to world spawn", "/world spawn");
-        commandUsage(player, "SetSpawn", null, "Set world spawn", "/world setspawn ");
-        commandUsage(player, "Time", "[Time|Lock|Unlock]", "Get or set world time", "/world time ");
-        commandUsage(player, "Difficulty", "Easy|Normal|Hard|Peaceful", "Get or set world difficulty",
+        commandUsage(player, "list", null, "List your worlds", "/world list");
+        commandUsage(player, "visit", null, "List worlds you can visit", "/world visit");
+        commandUsage(player, "info", null, "Get world info", "/world info");
+        commandUsage(player, "spawn", null, "Warp to world spawn", "/world spawn");
+        commandUsage(player, "setspawn", null, "Set world spawn", "/world setspawn ");
+        commandUsage(player, "time", "[Time|Lock|Unlock]", "Get or set world time", "/world time ");
+        commandUsage(player, "difficulty", "Easy|Normal|Hard|Peaceful", "Get or set world difficulty",
                      "/world difficulty ");
-        commandUsage(player, "GameMode|GM", "<Mode>", "Change your GameMode", "/world gamemode ");
-        commandUsage(player, "Trust", "<Player>", "Trust someone to build", "/world trust ");
-        commandUsage(player, "WETrust", "<Player>", "Give someone WorldEdit trust",
+        commandUsage(player, "gamemode|gm", "<Mode>", "Change your GameMode", "/world gamemode ");
+        commandUsage(player, "trust", "<Player>", "Trust someone to build", "/world trust ");
+        commandUsage(player, "wetrust", "<Player>", "Give someone WorldEdit trust",
                      "/world wetrust ");
-        commandUsage(player, "VisitTrust", "<Player>", "Trust someone to visit",
+        commandUsage(player, "visittrust", "<Player>", "Trust someone to visit",
                      "/world visittrust ");
-        commandUsage(player, "OwnerTrust", "<Player>", "Add a world owner", "/world ownertrust ");
-        commandUsage(player, "Untrust", "<Player>", "Revoke trust", "/world untrust ");
-        commandUsage(player, "Save", null, "Save your world to disk", "/world save");
-        commandUsage(player, "Set", "<Name|Description|Authors> [...]", "World settings",
+        commandUsage(player, "ownertrust", "<Player>", "Add a world owner", "/world ownertrust ");
+        commandUsage(player, "untrust", "<Player>", "Revoke trust", "/world untrust ");
+        commandUsage(player, "save", null, "Save your world to disk", "/world save");
+        commandUsage(player, "set", "<Name|Description|Authors> [...]", "World settings",
                      "/world set ");
     }
 
