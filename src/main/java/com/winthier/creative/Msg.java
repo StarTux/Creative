@@ -1,5 +1,6 @@
 package com.winthier.creative;
 
+import com.google.gson.Gson;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -9,9 +10,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.json.simple.JSONValue;
 
 final class Msg {
+    static Gson gson = new Gson();
     private Msg() { }
 
     public static String format(String msg, Object... args) {
@@ -43,9 +44,9 @@ final class Msg {
     public static void raw(Player player, Object... obj) {
         if (obj.length == 0) return;
         if (obj.length == 1) {
-            consoleCommand("minecraft:tellraw %s %s", player.getName(), JSONValue.toJSONString(obj[0]));
+            consoleCommand("minecraft:tellraw %s %s", player.getName(), gson.toJson(obj[0]));
         } else {
-            consoleCommand("minecraft:tellraw %s %s", player.getName(), JSONValue.toJSONString(Arrays.asList(obj)));
+            consoleCommand("minecraft:tellraw %s %s", player.getName(), gson.toJson(Arrays.asList(obj)));
         }
     }
 
