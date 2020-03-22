@@ -98,7 +98,8 @@ final class Permission {
 
     YamlConfiguration getPermissionsFile() {
         if (permissionsFile == null) {
-            permissionsFile = YamlConfiguration.loadConfiguration(new File(plugin.getDataFolder(), "permissions.yml"));
+            File file = new File(plugin.getDataFolder(), "permissions.yml");
+            permissionsFile = YamlConfiguration.loadConfiguration(file);
         }
         return permissionsFile;
     }

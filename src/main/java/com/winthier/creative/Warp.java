@@ -15,9 +15,13 @@ public final class Warp {
         }
     };
 
-    private final String name, world;
-    private final double x, y, z;
-    private final float pitch, yaw;
+    private final String name;
+    private final String world;
+    private final double x;
+    private final double y;
+    private final double z;
+    private final float pitch;
+    private final float yaw;
     private String permission = null;
     private String displayName = null;
 
@@ -38,8 +42,8 @@ public final class Warp {
         double x = config.getDouble("x");
         double y = config.getDouble("y");
         double z = config.getDouble("z");
-        float yaw = (float)config.getDouble("yaw");
-        float pitch = (float)config.getDouble("pitch");
+        float yaw = (float) config.getDouble("yaw");
+        float pitch = (float) config.getDouble("pitch");
         String permission = config.getString("permission", null);
         String displayName = config.getString("display_name", name);
         Warp warp = new Warp(name, world, x, y, z, pitch, yaw);

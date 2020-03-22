@@ -16,7 +16,7 @@ final class Builder {
         return PlayerCache.nameForUuid(uuid);
     }
 
-    private Builder(UUID uuid, String name) {
+    private Builder(final UUID uuid, final String name) {
         this.uuid = uuid;
     }
 

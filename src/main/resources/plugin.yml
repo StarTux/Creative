@@ -55,6 +55,8 @@ commands:
       /ca import <world>
       /ca load <world>
       /ca unload <world>
+      /ca setwarp <name> - Set warp at player location
+      /ca deletewarp <name> - Delete warp
   warp:
     description: Warps
     permission: creative.warp

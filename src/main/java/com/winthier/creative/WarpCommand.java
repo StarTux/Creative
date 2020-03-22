@@ -11,12 +11,12 @@ import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 
 @RequiredArgsConstructor
-public class WarpCommand implements TabExecutor {
+public final class WarpCommand implements TabExecutor {
     final CreativePlugin plugin;
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        Player player = sender instanceof Player ? (Player)sender : null;
+        Player player = sender instanceof Player ? (Player) sender : null;
         if (player == null) return false;
         if (args.length == 0) {
             listWarps(player);
@@ -27,7 +27,10 @@ public class WarpCommand implements TabExecutor {
             }
             String name = sb.toString();
             Warp warp = plugin.getWarps().get(name);
-            if (warp == null || (warp.getPermission() != null && !warp.getPermission().isEmpty() && !player.hasPermission(warp.getPermission()))) {
+            if (warp == null
+                || (warp.getPermission() != null
+                    && !warp.getPermission().isEmpty()
+                    && !player.hasPermission(warp.getPermission()))) {
                 Msg.warn(player, "Warp not found: %s", name);
                 return true;
             }
@@ -38,7 +41,8 @@ public class WarpCommand implements TabExecutor {
     }
 
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
+    public List<String> onTabComplete(CommandSender sender, Command command,
+                                      String label, String[] args) {
         return null;
     }
 

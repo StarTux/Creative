@@ -27,6 +27,7 @@ public final class CreativePlugin extends JavaPlugin {
     private final Permission permission = new Permission(this);
     private final Set<UUID> ignores = new HashSet<>();
     @Getter private static CreativePlugin instance = null;
+    WorldEditListener worldEditListener = new WorldEditListener(this);
 
     @Override
     public void onEnable() {
@@ -47,10 +48,12 @@ public final class CreativePlugin extends JavaPlugin {
             permission.updatePermissions(player);
         }
         getBuildWorlds();
+        worldEditListener.enable();
     }
 
     @Override
     public void onDisable() {
+        worldEditListener.disable();
         for (Player player: getServer().getOnlinePlayers()) {
             permission.resetPermissions(player);
             storeLogoutLocation(player);
@@ -172,8 +175,8 @@ public final class CreativePlugin extends JavaPlugin {
         double x = config.getDouble("x");
         double y = config.getDouble("y");
         double z = config.getDouble("z");
-        float yaw = (float)config.getDouble("yaw");
-        float pitch = (float)config.getDouble("pitch");
+        float yaw = (float) config.getDouble("yaw");
+        float pitch = (float) config.getDouble("pitch");
         return new Location(world, x, y, z, yaw, pitch);
     }
 

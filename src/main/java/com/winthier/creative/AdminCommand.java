@@ -48,6 +48,7 @@ final class AdminCommand implements CommandExecutor {
         case "ignore": return ignoreCommand(sender, argl);
         case "warp": return warpCommand(sender, argl);
         case "setwarp": return setWarpCommand(sender, argl);
+        case "deletewarp": return deleteWarpCommand(sender, argl);
         default: return false;
         }
     }
@@ -590,6 +591,18 @@ final class AdminCommand implements CommandExecutor {
         plugin.getWarps().put(name, warp);
         plugin.saveWarps();
         Msg.info(player, "Created warp '%s'", name);
+        return true;
+    }
+
+    boolean deleteWarpCommand(CommandSender sender, String[] args) {
+        if (args.length == 0) return false;
+        String name = Stream.of(args).collect(Collectors.joining(" "));
+        if (plugin.getWarps().remove(name) != null) {
+            plugin.saveWarps();
+            sender.sendMessage("Deleted warp: " + name);
+        } else {
+            sender.sendMessage("Warp not found: " + name);
+        }
         return true;
     }
 }

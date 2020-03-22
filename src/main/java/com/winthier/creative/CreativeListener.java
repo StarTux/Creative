@@ -12,6 +12,7 @@ import org.bukkit.command.BlockCommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
+import org.bukkit.entity.minecart.CommandMinecart;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -23,6 +24,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.LeavesDecayEvent;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.entity.EntityPlaceEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
@@ -64,7 +66,8 @@ public final class CreativeListener implements Listener {
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
-        ConfigurationSection config = plugin.getLogoutLocations().getConfigurationSection(uuid.toString());
+        ConfigurationSection config = plugin.getLogoutLocations()
+            .getConfigurationSection(uuid.toString());
         GameMode gamemode;
         if (config == null) {
             gamemode = GameMode.CREATIVE;
@@ -160,7 +163,7 @@ public final class CreativeListener implements Listener {
     @EventHandler(priority = EventPriority.LOW)
     public void onEntityChangeBlock(EntityChangeBlockEvent event) {
         if (event.getEntity() instanceof Player) {
-            checkBuildEvent((Player)event.getEntity(), event);
+            checkBuildEvent((Player) event.getEntity(), event);
         }
     }
 
@@ -215,9 +218,16 @@ public final class CreativeListener implements Listener {
 
     @EventHandler
     public void onServerCommand(ServerCommandEvent event) {
-        if (!(event.getSender() instanceof BlockCommandSender)) return;
-        BlockCommandSender sender = (BlockCommandSender) event.getSender();
-        Block block = sender.getBlock();
+        Block block;
+        if (event.getSender() instanceof BlockCommandSender) {
+            BlockCommandSender sender = (BlockCommandSender) event.getSender();
+            block = sender.getBlock();
+        } else if (event.getSender() instanceof CommandMinecart) {
+            CommandMinecart cart = (CommandMinecart) event.getSender();
+            block = cart.getLocation().getBlock();
+        } else {
+            return;
+        }
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(block.getWorld());
         if (buildWorld == null) return;
         plugin.getLogger().info("CommandBlock at " + block.getWorld().getName()
@@ -228,6 +238,17 @@ public final class CreativeListener implements Listener {
                                 + " command=" + event.getCommand());
         if (!buildWorld.isCommandBlocks()) {
             event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onEntityPlace(EntityPlaceEvent event) {
+        if (event.getPlayer().isOp()) return;
+        if (event.getEntity() instanceof CommandMinecart) {
+            plugin.getLogger().info(event.getPlayer().getName()
+                                    + " tried placing Command Minecart");
+            event.setCancelled(true);
+            return;
         }
     }
 }

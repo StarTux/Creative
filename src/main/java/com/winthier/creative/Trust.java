@@ -9,7 +9,7 @@ enum Trust {
 
     final int priority;
 
-    Trust(int priority) {
+    Trust(final int priority) {
         this.priority = priority;
     }
 
