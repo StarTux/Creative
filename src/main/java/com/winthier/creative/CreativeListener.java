@@ -28,6 +28,8 @@ import org.bukkit.event.block.LeavesDecayEvent;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityPlaceEvent;
+import org.bukkit.event.entity.EntitySpawnEvent;
+import org.bukkit.event.entity.FireworkExplodeEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
@@ -286,5 +288,20 @@ public final class CreativeListener implements Listener {
             event.setNewCurrent(event.getOldCurrent());
             return;
         }
+    }
+
+    @EventHandler
+    public void onEntitySpawn(EntitySpawnEvent event) {
+        switch (event.getEntity().getType()) {
+        case FIREWORK:
+            event.setCancelled(true);
+        default:
+            break;
+        }
+    }
+
+    @EventHandler
+    public void onFireworkExplode(FireworkExplodeEvent event) {
+        event.setCancelled(true);
     }
 }
