@@ -160,11 +160,11 @@ final class AdminCommand implements CommandExecutor {
             sender.sendMessage("Set CommandBlocks=" + buildWorld.isCommandBlocks());
             break;
         case "piston":
-            buildWorld.setCommandBlocks(newValue);
+            buildWorld.setPiston(newValue);
             sender.sendMessage("Set Piston=" + buildWorld.isPiston());
             break;
         case "redstone":
-            buildWorld.setCommandBlocks(newValue);
+            buildWorld.setRedstone(newValue);
             sender.sendMessage("Set Redstone=" + buildWorld.isRedstone());
             break;
         default:
