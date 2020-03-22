@@ -7,6 +7,8 @@ import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.block.Block;
+import org.bukkit.command.BlockCommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
@@ -29,6 +31,7 @@ import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.spigotmc.event.player.PlayerSpawnLocationEvent;
 
@@ -208,5 +211,23 @@ public final class CreativeListener implements Listener {
         if (!(proj.getShooter() instanceof Player)) return;
         Player player = (Player) proj.getShooter();
         checkBuildEvent(player, event);
+    }
+
+    @EventHandler
+    public void onServerCommand(ServerCommandEvent event) {
+        if (!(event.getSender() instanceof BlockCommandSender)) return;
+        BlockCommandSender sender = (BlockCommandSender) event.getSender();
+        Block block = sender.getBlock();
+        BuildWorld buildWorld = plugin.getBuildWorldByWorld(block.getWorld());
+        if (buildWorld == null) return;
+        plugin.getLogger().info("CommandBlock at " + block.getWorld().getName()
+                                + " " + block.getX()
+                                + " " + block.getY()
+                                + " " + block.getZ()
+                                + " permitted=" + buildWorld.isCommandBlocks()
+                                + " command=" + event.getCommand());
+        if (!buildWorld.isCommandBlocks()) {
+            event.setCancelled(true);
+        }
     }
 }

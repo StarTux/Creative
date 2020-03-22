@@ -31,7 +31,9 @@ commands:
     description: Admin Interface
     permission: creative.admin
     usage: |-
-      /ca info <world>
+      /ca ignore - Toggle permission ignore
+      /ca info [world] - World info
+      /ca set [world] <key> <value> - World settings
       /ca list <player>
       /ca listloaded
       /ca tp [player] <world>
@@ -40,11 +42,19 @@ commands:
       /ca trust <world> <player> <trust>
       /ca resetowner <world>
       /ca setowner <world> <player>
-      /ca create n:name p:path o:owner g:generator G:generatorSettings e:environment t:worldType s:seed S:generateStructures
+      /ca create
+        n:name
+        p:path
+        o:owner
+        g:generator
+        G:generatorSettings
+        e:environment
+        t:worldType
+        s:seed
+        S:generateStructures
       /ca import <world>
       /ca load <world>
       /ca unload <world>
-      /ca ignore
   warp:
     description: Warps
     permission: creative.warp

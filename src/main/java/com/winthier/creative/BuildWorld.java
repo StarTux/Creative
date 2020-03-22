@@ -33,6 +33,7 @@ final class BuildWorld {
     private boolean explosion = false;
     private boolean leafDecay = false;
     private boolean keepInMemory = false;
+    private boolean commandBlocks = false;
 
     public static final Comparator<BuildWorld> NAME_SORT = new Comparator<BuildWorld>() {
         @Override public int compare(BuildWorld a, BuildWorld b) {
@@ -40,7 +41,7 @@ final class BuildWorld {
         }
     };
 
-    BuildWorld(String name, String path, Builder owner) {
+    BuildWorld(final String name, final String path, final Builder owner) {
         this.name = name;
         this.path = path;
         this.owner = owner;
@@ -123,9 +124,9 @@ final class BuildWorld {
         } catch (IllegalArgumentException iae) { }
         creator.type(worldType);
         result = creator.createWorld();
-        result.setSpawnFlags(true, true); // TODO
-        result.setTicksPerAnimalSpawns(999999999); // TODO
-        result.setTicksPerMonsterSpawns(999999999); // TODO
+        result.setSpawnFlags(true, true);
+        result.setTicksPerAnimalSpawns(999999999);
+        result.setTicksPerMonsterSpawns(999999999);
         result.setGameRuleValue("doMobLoot", "false");
         result.setGameRuleValue("doMobSpawning", "false");
         result.setGameRuleValue("doTileDrops", "false");
@@ -169,15 +170,16 @@ final class BuildWorld {
 
     Location getSpawnLocation() {
         if (getWorld() == null) return null;
-        ConfigurationSection section = getWorldConfig().getConfigurationSection("world.SpawnLocation");
+        ConfigurationSection section = getWorldConfig()
+            .getConfigurationSection("world.SpawnLocation");
         if (section == null) {
             return getWorld().getSpawnLocation();
         } else {
             double x = section.getDouble("x");
             double y = section.getDouble("y");
             double z = section.getDouble("z");
-            float yaw = (float)section.getDouble("yaw");
-            float pitch = (float)section.getDouble("pitch");
+            float yaw = (float) section.getDouble("yaw");
+            float pitch = (float) section.getDouble("pitch");
             return new Location(getWorld(), x, y, z, yaw, pitch);
         }
     }
@@ -213,6 +215,7 @@ final class BuildWorld {
         result.put("Explosion", explosion);
         result.put("LeafDecay", leafDecay);
         result.put("KeepInMemory", keepInMemory);
+        result.put("CommandBlocks", commandBlocks);
         return result;
     }
 
@@ -234,6 +237,7 @@ final class BuildWorld {
         result.explosion = config.getBoolean("Explosion", result.explosion);
         result.leafDecay = config.getBoolean("LeafDecay", result.leafDecay);
         result.keepInMemory = config.getBoolean("KeepInMemory", result.keepInMemory);
+        result.commandBlocks = config.getBoolean("CommandBlocks", result.commandBlocks);
         return result;
     }
 }
