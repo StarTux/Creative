@@ -95,6 +95,8 @@ final class AdminCommand implements CommandExecutor {
         sender.sendMessage("LeafDecay: " + buildWorld.isLeafDecay());
         sender.sendMessage("KeepInMemory: " + buildWorld.isKeepInMemory());
         sender.sendMessage("CommandBlocks: " + buildWorld.isCommandBlocks());
+        sender.sendMessage("Piston: " + buildWorld.isPiston());
+        sender.sendMessage("Redstone: " + buildWorld.isRedstone());
         return true;
     }
 
@@ -156,6 +158,14 @@ final class AdminCommand implements CommandExecutor {
         case "commandblocks":
             buildWorld.setCommandBlocks(newValue);
             sender.sendMessage("Set CommandBlocks=" + buildWorld.isCommandBlocks());
+            break;
+        case "piston":
+            buildWorld.setCommandBlocks(newValue);
+            sender.sendMessage("Set Piston=" + buildWorld.isPiston());
+            break;
+        case "redstone":
+            buildWorld.setCommandBlocks(newValue);
+            sender.sendMessage("Set Redstone=" + buildWorld.isRedstone());
             break;
         default:
             sender.sendMessage("Unknown settings: " + key);

@@ -34,6 +34,8 @@ final class BuildWorld {
     private boolean leafDecay = false;
     private boolean keepInMemory = false;
     private boolean commandBlocks = false;
+    private boolean piston = false;
+    private boolean redstone = true;
 
     public static final Comparator<BuildWorld> NAME_SORT = new Comparator<BuildWorld>() {
         @Override public int compare(BuildWorld a, BuildWorld b) {
@@ -216,6 +218,8 @@ final class BuildWorld {
         result.put("LeafDecay", leafDecay);
         result.put("KeepInMemory", keepInMemory);
         result.put("CommandBlocks", commandBlocks);
+        result.put("Piston", piston);
+        result.put("Redstone", redstone);
         return result;
     }
 
@@ -238,6 +242,8 @@ final class BuildWorld {
         result.leafDecay = config.getBoolean("LeafDecay", result.leafDecay);
         result.keepInMemory = config.getBoolean("KeepInMemory", result.keepInMemory);
         result.commandBlocks = config.getBoolean("CommandBlocks", result.commandBlocks);
+        result.piston = config.getBoolean("Piston", result.piston);
+        result.redstone = config.getBoolean("Redstone", result.redstone);
         return result;
     }
 }

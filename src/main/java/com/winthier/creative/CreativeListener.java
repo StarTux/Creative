@@ -20,7 +20,10 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
+import org.bukkit.event.block.BlockPistonExtendEvent;
+import org.bukkit.event.block.BlockPistonRetractEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.block.BlockRedstoneEvent;
 import org.bukkit.event.block.LeavesDecayEvent;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
@@ -248,6 +251,39 @@ public final class CreativeListener implements Listener {
             plugin.getLogger().info(event.getPlayer().getName()
                                     + " tried placing Command Minecart");
             event.setCancelled(true);
+            return;
+        }
+    }
+
+    @EventHandler
+    public void onBlockPistonExtend(BlockPistonExtendEvent event) {
+        BuildWorld buildWorld = plugin
+            .getBuildWorldByWorld(event.getBlock().getWorld());
+        if (buildWorld == null) return;
+        if (!buildWorld.isPiston()) {
+            event.setCancelled(true);
+            return;
+        }
+    }
+
+    @EventHandler
+    public void onBlockPistonRetract(BlockPistonRetractEvent event) {
+        BuildWorld buildWorld = plugin
+            .getBuildWorldByWorld(event.getBlock().getWorld());
+        if (buildWorld == null) return;
+        if (!buildWorld.isPiston()) {
+            event.setCancelled(true);
+            return;
+        }
+    }
+
+    @EventHandler
+    public void onBlockRedstone(BlockRedstoneEvent event) {
+        BuildWorld buildWorld = plugin
+            .getBuildWorldByWorld(event.getBlock().getWorld());
+        if (buildWorld == null) return;
+        if (!buildWorld.isRedstone()) {
+            event.setNewCurrent(event.getOldCurrent());
             return;
         }
     }
