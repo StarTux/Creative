@@ -210,15 +210,12 @@ public final class CreativeListener implements Listener {
 
     @EventHandler
     public void onPlayerDropItem(PlayerDropItemEvent event) {
-        checkBuildEvent(event.getPlayer(), event);
+        event.setCancelled(true);
     }
 
     @EventHandler
     public void onProjectileLaunch(ProjectileLaunchEvent event) {
-        Projectile proj = event.getEntity();
-        if (!(proj.getShooter() instanceof Player)) return;
-        Player player = (Player) proj.getShooter();
-        checkBuildEvent(player, event);
+        event.setCancelled(true);
     }
 
     @EventHandler
