@@ -35,16 +35,6 @@ final class Permission {
                 }
             }
         }
-        if (trust.isOwner() && player.hasPermission("creative.minigames")) {
-            givePermission(player, "adventure.test");
-            givePermission(player, "colorfall.test");
-            givePermission(player, "spleef.test");
-            givePermission(player, "vertigo.test");
-            givePermission(player, "survivalgames.test");
-            givePermission(player, "mobarena.test");
-            givePermission(player, "enderball.test");
-            givePermission(player, "pvp.test");
-        }
         if (player.hasPermission("creative.Dangerous")) {
             for (String perm: getPermissionsFile().getStringList("Dangerous")) {
                 givePermission(player, perm);
