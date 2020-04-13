@@ -7,8 +7,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import lombok.Getter;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -28,6 +30,9 @@ public final class CreativePlugin extends JavaPlugin {
     private final Set<UUID> ignores = new HashSet<>();
     @Getter private static CreativePlugin instance = null;
     WorldEditListener worldEditListener = new WorldEditListener(this);
+    final Vault vault = new Vault(this);
+    final Metadata metadata = new Metadata(this);
+    final Random random = ThreadLocalRandom.current();
 
     @Override
     public void onEnable() {
@@ -39,16 +44,18 @@ public final class CreativePlugin extends JavaPlugin {
         } catch (IllegalArgumentException iae) {
             iae.printStackTrace();
         }
-        getCommand("World").setExecutor(worldCommand);
+        getCommand("world").setExecutor(worldCommand);
+        worldCommand.load();
         getCommand("wtp").setExecutor(new WTPCommand(this));
-        getCommand("CreativeAdmin").setExecutor(new AdminCommand(this));
-        getCommand("Warp").setExecutor(new WarpCommand(this));
+        getCommand("creativeadmin").setExecutor(new AdminCommand(this));
+        getCommand("warp").setExecutor(new WarpCommand(this));
         getServer().getPluginManager().registerEvents(new CreativeListener(this), this);
         for (Player player: getServer().getOnlinePlayers()) {
             permission.updatePermissions(player);
         }
         getBuildWorlds();
         worldEditListener.enable();
+        vault.setup();
     }
 
     @Override
@@ -62,10 +69,12 @@ public final class CreativePlugin extends JavaPlugin {
     }
 
     void reloadAllConfigs() {
+        reloadConfig();
         buildWorlds = null;
         warps = null;
         logoutLocations = null;
         permission.reload();
+        worldCommand.load();
     }
 
     // Build Worlds
@@ -225,5 +234,9 @@ public final class CreativePlugin extends JavaPlugin {
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
+    }
+
+    Meta metaOf(Player player) {
+        return metadata.get(player, "creative:meta", Meta.class, Meta::new);
     }
 }

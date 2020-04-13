@@ -14,6 +14,7 @@ import lombok.Setter;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.WorldBorder;
 import org.bukkit.WorldCreator;
 import org.bukkit.WorldType;
 import org.bukkit.block.Block;
@@ -29,13 +30,15 @@ final class BuildWorld {
     private final Map<UUID, Trusted> trusted = new HashMap<>();
     private Trust publicTrust = Trust.NONE;
     private YamlConfiguration worldConfig = null;
-    private boolean voxelSniper = true;
+    private boolean voxelSniper = false;
+    private boolean worldEdit = false;
     private boolean explosion = false;
     private boolean leafDecay = false;
     private boolean keepInMemory = false;
     private boolean commandBlocks = false;
     private boolean piston = false;
     private boolean redstone = true;
+    private long size = -1;
 
     public static final Comparator<BuildWorld> NAME_SORT = new Comparator<BuildWorld>() {
         @Override public int compare(BuildWorld a, BuildWorld b) {
@@ -138,6 +141,17 @@ final class BuildWorld {
         result.setGameRuleValue("showDeathMessages", "false");
         result.setGameRuleValue("spawnRadius", "0");
         result.setGameRuleValue("doFireTick", "0");
+        WorldBorder border = result.getWorldBorder();
+        if (size > 0) {
+            border.setCenter(0, 0);
+            border.setSize((double) size);
+        }
+        if (getWorldConfig().isConfigurationSection("world.SpawnLocation")) {
+            int x = getWorldConfig().getInt("world.SpawnLocation.x");
+            int y = getWorldConfig().getInt("world.SpawnLocation.y");
+            int z = getWorldConfig().getInt("world.SpawnLocation.z");
+            result.setSpawnLocation(x, y, z);
+        }
         return result;
     }
 
@@ -213,6 +227,7 @@ final class BuildWorld {
         for (Map.Entry<UUID, Trusted> e: this.trusted.entrySet()) {
             trustedMap.put(e.getKey().toString(), e.getValue().serialize());
         }
+        result.put("WorldEdit", worldEdit);
         result.put("VoxelSniper", voxelSniper);
         result.put("Explosion", explosion);
         result.put("LeafDecay", leafDecay);
@@ -237,6 +252,7 @@ final class BuildWorld {
             }
         }
         result.publicTrust = Trust.of(config.getString("publicTrust", "NONE"));
+        result.worldEdit = config.getBoolean("WorldEdit", result.worldEdit);
         result.voxelSniper = config.getBoolean("VoxelSniper", result.voxelSniper);
         result.explosion = config.getBoolean("Explosion", result.explosion);
         result.leafDecay = config.getBoolean("LeafDecay", result.leafDecay);

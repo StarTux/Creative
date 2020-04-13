@@ -5,7 +5,7 @@ version: 0.1
 website: https://github.com/StarTux/Creative
 api-version: 1.13
 main: com.winthier.creative.CreativePlugin
-depend: [ PlayerCache, GenericEvents ]
+depend: [WorldEdit, PlayerCache, GenericEvents]
 commands:
   world:
     aliases: [ worlds ]
@@ -17,11 +17,14 @@ commands:
       /world info - Get world info
       /world spawn - Teleport to spawn
       /world setspawn - Set world spawn
+      /world rename - Rename world
       /world time [time] - Get or set the world time
       /world difficulty [difficulty] - Difficulty setting
       /world gamemode <gamemode> - Change your GameMode
       /world trust <player> [trust] - Trust someone
       /world untrust <player> - Revoke trust
+      /world confirm - Confirm action
+      /world cancel - Cancel action
   wtp:
     description: World Teleport
     permission: creative.world

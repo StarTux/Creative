@@ -8,10 +8,14 @@ import java.util.UUID;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import org.bukkit.ChatColor;
+import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.chat.ClickEvent;
+import net.md_5.bungee.api.chat.ComponentBuilder;
+import net.md_5.bungee.api.chat.HoverEvent;
 import org.bukkit.Difficulty;
 import org.bukkit.GameMode;
 import org.bukkit.World;
+import org.bukkit.WorldType;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -20,6 +24,10 @@ import org.bukkit.entity.Player;
 @RequiredArgsConstructor
 final class WorldCommand implements TabExecutor {
     final CreativePlugin plugin;
+
+    void load() {
+        // Here we could load some data if we wanted...
+    }
 
     static final class Wrong extends Exception {
         @Getter final String message;
@@ -59,10 +67,10 @@ final class WorldCommand implements TabExecutor {
             return true;
         }
         try {
-            onCommand(player, cmd, args);
+            onCommand(player, cmd, Arrays.copyOfRange(args, 1, args.length));
         } catch (Wrong ce) {
             if (ce.usage) {
-                usage(player);
+                usage(player, cmd);
             } else {
                 Msg.warn(player, "%s", ce.getMessage());
             }
@@ -72,90 +80,58 @@ final class WorldCommand implements TabExecutor {
 
     void onCommand(Player player, @NonNull String cmd, String[] args) throws Wrong {
         switch (cmd) {
-        case "tp": {
-            if (args.length != 2) Wrong.usage();
-            String worldName = args[1];
+        case "tp":
+            if (args.length != 1) Wrong.usage();
+            String worldName = args[0];
             worldTeleport(player, worldName);
             break;
-        }
-        case "ls": case "list": {
-            if (args.length != 1) Wrong.usage();
+        case "ls": case "list":
+            if (args.length != 0) Wrong.usage();
             listWorlds(player);
             break;
-        }
-        case "visit": {
-            if (args.length != 1) Wrong.usage();
+        case "visit":
+            if (args.length != 0) Wrong.usage();
             listVisits(player);
             break;
-        }
-        case "info": {
-            if (args.length != 1) Wrong.usage();
+        case "info":
+            if (args.length != 0) Wrong.usage();
             worldInfo(player);
             break;
-        }
-        case "time": {
-            String arg = args.length >= 2 ? args[1] : null;
+        case "time":
+            String arg = args.length >= 1 ? args[0] : null;
             worldTime(player, arg);
             break;
-        }
-        case "difficulty": {
-            World world = player.getWorld();
-            BuildWorld buildWorld = plugin.getBuildWorldByWorld(world);
-            if (buildWorld == null || !buildWorld.getTrust(player.getUniqueId()).isOwner()) {
-                Wrong.noPerm();
-            }
-            if (args.length < 2) {
-                Difficulty difficulty = player.getWorld().getDifficulty();
-                Msg.info(player, "World difficulty is %s.", Msg.camelCase(difficulty.name()));
-            } else if (args.length == 2) {
-                Difficulty difficulty;
-                try {
-                    difficulty = Difficulty.valueOf(args[1]);
-                } catch (IllegalArgumentException iae) {
-                    throw new Wrong("Unknown difficulty: %s", args[1]);
-                }
-                world.setDifficulty(difficulty);
-                Msg.info(player, "World difficulty set to %s.",
-                         Msg.camelCase(difficulty.name()));
-            } else {
-                Wrong.usage();
-            }
+        case "difficulty":
+            difficultyCommand(player, args);
             break;
-        }
-        case "spawn": {
+        case "spawn":
             teleportToSpawn(player);
             break;
-        }
-        case "setspawn": {
+        case "setspawn":
             setWorldSpawn(player);
             break;
-        }
-        case "trust": {
-            if (args.length != 2) Wrong.usage();
-            trustCommand(player, args[1], Trust.BUILD);
+        case "trust":
+            if (args.length != 1) Wrong.usage();
+            trustCommand(player, args[0], Trust.BUILD);
             break;
-        }
-        case "wetrust": {
-            if (args.length != 2) Wrong.usage();
-            trustCommand(player, args[1], Trust.WORLD_EDIT);
+        case "wetrust":
+            if (args.length != 1) Wrong.usage();
+            trustCommand(player, args[0], Trust.WORLD_EDIT);
             break;
-        }
-        case "visittrust": {
-            if (args.length != 2) Wrong.usage();
-            trustCommand(player, args[1], Trust.VISIT);
+        case "visittrust":
+            if (args.length != 1) Wrong.usage();
+            trustCommand(player, args[0], Trust.VISIT);
             break;
-        }
-        case "ownertrust": {
-            if (args.length != 2) Wrong.usage();
-            trustCommand(player, args[1], Trust.OWNER);
+        case "ownertrust":
+            if (args.length != 1) Wrong.usage();
+            trustCommand(player, args[0], Trust.OWNER);
             break;
-        }
-        case "untrust": {
-            if (args.length != 2) Wrong.usage();
-            trustCommand(player, args[1], Trust.NONE);
+        case "untrust":
+            if (args.length != 1) Wrong.usage();
+            trustCommand(player, args[0], Trust.NONE);
             break;
-        }
         case "save": {
+            if (args.length != 0) Wrong.usage();
             World world = player.getWorld();
             BuildWorld buildWorld = plugin.getBuildWorldByWorld(world);
             if (buildWorld == null || !buildWorld.getTrust(player.getUniqueId()).isOwner()) {
@@ -165,56 +141,103 @@ final class WorldCommand implements TabExecutor {
             Msg.info(player, "Saved your current world to disk.");
             break;
         }
-        case "rename": {
+        case "rename":
+            renameCommand(player, args);
+            break;
+        case "gamemode": case "gm":
+            gamemodeCommand(player, args);
+            break;
+        case "set": {
             if (args.length < 2) Wrong.usage();
             World world = player.getWorld();
             BuildWorld buildWorld = plugin.getBuildWorldByWorld(world);
             if (buildWorld == null || !buildWorld.getTrust(player.getUniqueId()).isOwner()) {
                 Wrong.noPerm();
             }
-            StringBuilder sb = new StringBuilder(args[1]);
-            for (int i = 2; i < args.length; ++i) {
-                sb.append(" ").append(args[i]);
-            }
-            String name = sb.toString();
-            buildWorld.setName(name);
-            plugin.saveBuildWorlds();
-            Msg.info(player, "Renamed your current world to '%s'.", name);
+            changeWorldSetting(player, buildWorld, args[0].toLowerCase(),
+                               Arrays.asList(Arrays.copyOfRange(args, 1, args.length)));
             break;
         }
-        case "gamemode": case "gm": {
-            if (args.length != 2) Wrong.usage();
-            GameMode newGM;
-            switch (args[1].toLowerCase()) {
-            case "0": newGM = GameMode.SURVIVAL; break;
-            case "1": newGM = GameMode.CREATIVE; break;
-            case "2": newGM = GameMode.ADVENTURE; break;
-            case "survival": newGM = GameMode.SURVIVAL; break;
-            case "creative": newGM = GameMode.CREATIVE; break;
-            case "adventure": newGM = GameMode.ADVENTURE; break;
-            default:
-                newGM = null;
-            }
-            if (newGM == null) {
-                Msg.warn(player, "Invalid GameMode: %s", args[1]);
-            } else {
-                player.setGameMode(newGM);
-                Msg.info(player, "Set GameMode to %s", newGM.name());
-            }
-        }
-        case "set": {
-            if (args.length < 3) Wrong.usage();
-            World world = player.getWorld();
-            BuildWorld buildWorld = plugin.getBuildWorldByWorld(world);
-            if (buildWorld == null || !buildWorld.getTrust(player.getUniqueId()).isOwner()) {
-                Wrong.noPerm();
-            }
-            changeWorldSetting(player, buildWorld, args[1].toLowerCase(),
-                               Arrays.asList(Arrays.copyOfRange(args, 2, args.length)));
-        }
+        case "buy":
+            buyCommand(player, args);
+            break;
+        case "confirm":
+            confirmCommand(player, args);
+            break;
+        case "cancel":
+            cancelCommand(player, args);
+            break;
         default:
             Wrong.usage();
         }
+    }
+
+    void confirm(Player player, String code, Runnable callback) {
+        Meta meta = plugin.metaOf(player);
+        meta.confirmCode = code;
+        meta.confirmCallback = callback;
+        ComponentBuilder cb = Msg.componentBuilder();
+        cb.append("[Confirm]").color(ChatColor.GREEN);
+        cb.event(new ClickEvent(ClickEvent.Action.RUN_COMMAND,
+                                "/world confirm " + code));
+        cb.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
+                                Msg.lore(ChatColor.GREEN + "Confirm")));
+        cb.append(" ").reset();
+        cb.append("[Cancel]").color(ChatColor.RED);
+        cb.event(new ClickEvent(ClickEvent.Action.RUN_COMMAND,
+                                "/world cancel " + code));
+        cb.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
+                                Msg.lore(ChatColor.RED + "Cancel")));
+        player.spigot().sendMessage(cb.create());
+    }
+
+    /**
+     * Produce a String with 5 random readable characters.
+     */
+    String randomString() {
+        StringBuilder sb = new StringBuilder();
+        String chars = "abcdefghijklmnopqrstuvwxyz"
+            + "ABCDEFGHIJKLMNOPQRSTUVWXYZ" + "1234567890";
+        int len = chars.length();
+        for (int i = 0; i < 5; i += 1) {
+            sb.append(chars.charAt(plugin.random.nextInt(len)));
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Callback for /world buy, then /world confirm.
+     */
+    void confirmBuy(Player player, double price, long size) {
+        String base = player.getName();
+        String path;
+        int suffix = 1;
+        do {
+            path = String.format("%s%03d", base, suffix++);
+        } while (plugin.getBuildWorldByPath(path) != null);
+        plugin.getLogger().info("New world for " + base + ": " + path);
+        if (!plugin.vault.take(player, price)) {
+            player.sendMessage("You don't have enough money");
+            return;
+        }
+        BuildWorld buildWorld = new BuildWorld(base, path, Builder.of(player));
+        buildWorld.setSize(size);
+        plugin.getBuildWorlds().add(buildWorld);
+        plugin.saveBuildWorlds();
+        buildWorld.getWorldConfig().set("world.Seed", 0);
+        buildWorld.getWorldConfig().set("world.WorldType", WorldType.FLAT.name());
+        buildWorld.getWorldConfig().set("world.Environment", World.Environment.NORMAL.name());
+        buildWorld.getWorldConfig().set("world.SpawnLocation.x", 0);
+        buildWorld.getWorldConfig().set("world.SpawnLocation.y", 5);
+        buildWorld.getWorldConfig().set("world.SpawnLocation.z", 0);
+        buildWorld.getWorldConfig().set("world.SpawnLocation.pitch", 0);
+        buildWorld.getWorldConfig().set("world.SpawnLocation.yaw", 0);
+        buildWorld.saveWorldConfig();
+        player.sendMessage("Bought a world for "
+                           + ChatColor.GREEN + plugin.vault.format(price)
+                           + ChatColor.WHITE + "!");
+        World world = buildWorld.loadWorld();
+        buildWorld.teleportToSpawn(player);
     }
 
     List<String> filterStartsWith(String term, List<String> in) {
@@ -256,6 +279,7 @@ final class WorldCommand implements TabExecutor {
             Msg.warn(player, "World not found: %s", worldName);
             return false;
         }
+        Msg.info(player, "Please wait.");
         buildWorld.loadWorld();
         buildWorld.teleportToSpawn(player);
         Msg.info(player, "Teleported to %s.", buildWorld.getName());
@@ -483,6 +507,111 @@ final class WorldCommand implements TabExecutor {
         }
     }
 
+    void difficultyCommand(Player player, String[] args) throws Wrong {
+        World world = player.getWorld();
+        BuildWorld buildWorld = plugin.getBuildWorldByWorld(world);
+        if (buildWorld == null || !buildWorld.getTrust(player.getUniqueId()).isOwner()) {
+            Wrong.noPerm();
+        }
+        if (args.length < 1) {
+            Difficulty difficulty = player.getWorld().getDifficulty();
+            Msg.info(player, "World difficulty is %s.", Msg.camelCase(difficulty.name()));
+        } else if (args.length == 1) {
+            Difficulty difficulty;
+            try {
+                difficulty = Difficulty.valueOf(args[0]);
+            } catch (IllegalArgumentException iae) {
+                throw new Wrong("Unknown difficulty: %s", args[0]);
+            }
+            world.setDifficulty(difficulty);
+            Msg.info(player, "World difficulty set to %s.",
+                     Msg.camelCase(difficulty.name()));
+        } else {
+            Wrong.usage();
+        }
+    }
+
+    void renameCommand(Player player, String[] args) throws Wrong {
+        if (args.length < 1) Wrong.usage();
+        World world = player.getWorld();
+        BuildWorld buildWorld = plugin.getBuildWorldByWorld(world);
+        if (buildWorld == null || !buildWorld.getTrust(player.getUniqueId()).isOwner()) {
+            Wrong.noPerm();
+        }
+        StringBuilder sb = new StringBuilder(args[0]);
+        for (int i = 1; i < args.length; ++i) {
+            sb.append(" ").append(args[i]);
+        }
+        String name = sb.toString();
+        buildWorld.setName(name);
+        plugin.saveBuildWorlds();
+        Msg.info(player, "Renamed your current world to '%s'.", name);
+    }
+
+    void gamemodeCommand(Player player, String[] args) throws Wrong {
+        if (args.length != 1) Wrong.usage();
+        BuildWorld buildWorld = plugin.getBuildWorldByWorld(player.getWorld());
+        if (buildWorld == null || !buildWorld.getTrust(player.getUniqueId()).isOwner()) {
+            Wrong.noPerm();
+        }
+        GameMode newGM;
+        switch (args[0].toLowerCase()) {
+        case "0": newGM = GameMode.SURVIVAL; break;
+        case "1": newGM = GameMode.CREATIVE; break;
+        case "2": newGM = GameMode.ADVENTURE; break;
+        case "survival": newGM = GameMode.SURVIVAL; break;
+        case "creative": newGM = GameMode.CREATIVE; break;
+        case "adventure": newGM = GameMode.ADVENTURE; break;
+        default:
+            newGM = null;
+        }
+        if (newGM == null) {
+            Msg.warn(player, "Invalid GameMode: %s", args[0]);
+        } else {
+            player.setGameMode(newGM);
+            Msg.info(player, "Set GameMode to %s", newGM.name());
+        }
+    }
+
+    void buyCommand(Player player, String[] args) throws Wrong {
+        if (args.length != 0) Wrong.usage();
+        double price = 10000.0;
+        long size = 256;
+        String sizeFmt = "" + size;
+        ComponentBuilder cb = Msg.componentBuilder();
+        cb.append("Buy a ").color(ChatColor.WHITE);
+        cb.append(sizeFmt).color(ChatColor.GREEN);
+        cb.append("x").color(ChatColor.GRAY);
+        cb.append(sizeFmt).color(ChatColor.GREEN);
+        cb.append(" flat world for ").color(ChatColor.WHITE);
+        cb.append(plugin.vault.format(price)).color(ChatColor.GREEN);
+        cb.append("?").color(ChatColor.WHITE);
+        player.spigot().sendMessage(cb.create());
+        String code = randomString();
+        confirm(player, code, () -> confirmBuy(player, price, size));
+    }
+
+    void confirmCommand(Player player, String[] args) {
+        if (args.length != 1) return;
+        String code = args[0];
+        Meta meta = plugin.metaOf(player);
+        if (!code.equals(meta.confirmCode)) return;
+        meta.confirmCode = null;
+        Runnable run = meta.confirmCallback;
+        meta.confirmCallback = null;
+        run.run();
+    }
+
+    void cancelCommand(Player player, String[] args) {
+        if (args.length != 1) return;
+        String code = args[0];
+        Meta meta = plugin.metaOf(player);
+        if (!code.equals(meta.confirmCode)) return;
+        meta.confirmCode = null;
+        meta.confirmCallback = null;
+        player.sendMessage(ChatColor.RED + "Cancelled.");
+    }
+
     void commandUsage(Player player, String sub, String args,
                       String description, String suggestion) {
         String cmd;
@@ -504,28 +633,103 @@ final class WorldCommand implements TabExecutor {
                            suggestion));
     }
 
+    void usage(Player player, String cmd) {
+        switch (cmd) {
+        case "list":
+            commandUsage(player, "list", null, "List your worlds", "/world list");
+            break;
+        case "visit":
+            commandUsage(player, "visit", null, "List worlds you can visit", "/world visit");
+            break;
+        case "info":
+            commandUsage(player, "info", null, "Get world info", "/world info");
+            break;
+        case "buy":
+            commandUsage(player, "buy", null, "Buy a world.", "/world buy");
+            break;
+        case "rename": {
+            BuildWorld buildWorld = plugin.getBuildWorldByWorld(player.getWorld());
+            if (buildWorld != null && !buildWorld.getTrust(player.getUniqueId()).isOwner()) {
+                buildWorld = null;
+            }
+            commandUsage(player, "rename", "<name>", "Change the name of your world",
+                         "/world rename " + (buildWorld != null ? buildWorld.getName() : ""));
+            break;
+        }
+        case "spawn":
+            commandUsage(player, "spawn", null, "Warp to world spawn", "/world spawn");
+            break;
+        case "setspawn":
+            commandUsage(player, "setspawn", null, "Set world spawn", "/world setspawn ");
+            break;
+        case "time":
+            commandUsage(player, "time", "[time|lock|unlock]", "Get or set world time",
+                         "/world time ");
+            break;
+        case "difficulty":
+            commandUsage(player, "difficulty", "easy|normal|hard|peaceful",
+                         "Get or set world difficulty",
+                         "/world difficulty ");
+            break;
+        case "gamemode": case "gm":
+            commandUsage(player, "gamemode|gm", "<mode>", "Change your GameMode",
+                         "/world gamemode ");
+            break;
+        case "trust":
+            commandUsage(player, "trust", "<player>", "Trust someone to build", "/world trust ");
+            break;
+        case "wetrust":
+            commandUsage(player, "wetrust", "<player>", "Give someone WorldEdit trust",
+                         "/world wetrust ");
+            break;
+        case "visittrust":
+            commandUsage(player, "visittrust", "<player>", "Trust someone to visit",
+                         "/world visittrust ");
+            break;
+        case "ownertrust":
+            commandUsage(player, "ownertrust", "<player>", "Add a world owner",
+                         "/world ownertrust ");
+            break;
+        case "untrust":
+            commandUsage(player, "untrust", "<player>", "Revoke trust", "/world untrust ");
+            break;
+        case "save":
+            commandUsage(player, "save", null, "Save your world to disk", "/world save");
+            break;
+        case "set":
+            commandUsage(player, "set", "<name|description|authors> [...]", "World settings",
+                         "/world set ");
+            break;
+        default:
+            player.sendMessage(ChatColor.RED + "Unknown command: " + cmd);
+        }
+    }
+
     void usage(Player player) {
+        BuildWorld buildWorld = plugin.getBuildWorldByWorld(player.getWorld());
+        boolean owner = buildWorld != null && buildWorld.getTrust(player.getUniqueId()).isOwner();
         Msg.info(player, "&lWorld&3 Command Usage");
-        commandUsage(player, "list", null, "List your worlds", "/world list");
-        commandUsage(player, "visit", null, "List worlds you can visit", "/world visit");
-        commandUsage(player, "info", null, "Get world info", "/world info");
-        commandUsage(player, "spawn", null, "Warp to world spawn", "/world spawn");
-        commandUsage(player, "setspawn", null, "Set world spawn", "/world setspawn ");
-        commandUsage(player, "time", "[Time|Lock|Unlock]", "Get or set world time", "/world time ");
-        commandUsage(player, "difficulty", "Easy|Normal|Hard|Peaceful",
-                     "Get or set world difficulty",
-                     "/world difficulty ");
-        commandUsage(player, "gamemode|gm", "<Mode>", "Change your GameMode", "/world gamemode ");
-        commandUsage(player, "trust", "<Player>", "Trust someone to build", "/world trust ");
-        commandUsage(player, "wetrust", "<Player>", "Give someone WorldEdit trust",
-                     "/world wetrust ");
-        commandUsage(player, "visittrust", "<Player>", "Trust someone to visit",
-                     "/world visittrust ");
-        commandUsage(player, "ownertrust", "<Player>", "Add a world owner", "/world ownertrust ");
-        commandUsage(player, "untrust", "<Player>", "Revoke trust", "/world untrust ");
-        commandUsage(player, "save", null, "Save your world to disk", "/world save");
-        commandUsage(player, "set", "<Name|Description|Authors> [...]", "World settings",
-                     "/world set ");
+        usage(player, "list");
+        usage(player, "visit");
+        usage(player, "info");
+        usage(player, "buy");
+        usage(player, "spawn");
+        if (owner) {
+            usage(player, "rename");
+            usage(player, "setspawn");
+            usage(player, "time");
+            usage(player, "difficulty");
+            usage(player, "gamemode|gm");
+            usage(player, "trust");
+            if (buildWorld.isWorldEdit()) {
+                usage(player, "wetrust");
+            }
+            usage(player, "visittrust");
+            usage(player, "ownertrust");
+            usage(player, "untrust");
+            usage(player, "save");
+            usage(player, "set");
+        }
     }
 
     void changeWorldSetting(Player player, BuildWorld buildWorld, String key, List<String> args) {

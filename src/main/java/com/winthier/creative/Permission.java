@@ -25,7 +25,9 @@ final class Permission {
                 givePermission(player, perm);
             }
         }
-        if (trust.canUseWorldEdit() && player.hasPermission("creative.worldedit")) {
+        if (buildWorld.isWorldEdit()
+            && trust.canUseWorldEdit()
+            && player.hasPermission("creative.worldedit")) {
             for (String perm: getPermissionsFile().getStringList("WorldEdit")) {
                 givePermission(player, perm);
             }

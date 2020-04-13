@@ -6,8 +6,12 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
+import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.ComponentBuilder;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -137,5 +141,16 @@ final class Msg {
         StringBuilder sb = new StringBuilder(ls.get(0));
         for (int i = 1; i < ls.size(); ++i) sb.append(glue).append(ls.get(i));
         return sb.toString();
+    }
+
+    public static ComponentBuilder componentBuilder() {
+        return new ComponentBuilder("[Creative]").color(ChatColor.AQUA)
+            .append(" ").reset();
+    }
+
+    public static BaseComponent[] lore(String... lines) {
+        return Stream.of(lines)
+            .map(TextComponent::new)
+            .toArray(BaseComponent[]::new);
     }
 }
