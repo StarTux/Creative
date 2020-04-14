@@ -120,11 +120,17 @@ public final class CreativeListener implements Listener {
 
     // Build Permission Check
 
-    void checkBuildEvent(Player player, Cancellable event) {
+    void checkBuildEvent(Player player, Block block, Cancellable event) {
         if (plugin.doesIgnore(player)) return;
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(player.getWorld());
         if (buildWorld == null) {
             event.setCancelled(true);
+            return;
+        }
+        if (block != null && plugin.isPlotWorld(block.getWorld())) {
+            if (!plugin.canBuildInPlot(player, block)) {
+                event.setCancelled(true);
+            }
             return;
         }
         if (!buildWorld.getTrust(player.getUniqueId()).canBuild()) {
@@ -135,12 +141,12 @@ public final class CreativeListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOW)
     public void onBlockBreak(BlockBreakEvent event) {
-        checkBuildEvent(event.getPlayer(), event);
+        checkBuildEvent(event.getPlayer(), event.getBlock(), event);
     }
 
     @EventHandler(priority = EventPriority.LOW)
     public void onBlockPlace(BlockPlaceEvent event) {
-        checkBuildEvent(event.getPlayer(), event);
+        checkBuildEvent(event.getPlayer(), event.getBlock(), event);
     }
 
     @EventHandler(priority = EventPriority.LOW)
@@ -151,23 +157,25 @@ public final class CreativeListener implements Listener {
             event.setCancelled(true);
             return;
         }
-        checkBuildEvent(event.getPlayer(), event);
+        checkBuildEvent(event.getPlayer(), event.getClickedBlock(), event);
     }
 
     @EventHandler(priority = EventPriority.LOW)
     public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
-        checkBuildEvent(event.getPlayer(), event);
+        Block block = event.getRightClicked().getLocation().getBlock();
+        checkBuildEvent(event.getPlayer(), block, event);
     }
 
     @EventHandler(priority = EventPriority.LOW)
     public void onPlayerInteractEntity(PlayerInteractAtEntityEvent event) {
-        checkBuildEvent(event.getPlayer(), event);
+        Block block = event.getRightClicked().getLocation().getBlock();
+        checkBuildEvent(event.getPlayer(), block, event);
     }
 
     @EventHandler(priority = EventPriority.LOW)
     public void onEntityChangeBlock(EntityChangeBlockEvent event) {
         if (event.getEntity() instanceof Player) {
-            checkBuildEvent((Player) event.getEntity(), event);
+            checkBuildEvent((Player) event.getEntity(), event.getBlock(), event);
         }
     }
 

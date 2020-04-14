@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -14,6 +15,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import lombok.Getter;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.MemoryConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -23,6 +25,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 @Getter
 public final class CreativePlugin extends JavaPlugin {
     private List<BuildWorld> buildWorlds;
+    Map<String, PlotWorld> plotWorlds = new LinkedHashMap<>();
     private Map<String, Warp> warps;
     private YamlConfiguration logoutLocations = null;
     private final WorldCommand worldCommand = new WorldCommand(this);
@@ -49,6 +52,7 @@ public final class CreativePlugin extends JavaPlugin {
         getCommand("wtp").setExecutor(new WTPCommand(this));
         getCommand("creativeadmin").setExecutor(new AdminCommand(this));
         getCommand("warp").setExecutor(new WarpCommand(this));
+        getCommand("plot").setExecutor(new PlotCommand(this));
         getServer().getPluginManager().registerEvents(new CreativeListener(this), this);
         for (Player player: getServer().getOnlinePlayers()) {
             permission.updatePermissions(player);
@@ -56,6 +60,7 @@ public final class CreativePlugin extends JavaPlugin {
         getBuildWorlds();
         worldEditListener.enable();
         vault.setup();
+        loadPlotWorlds();
     }
 
     @Override
@@ -75,6 +80,7 @@ public final class CreativePlugin extends JavaPlugin {
         logoutLocations = null;
         permission.reload();
         worldCommand.load();
+        loadPlotWorlds();
     }
 
     // Build Worlds
@@ -238,5 +244,34 @@ public final class CreativePlugin extends JavaPlugin {
 
     Meta metaOf(Player player) {
         return metadata.get(player, "creative:meta", Meta.class, Meta::new);
+    }
+
+    void loadPlotWorlds() {
+        plotWorlds.clear();
+        File dir = new File(getDataFolder(), "plots");
+        if (!dir.exists()) return;
+        for (File file : dir.listFiles()) {
+            String name = file.getName();
+            if (!name.endsWith(".yml")) continue;
+            name = name.substring(0, name.length() - 4);
+            ConfigurationSection cnf = YamlConfiguration.loadConfiguration(file);
+            PlotWorld plotWorld = new PlotWorld(name);
+            plotWorld.load(cnf);
+            plotWorlds.put(name, plotWorld);
+        }
+    }
+
+    boolean isPlotWorld(World world) {
+        return plotWorlds.containsKey(world.getName());
+    }
+
+    boolean canBuildInPlot(Player player, Block block) {
+        PlotWorld plotWorld = plotWorlds.get(block.getWorld().getName());
+        if (plotWorld == null) return false;
+        return plotWorld.canBuild(player, block);
+    }
+
+    PlotWorld getPlotWorld(World world) {
+        return plotWorlds.get(world.getName());
     }
 }

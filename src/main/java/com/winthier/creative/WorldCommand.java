@@ -144,7 +144,7 @@ final class WorldCommand implements TabExecutor {
         case "rename":
             renameCommand(player, args);
             break;
-        case "gamemode": case "gm":
+        case "gamemode":
             gamemodeCommand(player, args);
             break;
         case "set": {
@@ -671,8 +671,8 @@ final class WorldCommand implements TabExecutor {
                          "Get or set world difficulty",
                          "/world difficulty ");
             break;
-        case "gamemode": case "gm":
-            commandUsage(player, "gamemode|gm", "<mode>", "Change your GameMode",
+        case "gamemode":
+            commandUsage(player, "gamemode", "<mode>", "Change your GameMode",
                          "/world gamemode ");
             break;
         case "trust":
@@ -719,7 +719,7 @@ final class WorldCommand implements TabExecutor {
             usage(player, "setspawn");
             usage(player, "time");
             usage(player, "difficulty");
-            usage(player, "gamemode|gm");
+            usage(player, "gamemode");
             usage(player, "trust");
             if (buildWorld.isWorldEdit()) {
                 usage(player, "wetrust");

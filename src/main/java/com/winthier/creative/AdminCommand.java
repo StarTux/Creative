@@ -10,6 +10,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.WorldCreator;
 import org.bukkit.WorldType;
+import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -49,6 +50,7 @@ final class AdminCommand implements CommandExecutor {
         case "warp": return warpCommand(sender, argl);
         case "setwarp": return setWarpCommand(sender, argl);
         case "deletewarp": return deleteWarpCommand(sender, argl);
+        case "debugplot": return debugPlotCommand(sender, argl);
         default: return false;
         }
     }
@@ -613,6 +615,21 @@ final class AdminCommand implements CommandExecutor {
         } else {
             sender.sendMessage("Warp not found: " + name);
         }
+        return true;
+    }
+
+    boolean debugPlotCommand(CommandSender sender, String[] args) {
+        Player player = sender instanceof Player
+            ? (Player) sender
+            : null;
+        if (player == null) return false;
+        Block block = player.getLocation().getBlock();
+        PlotWorld plotWorld = plugin.getPlotWorld(block.getWorld());
+        if (plotWorld == null) {
+            player.sendMessage("No plot world!");
+            return true;
+        }
+        player.sendMessage(Msg.toString(block) + ": " + plotWorld.debug(block));
         return true;
     }
 }

@@ -17,7 +17,7 @@ commands:
       /world info - Get world info
       /world spawn - Teleport to spawn
       /world setspawn - Set world spawn
-      /world rename - Rename world
+      /world rename <name> - Rename world
       /world time [time] - Get or set the world time
       /world difficulty [difficulty] - Difficulty setting
       /world gamemode <gamemode> - Change your GameMode
@@ -65,6 +65,13 @@ commands:
     permission: creative.warp
     usage: |-
       /warp [name]
+  plot:
+    aliases: [plots]
+    description: Plot interface
+    permission: creative.world
+    usage: |-
+      /plot list - List your plots
+      /plot warp <id> - Warp to plot
 permissions:
   creative.world:
     descrption: Use /world and /wtp
