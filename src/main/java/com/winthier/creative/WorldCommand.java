@@ -213,7 +213,7 @@ final class WorldCommand implements TabExecutor {
         String path;
         int suffix = 1;
         do {
-            path = String.format("%s%03d", base, suffix++);
+            path = String.format("%s-%03d", base, suffix++);
         } while (plugin.getBuildWorldByPath(path) != null);
         plugin.getLogger().info("New world for " + base + ": " + path);
         if (!plugin.vault.take(player, price)) {
@@ -229,9 +229,9 @@ final class WorldCommand implements TabExecutor {
         buildWorld.getWorldConfig().set("world.Seed", 0);
         buildWorld.getWorldConfig().set("world.WorldType", WorldType.FLAT.name());
         buildWorld.getWorldConfig().set("world.Environment", World.Environment.NORMAL.name());
-        buildWorld.getWorldConfig().set("world.SpawnLocation.x", 0);
+        buildWorld.getWorldConfig().set("world.SpawnLocation.x", 256);
         buildWorld.getWorldConfig().set("world.SpawnLocation.y", 5);
-        buildWorld.getWorldConfig().set("world.SpawnLocation.z", 0);
+        buildWorld.getWorldConfig().set("world.SpawnLocation.z", 256);
         buildWorld.getWorldConfig().set("world.SpawnLocation.pitch", 0);
         buildWorld.getWorldConfig().set("world.SpawnLocation.yaw", 0);
         buildWorld.saveWorldConfig();
