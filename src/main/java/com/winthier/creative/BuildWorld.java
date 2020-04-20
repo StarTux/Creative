@@ -41,6 +41,8 @@ final class BuildWorld {
     private boolean redstone = true;
     private boolean physics = false;
     // World Border
+    private int centerX = 0;
+    private int centerZ = 0;
     private long size = -1;
 
     public static final Comparator<BuildWorld> NAME_SORT = new Comparator<BuildWorld>() {
@@ -146,7 +148,7 @@ final class BuildWorld {
         result.setGameRuleValue("doFireTick", "0");
         WorldBorder border = result.getWorldBorder();
         if (size > 0) {
-            border.setCenter(0, 0);
+            border.setCenter(centerX, centerZ);
             border.setSize((double) size);
         }
         if (getWorldConfig().isConfigurationSection("world.SpawnLocation")) {
@@ -238,6 +240,10 @@ final class BuildWorld {
         result.put("CommandBlocks", commandBlocks);
         result.put("Piston", piston);
         result.put("Redstone", redstone);
+        result.put("Physics", physics);
+        result.put("centerX", centerX);
+        result.put("centerZ", centerZ);
+        result.put("size", size);
         return result;
     }
 
@@ -263,6 +269,7 @@ final class BuildWorld {
         result.commandBlocks = config.getBoolean("CommandBlocks", result.commandBlocks);
         result.piston = config.getBoolean("Piston", result.piston);
         result.redstone = config.getBoolean("Redstone", result.redstone);
+        result.physics = config.getBoolean("Physics", result.physics);
         return result;
     }
 }

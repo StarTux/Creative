@@ -222,6 +222,8 @@ final class WorldCommand implements TabExecutor {
         }
         BuildWorld buildWorld = new BuildWorld(base, path, Builder.of(player));
         buildWorld.setSize(size);
+        buildWorld.setCenterX(255);
+        buildWorld.setCenterZ(255);
         plugin.getBuildWorlds().add(buildWorld);
         plugin.saveBuildWorlds();
         buildWorld.getWorldConfig().set("world.Seed", 0);
