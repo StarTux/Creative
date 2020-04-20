@@ -229,7 +229,7 @@ final class WorldCommand implements TabExecutor {
         buildWorld.getWorldConfig().set("world.Seed", 0);
         buildWorld.getWorldConfig().set("world.WorldType", WorldType.FLAT.name());
         buildWorld.getWorldConfig().set("world.Environment", World.Environment.NORMAL.name());
-        buildWorld.getWorldConfig().set("world.GenerateStructures", "false");
+        buildWorld.getWorldConfig().set("world.GenerateStructures", false);
         buildWorld.getWorldConfig().set("world.SpawnLocation.x", 256);
         buildWorld.getWorldConfig().set("world.SpawnLocation.y", 5);
         buildWorld.getWorldConfig().set("world.SpawnLocation.z", 256);
@@ -238,7 +238,7 @@ final class WorldCommand implements TabExecutor {
         buildWorld.saveWorldConfig();
         player.sendMessage("Bought a world for "
                            + ChatColor.GREEN + plugin.vault.format(price)
-                           + ChatColor.WHITE + "!");
+                           + ChatColor.WHITE + ". Please wait...");
         World world = buildWorld.loadWorld();
         buildWorld.teleportToSpawn(player);
     }
