@@ -99,6 +99,8 @@ final class AdminCommand implements CommandExecutor {
         sender.sendMessage("CommandBlocks: " + buildWorld.isCommandBlocks());
         sender.sendMessage("Piston: " + buildWorld.isPiston());
         sender.sendMessage("Redstone: " + buildWorld.isRedstone());
+        sender.sendMessage("Size: " + buildWorld.getSize());
+        sender.sendMessage("Center: " + buildWorld.getCenterX() + "," + buildWorld.getCenterZ());
         return true;
     }
 
