@@ -30,6 +30,7 @@ final class BuildWorld {
     private final Map<UUID, Trusted> trusted = new HashMap<>();
     private Trust publicTrust = Trust.NONE;
     private YamlConfiguration worldConfig = null;
+    // World Feature Settings
     private boolean voxelSniper = false;
     private boolean worldEdit = false;
     private boolean explosion = false;
@@ -38,6 +39,8 @@ final class BuildWorld {
     private boolean commandBlocks = false;
     private boolean piston = false;
     private boolean redstone = true;
+    private boolean physics = false;
+    // World Border
     private long size = -1;
 
     public static final Comparator<BuildWorld> NAME_SORT = new Comparator<BuildWorld>() {
