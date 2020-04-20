@@ -241,9 +241,9 @@ final class BuildWorld {
         result.put("Piston", piston);
         result.put("Redstone", redstone);
         result.put("Physics", physics);
-        result.put("centerX", centerX);
-        result.put("centerZ", centerZ);
-        result.put("size", size);
+        result.put("Size", size);
+        result.put("CenterX", centerX);
+        result.put("CenterZ", centerZ);
         return result;
     }
 
@@ -270,6 +270,9 @@ final class BuildWorld {
         result.piston = config.getBoolean("Piston", result.piston);
         result.redstone = config.getBoolean("Redstone", result.redstone);
         result.physics = config.getBoolean("Physics", result.physics);
+        result.size = config.getLong("Size", result.size);
+        result.centerX = config.getInt("CenterX", result.centerX);
+        result.centerZ = config.getInt("CenterZ", result.centerZ);
         return result;
     }
 }
