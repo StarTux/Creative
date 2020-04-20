@@ -37,24 +37,8 @@ final class Permission {
                 }
             }
         }
-        if (player.hasPermission("creative.Dangerous")) {
+        if (player.hasPermission("creative.dangerous")) {
             for (String perm: getPermissionsFile().getStringList("Dangerous")) {
-                givePermission(player, perm);
-            }
-        }
-        // Special permissions for explicit trust, NOT including public trust
-        Trusted explicitTrusted = buildWorld.getTrusted().get(player.getUniqueId());
-        Trust explicitTrust = explicitTrusted == null ? null : explicitTrusted.getTrust();
-        if (trust.isOwner() || (explicitTrust != null && explicitTrust.canUseWorldEdit())) {
-            for (String perm: getPermissionsFile().getStringList("WorldEdit")) {
-                givePermission(player, perm);
-            }
-            if (buildWorld.isVoxelSniper()) {
-                for (String perm: getPermissionsFile().getStringList("VoxelSniper")) {
-                    givePermission(player, perm);
-                }
-            }
-            for (String perm: getPermissionsFile().getStringList("ExplicitWorldEdit")) {
                 givePermission(player, perm);
             }
         }
