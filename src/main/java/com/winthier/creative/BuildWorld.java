@@ -39,7 +39,6 @@ final class BuildWorld {
     private boolean commandBlocks = false;
     private boolean piston = false;
     private boolean redstone = true;
-    private boolean physics = false;
     // World Border
     private int centerX = 0;
     private int centerZ = 0;
@@ -240,7 +239,6 @@ final class BuildWorld {
         result.put("CommandBlocks", commandBlocks);
         result.put("Piston", piston);
         result.put("Redstone", redstone);
-        result.put("Physics", physics);
         result.put("Size", size);
         result.put("CenterX", centerX);
         result.put("CenterZ", centerZ);
@@ -269,7 +267,6 @@ final class BuildWorld {
         result.commandBlocks = config.getBoolean("CommandBlocks", result.commandBlocks);
         result.piston = config.getBoolean("Piston", result.piston);
         result.redstone = config.getBoolean("Redstone", result.redstone);
-        result.physics = config.getBoolean("Physics", result.physics);
         result.size = config.getLong("Size", result.size);
         result.centerX = config.getInt("CenterX", result.centerX);
         result.centerZ = config.getInt("CenterZ", result.centerZ);

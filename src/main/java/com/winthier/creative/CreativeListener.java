@@ -19,7 +19,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
-import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.block.BlockPistonExtendEvent;
 import org.bukkit.event.block.BlockPistonRetractEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -284,16 +283,16 @@ public final class CreativeListener implements Listener {
         }
     }
 
-    // @EventHandler
-    // public void onBlockRedstone(BlockRedstoneEvent event) {
-    //     BuildWorld buildWorld = plugin
-    //         .getBuildWorldByWorld(event.getBlock().getWorld());
-    //     if (buildWorld == null) return;
-    //     if (!buildWorld.isRedstone()) {
-    //         event.setNewCurrent(event.getOldCurrent());
-    //         return;
-    //     }
-    // }
+    @EventHandler
+    public void onBlockRedstone(BlockRedstoneEvent event) {
+        BuildWorld buildWorld = plugin
+            .getBuildWorldByWorld(event.getBlock().getWorld());
+        if (buildWorld == null) return;
+        if (!buildWorld.isRedstone()) {
+            event.setNewCurrent(event.getOldCurrent());
+            return;
+        }
+    }
 
     @EventHandler
     public void onEntitySpawn(EntitySpawnEvent event) {
@@ -307,15 +306,6 @@ public final class CreativeListener implements Listener {
 
     @EventHandler
     public void onFireworkExplode(FireworkExplodeEvent event) {
-        event.setCancelled(true);
-    }
-
-    @EventHandler
-    public void onBlockPhysics(BlockPhysicsEvent event) {
-        BuildWorld buildWorld = plugin
-            .getBuildWorldByWorld(event.getBlock().getWorld());
-        if (buildWorld == null) return;
-        if (buildWorld.isPhysics()) return;
         event.setCancelled(true);
     }
 }
