@@ -284,16 +284,16 @@ public final class CreativeListener implements Listener {
         }
     }
 
-    @EventHandler
-    public void onBlockRedstone(BlockRedstoneEvent event) {
-        BuildWorld buildWorld = plugin
-            .getBuildWorldByWorld(event.getBlock().getWorld());
-        if (buildWorld == null) return;
-        if (!buildWorld.isRedstone()) {
-            event.setNewCurrent(event.getOldCurrent());
-            return;
-        }
-    }
+    // @EventHandler
+    // public void onBlockRedstone(BlockRedstoneEvent event) {
+    //     BuildWorld buildWorld = plugin
+    //         .getBuildWorldByWorld(event.getBlock().getWorld());
+    //     if (buildWorld == null) return;
+    //     if (!buildWorld.isRedstone()) {
+    //         event.setNewCurrent(event.getOldCurrent());
+    //         return;
+    //     }
+    // }
 
     @EventHandler
     public void onEntitySpawn(EntitySpawnEvent event) {
