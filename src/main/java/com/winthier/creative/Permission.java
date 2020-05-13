@@ -25,13 +25,13 @@ final class Permission {
                 givePermission(player, perm);
             }
         }
-        if (buildWorld.isWorldEdit()
+        if (buildWorld.isSet(BuildWorld.Flag.WORLD_EDIT)
             && trust.canUseWorldEdit()
             && player.hasPermission("creative.worldedit")) {
             for (String perm: getPermissionsFile().getStringList("WorldEdit")) {
                 givePermission(player, perm);
             }
-            if (buildWorld.isVoxelSniper()) {
+            if (buildWorld.isSet(BuildWorld.Flag.VOXEL_SNIPER)) {
                 for (String perm: getPermissionsFile().getStringList("VoxelSniper")) {
                     givePermission(player, perm);
                 }

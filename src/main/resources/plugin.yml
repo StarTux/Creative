@@ -15,6 +15,8 @@ commands:
       /world list - List your worlds
       /world visit - List worlds you can join
       /world info - Get world info
+      /world buy - Buy a world
+      /world unlock - Unlock world features
       /world spawn - Teleport to spawn
       /world setspawn - Set world spawn
       /world rename <name> - Rename world

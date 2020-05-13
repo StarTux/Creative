@@ -92,13 +92,9 @@ final class AdminCommand implements CommandExecutor {
                                 + "=" + trusted.getTrust().nice())
                            .collect(Collectors.joining(" ")));
         sender.sendMessage("Public Trust: " + buildWorld.getPublicTrust());
-        sender.sendMessage("VoxelSniper: " + buildWorld.isVoxelSniper());
-        sender.sendMessage("Explosion: " + buildWorld.isExplosion());
-        sender.sendMessage("LeafDecay: " + buildWorld.isLeafDecay());
-        sender.sendMessage("KeepInMemory: " + buildWorld.isKeepInMemory());
-        sender.sendMessage("CommandBlocks: " + buildWorld.isCommandBlocks());
-        sender.sendMessage("Piston: " + buildWorld.isPiston());
-        sender.sendMessage("Redstone: " + buildWorld.isRedstone());
+        for (BuildWorld.Flag flag : BuildWorld.Flag.values()) {
+            sender.sendMessage(flag.key + ": " + buildWorld.isSet(flag));
+        }
         sender.sendMessage("Size: " + buildWorld.getSize());
         sender.sendMessage("Center: " + buildWorld.getCenterX() + "," + buildWorld.getCenterZ());
         return true;
@@ -142,39 +138,13 @@ final class AdminCommand implements CommandExecutor {
             sender.sendMessage("Unknown value: " + value);
             return true;
         }
-        switch (key.toLowerCase()) {
-        case "voxelsniper":
-            buildWorld.setVoxelSniper(newValue);
-            sender.sendMessage("Set VoxelSniper=" + buildWorld.isVoxelSniper());
-            break;
-        case "explosion":
-            buildWorld.setExplosion(newValue);
-            sender.sendMessage("Set Explosion=" + buildWorld.isExplosion());
-            break;
-        case "leafdecay":
-            buildWorld.setLeafDecay(newValue);
-            sender.sendMessage("Set LeafDecay=" + buildWorld.isLeafDecay());
-            break;
-        case "keepinmemory":
-            buildWorld.setKeepInMemory(newValue);
-            sender.sendMessage("Set KeepInMemory=" + buildWorld.isKeepInMemory());
-            break;
-        case "commandblocks":
-            buildWorld.setCommandBlocks(newValue);
-            sender.sendMessage("Set CommandBlocks=" + buildWorld.isCommandBlocks());
-            break;
-        case "piston":
-            buildWorld.setPiston(newValue);
-            sender.sendMessage("Set Piston=" + buildWorld.isPiston());
-            break;
-        case "redstone":
-            buildWorld.setRedstone(newValue);
-            sender.sendMessage("Set Redstone=" + buildWorld.isRedstone());
-            break;
-        default:
-            sender.sendMessage("Unknown settings: " + key);
+        BuildWorld.Flag flag = BuildWorld.Flag.of(key);
+        if (key == null) {
+            player.sendMessage(ChatColor.RED + "Invalid flag: " + key);
             return true;
         }
+        buildWorld.set(flag, newValue);
+        sender.sendMessage(flag.key + " set to " + newValue);
         plugin.saveBuildWorlds();
         return true;
     }
@@ -457,6 +427,10 @@ final class AdminCommand implements CommandExecutor {
         if (name == null) name = path;
         if (path == null) {
             sender.sendMessage("Path missing!");
+            return true;
+        }
+        if (!path.matches("[a-z0-9/._-]+")) {
+            sender.sendMessage("Invalid path name: " + path);
             return true;
         }
         if (plugin.getBuildWorldByPath(path) != null) {

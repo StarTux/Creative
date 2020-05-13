@@ -105,7 +105,7 @@ public final class CreativeListener implements Listener {
         if (!plugin.isEnabled()) return;
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(world);
         if (buildWorld == null) return;
-        if (buildWorld.isKeepInMemory()) return;
+        if (buildWorld.isSet(BuildWorld.Flag.KEEP_IN_MEMORY)) return;
         final String name = world.getName();
         new BukkitRunnable() {
             @Override public void run() {
@@ -185,7 +185,7 @@ public final class CreativeListener implements Listener {
     public void onEntityExplode(EntityExplodeEvent event) {
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getEntity().getWorld());
         if (buildWorld == null) return;
-        if (!buildWorld.isExplosion()) {
+        if (!buildWorld.isSet(BuildWorld.Flag.EXPLOSION)) {
             event.setCancelled(true);
             event.blockList().clear();
         }
@@ -195,7 +195,7 @@ public final class CreativeListener implements Listener {
     public void onBlockExplode(BlockExplodeEvent event) {
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getBlock().getWorld());
         if (buildWorld == null) return;
-        if (!buildWorld.isExplosion()) {
+        if (!buildWorld.isSet(BuildWorld.Flag.EXPLOSION)) {
             event.setCancelled(true);
             event.blockList().clear();
         }
@@ -205,7 +205,7 @@ public final class CreativeListener implements Listener {
     public void onLeavesDecay(LeavesDecayEvent event) {
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getBlock().getWorld());
         if (buildWorld == null) return;
-        if (!buildWorld.isLeafDecay()) {
+        if (!buildWorld.isSet(BuildWorld.Flag.LEAF_DECAY)) {
             event.setCancelled(true);
         }
     }
@@ -239,13 +239,14 @@ public final class CreativeListener implements Listener {
         }
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(block.getWorld());
         if (buildWorld == null) return;
-        plugin.getLogger().info("CommandBlock at " + block.getWorld().getName()
-                                + " " + block.getX()
-                                + " " + block.getY()
-                                + " " + block.getZ()
-                                + " permitted=" + buildWorld.isCommandBlocks()
-                                + " command=" + event.getCommand());
-        if (!buildWorld.isCommandBlocks()) {
+        String msg = "CommandBlock at " + block.getWorld().getName()
+            + " " + block.getX()
+            + " " + block.getY()
+            + " " + block.getZ()
+            + " permitted=" + buildWorld.isSet(BuildWorld.Flag.COMMAND_BLOCKS)
+            + " command=" + event.getCommand();
+        plugin.getLogger().info(msg);
+        if (!buildWorld.isSet(BuildWorld.Flag.COMMAND_BLOCKS)) {
             event.setCancelled(true);
         }
     }
@@ -266,7 +267,7 @@ public final class CreativeListener implements Listener {
         BuildWorld buildWorld = plugin
             .getBuildWorldByWorld(event.getBlock().getWorld());
         if (buildWorld == null) return;
-        if (!buildWorld.isPiston()) {
+        if (!buildWorld.isSet(BuildWorld.Flag.PISTON)) {
             event.setCancelled(true);
             return;
         }
@@ -277,7 +278,7 @@ public final class CreativeListener implements Listener {
         BuildWorld buildWorld = plugin
             .getBuildWorldByWorld(event.getBlock().getWorld());
         if (buildWorld == null) return;
-        if (!buildWorld.isPiston()) {
+        if (!buildWorld.isSet(BuildWorld.Flag.PISTON)) {
             event.setCancelled(true);
             return;
         }
@@ -288,7 +289,7 @@ public final class CreativeListener implements Listener {
         BuildWorld buildWorld = plugin
             .getBuildWorldByWorld(event.getBlock().getWorld());
         if (buildWorld == null) return;
-        if (!buildWorld.isRedstone()) {
+        if (!buildWorld.isSet(BuildWorld.Flag.REDSTONE)) {
             event.setNewCurrent(event.getOldCurrent());
             return;
         }

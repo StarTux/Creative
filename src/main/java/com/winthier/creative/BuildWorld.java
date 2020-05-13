@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -30,15 +31,7 @@ final class BuildWorld {
     private final Map<UUID, Trusted> trusted = new HashMap<>();
     private Trust publicTrust = Trust.NONE;
     private YamlConfiguration worldConfig = null;
-    // World Feature Settings
-    private boolean voxelSniper = false;
-    private boolean worldEdit = false;
-    private boolean explosion = false;
-    private boolean leafDecay = false;
-    private boolean keepInMemory = false;
-    private boolean commandBlocks = false;
-    private boolean piston = false;
-    private boolean redstone = true;
+    Map<Flag, Boolean> flags = new EnumMap<>(Flag.class);
     // World Border
     private int centerX = 0;
     private int centerZ = 0;
@@ -54,6 +47,42 @@ final class BuildWorld {
         this.name = name;
         this.path = path;
         this.owner = owner;
+        for (Flag flag : Flag.values()) {
+            flags.put(flag, flag.defaultValue);
+        }
+    }
+
+    enum Flag {
+        VOXEL_SNIPER("VoxelSniper", false, -1),
+        WORLD_EDIT("WorldEdit", false, 1000),
+        EXPLOSION("Explosion", false, 0),
+        LEAF_DECAY("LeafDecay", false, 0),
+        KEEP_IN_MEMORY("KeepInMemory", false, -1),
+        COMMAND_BLOCKS("CommandBlocks", false, -1),
+        PISTON("Piston", true, 0),
+        REDSTONE("Redstone", true, 0);
+
+        public final String key;
+        public final boolean defaultValue;
+        public final double price;
+
+        Flag(final String key, final boolean defaultValue, final double price) {
+            this.key = key;
+            this.defaultValue = defaultValue;
+            this.price = price;
+        }
+
+        boolean userCanEdit() {
+            return price >= 0;
+        }
+
+        static Flag of(String in) {
+            for (Flag flag : Flag.values()) {
+                if (in.equalsIgnoreCase(flag.key)) return flag;
+                if (in.equalsIgnoreCase(flag.name())) return flag;
+            }
+            return null;
+        }
     }
 
     CreativePlugin getPlugin() {
@@ -231,14 +260,9 @@ final class BuildWorld {
         for (Map.Entry<UUID, Trusted> e: this.trusted.entrySet()) {
             trustedMap.put(e.getKey().toString(), e.getValue().serialize());
         }
-        result.put("WorldEdit", worldEdit);
-        result.put("VoxelSniper", voxelSniper);
-        result.put("Explosion", explosion);
-        result.put("LeafDecay", leafDecay);
-        result.put("KeepInMemory", keepInMemory);
-        result.put("CommandBlocks", commandBlocks);
-        result.put("Piston", piston);
-        result.put("Redstone", redstone);
+        for (Flag flag : Flag.values()) {
+            result.put(flag.key, flags.get(flag));
+        }
         result.put("Size", size);
         result.put("CenterX", centerX);
         result.put("CenterZ", centerZ);
@@ -259,17 +283,20 @@ final class BuildWorld {
             }
         }
         result.publicTrust = Trust.of(config.getString("publicTrust", "NONE"));
-        result.worldEdit = config.getBoolean("WorldEdit", result.worldEdit);
-        result.voxelSniper = config.getBoolean("VoxelSniper", result.voxelSniper);
-        result.explosion = config.getBoolean("Explosion", result.explosion);
-        result.leafDecay = config.getBoolean("LeafDecay", result.leafDecay);
-        result.keepInMemory = config.getBoolean("KeepInMemory", result.keepInMemory);
-        result.commandBlocks = config.getBoolean("CommandBlocks", result.commandBlocks);
-        result.piston = config.getBoolean("Piston", result.piston);
-        result.redstone = config.getBoolean("Redstone", result.redstone);
+        for (Flag flag : Flag.values()) {
+            result.flags.put(flag, config.getBoolean(flag.key, flag.defaultValue));
+        }
         result.size = config.getLong("Size", result.size);
         result.centerX = config.getInt("CenterX", result.centerX);
         result.centerZ = config.getInt("CenterZ", result.centerZ);
         return result;
+    }
+
+    public boolean isSet(Flag flag) {
+        return flags.get(flag);
+    }
+
+    public void set(Flag flag, boolean value) {
+        flags.put(flag, value);
     }
 }

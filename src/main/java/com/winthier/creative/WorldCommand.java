@@ -67,7 +67,11 @@ final class WorldCommand implements TabExecutor {
             return true;
         }
         try {
-            onCommand(player, cmd, Arrays.copyOfRange(args, 1, args.length));
+            boolean res = onCommand(player, cmd, Arrays.copyOfRange(args, 1, args.length));
+            if (!res) {
+                usage(player, cmd);
+                return true;
+            }
         } catch (Wrong ce) {
             if (ce.usage) {
                 usage(player, cmd);
@@ -78,7 +82,7 @@ final class WorldCommand implements TabExecutor {
         return true;
     }
 
-    void onCommand(Player player, @NonNull String cmd, String[] args) throws Wrong {
+    boolean onCommand(Player player, @NonNull String cmd, String[] args) throws Wrong {
         switch (cmd) {
         case "tp":
             if (args.length != 1) Wrong.usage();
@@ -161,6 +165,7 @@ final class WorldCommand implements TabExecutor {
         case "buy":
             buyCommand(player, args);
             break;
+        case "unlock": return unlockCommand(player, args);
         case "confirm":
             confirmCommand(player, args);
             break;
@@ -170,6 +175,7 @@ final class WorldCommand implements TabExecutor {
         default:
             Wrong.usage();
         }
+        return true;
     }
 
     void confirm(Player player, String code, Runnable callback) {
@@ -188,7 +194,7 @@ final class WorldCommand implements TabExecutor {
                                 "/world cancel " + code));
         cb.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
                                 Msg.lore(ChatColor.RED + "Cancel")));
-        player.spigot().sendMessage(cb.create());
+        player.sendMessage(cb.create());
     }
 
     /**
@@ -209,7 +215,7 @@ final class WorldCommand implements TabExecutor {
      * Callback for /world buy, then /world confirm.
      */
     void confirmBuy(Player player, double price, long size) {
-        String base = player.getName();
+        String base = player.getName().toLowerCase();
         String path;
         int suffix = 1;
         do {
@@ -241,6 +247,21 @@ final class WorldCommand implements TabExecutor {
                            + ChatColor.WHITE + ". Please wait...");
         World world = buildWorld.loadWorld();
         buildWorld.teleportToSpawn(player);
+    }
+
+    void confirmUnlock(Player player, BuildWorld buildWorld, BuildWorld.Flag flag) {
+        if (flag.price == 0) return;
+        if (buildWorld.isSet(flag)) return;
+        if (!plugin.vault.take(player, flag.price)) {
+            player.sendMessage("You don't have enough money");
+            return;
+        }
+        buildWorld.set(flag, true);
+        plugin.saveBuildWorlds();
+        plugin.getPermission().updatePermissions(buildWorld.getWorld());
+        Msg.info(player, "Unlocked " + flag.key + " for "
+                 + ChatColor.GREEN + plugin.vault.format(flag.price)
+                 + ChatColor.WHITE + ".");
     }
 
     List<String> filterStartsWith(String term, List<String> in) {
@@ -589,9 +610,91 @@ final class WorldCommand implements TabExecutor {
         cb.append(" flat world for ").color(ChatColor.WHITE);
         cb.append(plugin.vault.format(price)).color(ChatColor.GREEN);
         cb.append("?").color(ChatColor.WHITE);
-        player.spigot().sendMessage(cb.create());
+        player.sendMessage(cb.create());
         String code = randomString();
         confirm(player, code, () -> confirmBuy(player, price, size));
+    }
+
+    boolean unlockCommand(Player player, String[] args) throws Wrong {
+        BuildWorld buildWorld = plugin.getBuildWorldByWorld(player.getWorld());
+        UUID uuid = player.getUniqueId();
+        if (buildWorld == null || !buildWorld.getTrust(uuid).isOwner()) {
+            throw new Wrong("You cannot unlock features in this world.");
+        }
+        if (args.length == 0) {
+            sendWorldFeatures(player, buildWorld);
+            return true;
+        }
+        BuildWorld.Flag flag = BuildWorld.Flag.of(args[0]);
+        if (flag == null || !flag.userCanEdit()) {
+            throw new Wrong("Unknown flag: " + args[0]);
+        }
+        if (args.length == 1) {
+            if (flag.price == 0) throw new Wrong("Cannot unlock");
+            if (buildWorld.isSet(flag)) throw new Wrong("Already unlocked");
+            ComponentBuilder cb = Msg.componentBuilder();
+            cb.append("Unlock ").color(ChatColor.WHITE);
+            cb.append(flag.key).color(ChatColor.GREEN);
+            cb.append("  for ").color(ChatColor.WHITE);
+            cb.append(plugin.vault.format(flag.price)).color(ChatColor.GREEN);
+            cb.append("?").color(ChatColor.WHITE);
+            player.sendMessage(cb.create());
+            String code = randomString();
+            confirm(player, code, () -> confirmUnlock(player, buildWorld, flag));
+        } else if (args.length == 2) {
+            boolean newValue = args[1].equals("on") ? true : false;
+            if (buildWorld.isSet(flag) == newValue) {
+                throw new Wrong("Already " + (newValue ? "enabled" : "disabled"));
+            }
+            buildWorld.set(flag, newValue);
+            plugin.saveBuildWorlds();
+            sendWorldFeatures(player, buildWorld);
+            Msg.info(player, flag.key + " " + (newValue ? "enabled" : "disabled"));
+            plugin.getPermission().updatePermissions(buildWorld.getWorld());
+        } else {
+            return false;
+        }
+        return true;
+    }
+
+    void sendWorldFeatures(Player player, BuildWorld buildWorld) {
+        player.sendMessage("");
+        final String line = "  "
+            + ChatColor.GRAY + ChatColor.STRIKETHROUGH + "      "
+            + ChatColor.RESET + "  ";
+        player.sendMessage(line
+                           + ChatColor.RESET + ChatColor.BOLD + "World Features"
+                           + line);
+        for (BuildWorld.Flag flag : BuildWorld.Flag.values()) {
+            if (!flag.userCanEdit()) continue;
+            boolean enabled = buildWorld.isSet(flag);
+            ComponentBuilder cb = new ComponentBuilder();
+            if (flag.price == 0) {
+                cb.append("[ON]").color(enabled ? ChatColor.GREEN : ChatColor.DARK_GRAY);
+                String cmd;
+                cmd = "/world unlock " + flag.key + " on";
+                cb.event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, cmd));
+                cb.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Msg.lore(cmd)));
+                cb.append(" ").reset();
+                cb.append("[OFF]").color(!enabled ? ChatColor.RED : ChatColor.DARK_GRAY);
+                cmd = "/world unlock " + flag.key + " off";
+                cb.event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, cmd));
+                cb.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Msg.lore(cmd)));
+            } else {
+                if (enabled) {
+                    cb.append("[UNLOCKED]").color(ChatColor.DARK_GRAY);
+                } else {
+                    cb.append("[UNLOCK]").color(ChatColor.GREEN);
+                    String cmd = "/world unlock " + flag.key;
+                    cb.event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, cmd));
+                    cb.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Msg.lore(cmd)));
+                }
+            }
+            cb.append(" ").reset();
+            cb.append(flag.key).color(enabled ? ChatColor.YELLOW : ChatColor.WHITE);
+            player.sendMessage(cb.create());
+        }
+        player.sendMessage("");
     }
 
     void confirmCommand(Player player, String[] args) {
@@ -648,7 +751,10 @@ final class WorldCommand implements TabExecutor {
             commandUsage(player, "info", null, "Get world info", "/world info");
             break;
         case "buy":
-            commandUsage(player, "buy", null, "Buy a world.", "/world buy");
+            commandUsage(player, "buy", null, "Buy a world", "/world buy");
+            break;
+        case "unlock":
+            commandUsage(player, "unlock", null, "Unlock world features", "/world unlock");
             break;
         case "rename": {
             BuildWorld buildWorld = plugin.getBuildWorldByWorld(player.getWorld());
@@ -718,13 +824,14 @@ final class WorldCommand implements TabExecutor {
         usage(player, "buy");
         usage(player, "spawn");
         if (owner) {
+            usage(player, "unlock");
             usage(player, "rename");
             usage(player, "setspawn");
             usage(player, "time");
             usage(player, "difficulty");
             usage(player, "gamemode");
             usage(player, "trust");
-            if (buildWorld.isWorldEdit()) {
+            if (buildWorld.isSet(BuildWorld.Flag.WORLD_EDIT)) {
                 usage(player, "wetrust");
             }
             usage(player, "visittrust");

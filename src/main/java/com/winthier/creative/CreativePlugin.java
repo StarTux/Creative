@@ -95,7 +95,7 @@ public final class CreativePlugin extends JavaPlugin {
                 ConfigurationSection section = mem.createSection("tmp", map);
                 BuildWorld buildWorld = BuildWorld.deserialize(section);
                 buildWorlds.add(buildWorld);
-                if (buildWorld.isKeepInMemory()) buildWorld.loadWorld();
+                if (buildWorld.isSet(BuildWorld.Flag.KEEP_IN_MEMORY)) buildWorld.loadWorld();
             }
         }
         return buildWorlds;
