@@ -151,11 +151,13 @@ public final class CreativeListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOW)
     public void onPlayerInteract(PlayerInteractEvent event) {
-        if (event.getAction() == Action.PHYSICAL
-            && event.hasBlock()
-            && event.getClickedBlock().getType() == Material.FARMLAND) {
-            event.setCancelled(true);
-            return;
+        if (event.getAction() == Action.PHYSICAL && event.hasBlock()) {
+            // Turtle eggs, farmland, maybe more
+            Material mat = event.getClickedBlock().getType();
+            if (!mat.name().contains("PRESSURE_PLATE")) {
+                event.setCancelled(true);
+                return;
+            }
         }
         checkBuildEvent(event.getPlayer(), event.getClickedBlock(), event);
     }
