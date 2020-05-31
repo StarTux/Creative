@@ -146,6 +146,10 @@ final class AdminCommand implements CommandExecutor {
         buildWorld.set(flag, newValue);
         sender.sendMessage(flag.key + " set to " + newValue);
         plugin.saveBuildWorlds();
+        World bukkitWorld = buildWorld.getWorld();
+        if (bukkitWorld != null) {
+            plugin.getPermission().updatePermissions(bukkitWorld);
+        }
         return true;
     }
 
