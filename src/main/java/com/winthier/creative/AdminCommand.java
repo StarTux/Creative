@@ -43,7 +43,7 @@ final class AdminCommand implements CommandExecutor {
         case "resetowner": return resetOwnerCommand(sender, argl);
         case "setowner": return setOwnerCommand(sender, argl);
         case "create": return createCommand(sender, argl);
-        case "createvoid": return createCommand(sender, argl);
+        case "createvoid": return createVoidCommand(sender, argl);
         case "import": return importCommand(sender, argl);
         case "load": return loadCommand(sender, argl);
         case "unload": return unloadCommand(sender, argl);
