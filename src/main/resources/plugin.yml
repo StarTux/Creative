@@ -47,6 +47,7 @@ commands:
       /ca trust <world> <player> <trust>
       /ca resetowner <world>
       /ca setowner <world> <player>
+      /ca createvoid <name> [environment] - Create empty world
       /ca create
         n:name
         p:path

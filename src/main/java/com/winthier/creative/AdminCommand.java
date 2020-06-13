@@ -43,6 +43,7 @@ final class AdminCommand implements CommandExecutor {
         case "resetowner": return resetOwnerCommand(sender, argl);
         case "setowner": return setOwnerCommand(sender, argl);
         case "create": return createCommand(sender, argl);
+        case "createvoid": return createCommand(sender, argl);
         case "import": return importCommand(sender, argl);
         case "load": return loadCommand(sender, argl);
         case "unload": return unloadCommand(sender, argl);
@@ -427,14 +428,14 @@ final class AdminCommand implements CommandExecutor {
             default: break;
             }
         }
-        if (path == null) path = name;
+        if (path == null && name != null) path = name.toLowerCase();
         if (name == null) name = path;
         if (path == null) {
             sender.sendMessage("Path missing!");
             return true;
         }
-        if (!path.matches("[a-z0-9/._-]+")) {
-            sender.sendMessage("Invalid path name: " + path);
+        if (!path.matches("[a-z0-9_-]+")) {
+            sender.sendMessage("Invalid path name (must be lowercase): " + path);
             return true;
         }
         if (plugin.getBuildWorldByPath(path) != null) {
@@ -452,6 +453,46 @@ final class AdminCommand implements CommandExecutor {
         buildWorld.getWorldConfig().set("world.WorldType", worldType.name());
         buildWorld.getWorldConfig().set("world.Environment", environment.name());
         buildWorld.saveWorldConfig();
+        sender.sendMessage("World '" + path + "' created.");
+        return true;
+    }
+
+    boolean createVoidCommand(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player)) {
+            sender.sendMessage("Player expected");
+            return true;
+        }
+        Player player = (Player) sender;
+        if (args.length != 1 && args.length != 2) return false;
+        String name = args[0];
+        World.Environment environment = World.Environment.NORMAL;
+        if (args.length >= 2) {
+            String value = args[1];
+            try {
+                environment = World.Environment.valueOf(value.toUpperCase());
+            } catch (IllegalArgumentException iae) {
+                sender.sendMessage("Unknown environment: '" + value + "'");
+                return true;
+            }
+        }
+        String path = name.toLowerCase();
+        if (plugin.getBuildWorldByPath(path) != null) {
+            sender.sendMessage("World already exists: '" + path + "'");
+            return true;
+        }
+        BuildWorld buildWorld = new BuildWorld(name, path, Builder.of(player));
+        plugin.getBuildWorlds().add(buildWorld);
+        plugin.saveBuildWorlds();
+        // getWorldConfig() calls mkdirs()
+        buildWorld.getWorldConfig().set("world.Generator", "VoidGenerator");
+        buildWorld.getWorldConfig().set("world.GenerateStructures", "false");
+        buildWorld.getWorldConfig().set("world.GeneratorSettings", "");
+        buildWorld.getWorldConfig().set("world.Seed", 0L);
+        buildWorld.getWorldConfig().set("world.WorldType", WorldType.FLAT.name());
+        buildWorld.getWorldConfig().set("world.Environment", environment.name());
+        buildWorld.saveWorldConfig();
+        buildWorld.loadWorld();
+        buildWorld.teleportToSpawn(player);
         sender.sendMessage("World '" + path + "' created.");
         return true;
     }
