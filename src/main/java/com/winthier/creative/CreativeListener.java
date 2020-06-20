@@ -27,6 +27,7 @@ import org.bukkit.event.block.LeavesDecayEvent;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityPlaceEvent;
+import org.bukkit.event.entity.EntityPortalEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.entity.FireworkExplodeEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
@@ -36,6 +37,7 @@ import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -309,6 +311,16 @@ public final class CreativeListener implements Listener {
 
     @EventHandler
     public void onFireworkExplode(FireworkExplodeEvent event) {
+        event.setCancelled(true);
+    }
+
+    @EventHandler
+    void onPlayerPortal(PlayerPortalEvent event) {
+        event.setCancelled(true);
+    }
+
+    @EventHandler
+    void onEntityPortal(EntityPortalEvent event) {
         event.setCancelled(true);
     }
 }
