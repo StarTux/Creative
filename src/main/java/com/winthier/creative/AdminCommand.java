@@ -40,6 +40,7 @@ final class AdminCommand implements CommandExecutor {
         case "listloaded": return listLoadedCommand(sender, argl);
         case "tp": return tpCommand(sender, argl);
         case "remove": return removeCommand(sender, argl);
+        case "trust": return trustCommand(sender, argl);
         case "resetowner": return resetOwnerCommand(sender, argl);
         case "setowner": return setOwnerCommand(sender, argl);
         case "create": return createCommand(sender, argl);
@@ -651,6 +652,38 @@ final class AdminCommand implements CommandExecutor {
             return true;
         }
         player.sendMessage(Msg.toString(block) + ": " + plotWorld.debug(block));
+        return true;
+    }
+
+    boolean trustCommand(CommandSender sender, String[] args) {
+        if (args.length != 3) return false;
+        String worldName = args[0];
+        String playerName = args[1];
+        String trustName = args[2];
+        BuildWorld buildWorld = plugin.getBuildWorldByPath(worldName);
+        if (buildWorld == null) {
+            sender.sendMessage(ChatColor.RED + "World not found: " + worldName);
+            return true;
+        }
+        Builder builder = Builder.find(playerName);
+        if (builder == null) {
+            sender.sendMessage("Builder not found: " + playerName);
+            return true;
+        }
+        Trust trust;
+        if (trustName.equalsIgnoreCase("none")) {
+            trust = Trust.NONE;
+        } else {
+            trust = Trust.of(trustName);
+            if (trust == null || trust == Trust.NONE) {
+                sender.sendMessage(ChatColor.RED + "Unknown trust type: " + trustName);
+                return true;
+            }
+        }
+        buildWorld.trustBuilder(builder, trust);
+        plugin.saveBuildWorlds();
+        sender.sendMessage(ChatColor.GREEN + playerName + " now has " + trust.nice()
+                           + " trust in world " + buildWorld.getName());
         return true;
     }
 }
