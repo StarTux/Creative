@@ -25,6 +25,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.BlockRedstoneEvent;
 import org.bukkit.event.block.LeavesDecayEvent;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityPlaceEvent;
 import org.bukkit.event.entity.EntityPortalEvent;
@@ -322,5 +323,11 @@ public final class CreativeListener implements Listener {
     @EventHandler
     void onEntityPortal(EntityPortalEvent event) {
         event.setCancelled(true);
+    }
+
+    @EventHandler
+    void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
+        if (!(event.getDamager() instanceof Player)) return;
+        checkBuildEvent((Player) event.getDamager(), event.getEntity().getLocation().getBlock(), event);
     }
 }
