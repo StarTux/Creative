@@ -3,6 +3,7 @@ package com.winthier.creative;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.command.Command;
@@ -41,9 +42,12 @@ public final class WarpCommand implements TabExecutor {
     }
 
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command,
-                                      String label, String[] args) {
-        return null;
+    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length == 0) return null;
+        String arg = args[args.length - 1].toLowerCase();
+        return plugin.getWarps().keySet().stream()
+            .filter(k -> k.toLowerCase().startsWith(arg))
+            .collect(Collectors.toList());
     }
 
     private void listWarps(Player player) {
@@ -55,7 +59,7 @@ public final class WarpCommand implements TabExecutor {
         for (Warp warp: warps) {
             json.add(" ");
             json.add(Msg.button(ChatColor.GREEN,
-                                "&f[&a" + warp.getDisplayName() + "&r]",
+                                "&f[&a" + warp.getDisplayName() + "&f]",
                                 "Warp to " + warp.getDisplayName(),
                                 "/warp " + warp.getName()));
             count += 1;
