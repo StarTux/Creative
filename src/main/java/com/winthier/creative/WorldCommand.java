@@ -543,7 +543,7 @@ final class WorldCommand implements TabExecutor {
         } else if (args.length == 1) {
             Difficulty difficulty;
             try {
-                difficulty = Difficulty.valueOf(args[0]);
+                difficulty = Difficulty.valueOf(args[0].toUpperCase());
             } catch (IllegalArgumentException iae) {
                 throw new Wrong("Unknown difficulty: %s", args[0]);
             }
