@@ -12,20 +12,19 @@ import org.bukkit.WorldCreator;
 import org.bukkit.WorldType;
 import org.bukkit.block.Block;
 import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabExecutor;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
 @RequiredArgsConstructor
-final class AdminCommand implements CommandExecutor {
+final class AdminCommand implements TabExecutor {
     final CreativePlugin plugin;
     private BukkitRunnable updateTask;
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command,
-                             String label, String[] args) {
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) return false;
         String cmd = args[0];
         String[] argl = Arrays.copyOfRange(args, 1, args.length);
@@ -55,6 +54,35 @@ final class AdminCommand implements CommandExecutor {
         case "debugplot": return debugPlotCommand(sender, argl);
         default: return false;
         }
+    }
+
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length == 2) {
+            String arg = args[1];
+            switch (args[0]) {
+            case "info":
+            case "set":
+            case "remove":
+            case "trust":
+            case "resetowner":
+            case "setowner":
+            case "import":
+            case "load":
+            case "unload":
+                return tabCompleteWorldPaths(arg);
+            default: return null;
+            }
+        }
+        return null;
+    }
+
+    List<String> tabCompleteWorldPaths(String arg) {
+        String lower = arg.toLowerCase();
+        return plugin.getBuildWorlds().stream()
+            .map(BuildWorld::getPath)
+            .filter(path -> path.toLowerCase().startsWith(lower))
+            .collect(Collectors.toList());
     }
 
     boolean reloadCommand(CommandSender sender, String[] args) {
@@ -308,11 +336,24 @@ final class AdminCommand implements CommandExecutor {
     }
 
     boolean resetOwnerCommand(CommandSender sender, String[] args) {
-        if (args.length != 1) return false;
-        String worldKey = args[0];
-        BuildWorld buildWorld = plugin.getBuildWorldByPath(worldKey);
-        if (buildWorld == null) {
-            sender.sendMessage("World not found: " + worldKey);
+        if (args.length > 1) return false;
+        BuildWorld buildWorld;
+        if (args.length >= 1) {
+            String worldKey = args[0];
+            buildWorld = plugin.getBuildWorldByPath(worldKey);
+            if (buildWorld == null) {
+                sender.sendMessage("World not found: " + worldKey);
+                return true;
+            }
+        } else if (sender instanceof Player) {
+            Player player = (Player) sender;
+            buildWorld = plugin.getBuildWorldByWorld(player.getWorld());
+            if (buildWorld == null) {
+                player.sendMessage(ChatColor.RED + "This is not a build world!");
+                return true;
+            }
+        } else {
+            sender.sendMessage(ChatColor.RED + "Player expected");
             return true;
         }
         buildWorld.setOwner(null);

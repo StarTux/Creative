@@ -45,7 +45,7 @@ commands:
       /ca debug
       /ca remove <world>
       /ca trust <world> <player> <trust>
-      /ca resetowner <world>
+      /ca resetowner [world]
       /ca setowner <world> <player>
       /ca createvoid <name> [environment] - Create empty world
       /ca create
