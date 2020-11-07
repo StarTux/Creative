@@ -281,9 +281,12 @@ final class WorldCommand implements TabExecutor {
         if (args.length == 0) {
             return null;
         } else if (args.length == 1) {
-            return filterStartsWith(args[0], Arrays.asList("list", "visit", "info", "time", "spawn",
-                                                           "setspawn", "difficulty", "trust",
-                                                           "untrust"));
+            return filterStartsWith(args[0], Arrays.asList("tp",
+                                                           "ls", "list", "visit", "info",
+                                                           "time", "spawn", "setspawn", "difficulty",
+                                                           "trust", "wetrust", "visittrust", "ownertrust",
+                                                           "untrust", "save", "rename", "gamemode", "set",
+                                                           "buy", "unlock"));
         } else if (args.length == 2 && args[0].equalsIgnoreCase("set")) {
             return filterStartsWith(args[1], Arrays.asList("name", "description", "authors"));
         } else if (args.length == 2 && args[0].equalsIgnoreCase("difficulty")) {
