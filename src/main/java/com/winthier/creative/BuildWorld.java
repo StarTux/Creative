@@ -36,6 +36,7 @@ final class BuildWorld {
     private int centerX = 0;
     private int centerZ = 0;
     private long size = -1;
+    private transient long mobCooldown = 0;
 
     public static final Comparator<BuildWorld> NAME_SORT = new Comparator<BuildWorld>() {
         @Override public int compare(BuildWorld a, BuildWorld b) {
@@ -60,7 +61,9 @@ final class BuildWorld {
         KEEP_IN_MEMORY("KeepInMemory", false, -1),
         COMMAND_BLOCKS("CommandBlocks", false, -1),
         PISTON("Piston", true, 0),
-        REDSTONE("Redstone", true, 0);
+        REDSTONE("Redstone", true, 0),
+        PROJECTILES("Projectiles", false, 0),
+        MOBS("Mobs", false, 0);
 
         public final String key;
         public final boolean defaultValue;

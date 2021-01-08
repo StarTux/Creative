@@ -1,11 +1,13 @@
 package com.winthier.creative;
 
 import com.winthier.generic_events.PlayerCanBuildEvent;
+import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Tag;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.command.BlockCommandSender;
@@ -24,6 +26,7 @@ import org.bukkit.event.block.BlockPistonRetractEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.BlockRedstoneEvent;
 import org.bukkit.event.block.LeavesDecayEvent;
+import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
@@ -157,7 +160,7 @@ public final class CreativeListener implements Listener {
         if (event.getAction() == Action.PHYSICAL && event.hasBlock()) {
             // Turtle eggs, farmland, maybe more
             Material mat = event.getClickedBlock().getType();
-            if (!mat.name().contains("PRESSURE_PLATE")) {
+            if (!Tag.PRESSURE_PLATES.isTagged(mat)) {
                 event.setCancelled(true);
                 return;
             }
@@ -217,7 +220,7 @@ public final class CreativeListener implements Listener {
 
     @EventHandler
     public void playerCanBuild(PlayerCanBuildEvent event) {
-        event.setCancelled(true);
+        checkBuildEvent(event.getPlayer(), event.getBlock(), event);
     }
 
     @EventHandler
@@ -227,7 +230,11 @@ public final class CreativeListener implements Listener {
 
     @EventHandler
     public void onProjectileLaunch(ProjectileLaunchEvent event) {
-        event.setCancelled(true);
+        BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getEntity().getWorld());
+        if (buildWorld == null) return;
+        if (!buildWorld.isSet(BuildWorld.Flag.PROJECTILES)) {
+            event.setCancelled(true);
+        }
     }
 
     @EventHandler
@@ -260,8 +267,7 @@ public final class CreativeListener implements Listener {
     public void onEntityPlace(EntityPlaceEvent event) {
         if (event.getPlayer().isOp()) return;
         if (event.getEntity() instanceof CommandMinecart) {
-            plugin.getLogger().info(event.getPlayer().getName()
-                                    + " tried placing Command Minecart");
+            plugin.getLogger().info(event.getPlayer().getName() + " tried placing Command Minecart");
             event.setCancelled(true);
             return;
         }
@@ -291,8 +297,7 @@ public final class CreativeListener implements Listener {
 
     @EventHandler
     public void onBlockRedstone(BlockRedstoneEvent event) {
-        BuildWorld buildWorld = plugin
-            .getBuildWorldByWorld(event.getBlock().getWorld());
+        BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getBlock().getWorld());
         if (buildWorld == null) return;
         if (!buildWorld.isSet(BuildWorld.Flag.REDSTONE)) {
             event.setNewCurrent(event.getOldCurrent());
@@ -312,7 +317,11 @@ public final class CreativeListener implements Listener {
 
     @EventHandler
     public void onFireworkExplode(FireworkExplodeEvent event) {
-        event.setCancelled(true);
+        BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getEntity().getWorld());
+        if (buildWorld == null) return;
+        if (!buildWorld.isSet(BuildWorld.Flag.PROJECTILES)) {
+            event.setCancelled(true);
+        }
     }
 
     @EventHandler
@@ -329,5 +338,36 @@ public final class CreativeListener implements Listener {
     void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
         if (!(event.getDamager() instanceof Player)) return;
         checkBuildEvent((Player) event.getDamager(), event.getEntity().getLocation().getBlock(), event);
+    }
+
+    @EventHandler
+    void onCreatureSpawn(CreatureSpawnEvent event) {
+        BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getLocation().getWorld());
+        if (buildWorld == null) return;
+        switch (event.getSpawnReason()) {
+        case CUSTOM:
+            return;
+        case SPAWNER_EGG: {
+            if (!buildWorld.isSet(BuildWorld.Flag.MOBS)) {
+                event.setCancelled(true);
+                return;
+            }
+            long now = Instant.now().getEpochSecond();
+            if (now <= buildWorld.getMobCooldown()) {
+                event.setCancelled(true);
+                return;
+            }
+            String name = event.getEntity().getCustomName();
+            if (name != null && !name.isEmpty()) {
+                event.setCancelled(true);
+                return;
+            }
+            buildWorld.setMobCooldown(now + 2);
+            return;
+        }
+        default:
+            event.setCancelled(true);
+            return;
+        }
     }
 }

@@ -217,7 +217,7 @@ final class AdminCommand implements TabExecutor {
         if (args.length > 1) return false;
         if (args.length == 0) {
             int count = 0;
-            for (BuildWorld buildWorld: plugin.getBuildWorlds()) {
+            for (BuildWorld buildWorld : plugin.getBuildWorlds()) {
                 sender.sendMessage(buildWorld.getName() + " /"
                                    + buildWorld.getPath() + " " + buildWorld.getOwnerName());
                 count += 1;
@@ -233,23 +233,24 @@ final class AdminCommand implements TabExecutor {
         }
         PlayerWorldList list = plugin.getPlayerWorldList(builder.getUuid());
         Msg.send(sender, "&e%s World List", builder.getName());
+        final String delim = ChatColor.GRAY + " " + ChatColor.GREEN;
         if (!list.owner.isEmpty()) {
-            Msg.send(sender, "&7Owner (&r%d&7)", list.owner.size());
-            for (BuildWorld bw: list.owner) {
-                Msg.send(sender, "&a%s &8/%s", bw.getPath(), bw.getName());
-            }
+            Msg.send(sender, "&7Owner (&r%d&7)&a %s", list.owner.size(),
+                     list.owner.stream()
+                     .map(BuildWorld::getPath)
+                     .collect(Collectors.joining(delim)));
         }
         if (!list.build.isEmpty()) {
-            Msg.send(sender, "&7Build (&r%d&7)", list.build.size());
-            for (BuildWorld bw: list.build) {
-                Msg.send(sender, "&a%s &8/%s", bw.getPath(), bw.getName());
-            }
+            Msg.send(sender, "&7Build (&r%d&7)&a %s", list.build.size(),
+                     list.build.stream()
+                     .map(BuildWorld::getPath)
+                     .collect(Collectors.joining(delim)));
         }
         if (!list.visit.isEmpty()) {
-            Msg.send(sender, "&7Visit (&r%d&7)", list.visit.size());
-            for (BuildWorld bw: list.visit) {
-                Msg.send(sender, "&a%s &8/%s", bw.getPath(), bw.getName());
-            }
+            Msg.send(sender, "&7Visit (&r%d&7)&a %s", list.visit.size(),
+                     list.visit.stream()
+                     .map(BuildWorld::getPath)
+                     .collect(Collectors.joining(delim)));
         }
         Msg.send(sender, "&7Total (&r%d&7)", list.count());
         return true;
