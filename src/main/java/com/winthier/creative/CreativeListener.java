@@ -307,9 +307,14 @@ public final class CreativeListener implements Listener {
 
     @EventHandler
     public void onEntitySpawn(EntitySpawnEvent event) {
+        BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getEntity().getWorld());
+        if (buildWorld == null) return;
         switch (event.getEntity().getType()) {
         case FIREWORK:
-            event.setCancelled(true);
+            if (!buildWorld.isSet(BuildWorld.Flag.PROJECTILES)) {
+                event.setCancelled(true);
+            }
+            break;
         default:
             break;
         }
