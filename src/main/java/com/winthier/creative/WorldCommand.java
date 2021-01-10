@@ -235,6 +235,7 @@ final class WorldCommand implements TabExecutor {
         plugin.getBuildWorlds().add(buildWorld);
         plugin.saveBuildWorlds();
         buildWorld.getWorldConfig().set("world.Seed", 0);
+        buildWorld.getWorldConfig().set("world.WorldType", WorldType.FLAT.name());
         buildWorld.getWorldConfig().set("world.Environment", World.Environment.NORMAL.name());
         buildWorld.getWorldConfig().set("world.GenerateStructures", false);
         buildWorld.getWorldConfig().set("world.GeneratorSettings", "");
