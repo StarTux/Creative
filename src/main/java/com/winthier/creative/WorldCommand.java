@@ -5,6 +5,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -214,7 +216,7 @@ final class WorldCommand implements TabExecutor {
     /**
      * Callback for /world buy, then /world confirm.
      */
-    void confirmBuy(Player player, double price, long size) {
+    void confirmBuy(Player player, double price, long size, BuyType type) {
         String base = player.getName().toLowerCase();
         String path;
         int suffix = 1;
@@ -233,14 +235,17 @@ final class WorldCommand implements TabExecutor {
         plugin.getBuildWorlds().add(buildWorld);
         plugin.saveBuildWorlds();
         buildWorld.getWorldConfig().set("world.Seed", 0);
-        buildWorld.getWorldConfig().set("world.WorldType", WorldType.FLAT.name());
         buildWorld.getWorldConfig().set("world.Environment", World.Environment.NORMAL.name());
         buildWorld.getWorldConfig().set("world.GenerateStructures", false);
+        buildWorld.getWorldConfig().set("world.GeneratorSettings", "");
         buildWorld.getWorldConfig().set("world.SpawnLocation.x", 256);
         buildWorld.getWorldConfig().set("world.SpawnLocation.y", 5);
         buildWorld.getWorldConfig().set("world.SpawnLocation.z", 256);
         buildWorld.getWorldConfig().set("world.SpawnLocation.pitch", 0);
         buildWorld.getWorldConfig().set("world.SpawnLocation.yaw", 0);
+        if (type == BuyType.VOID) {
+            buildWorld.getWorldConfig().set("world.Generator", "VoidGenerator");
+        }
         buildWorld.saveWorldConfig();
         player.sendMessage("Bought a world for "
                            + ChatColor.GREEN + plugin.vault.format(price)
@@ -291,6 +296,9 @@ final class WorldCommand implements TabExecutor {
             return filterStartsWith(args[1], Arrays.asList("name", "description", "authors"));
         } else if (args.length == 2 && args[0].equalsIgnoreCase("difficulty")) {
             return filterStartsWith(args[1], Arrays.asList("easy", "normal", "hard", "peaceful"));
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("buy")) {
+            return filterStartsWith(args[1], Stream.of(BuyType.values())
+                                    .map(BuyType::name).map(String::toLowerCase).collect(Collectors.toList()));
         }
         return null;
     }
@@ -600,8 +608,22 @@ final class WorldCommand implements TabExecutor {
         }
     }
 
+    enum BuyType {
+        FLAT, VOID;
+    }
+
     void buyCommand(Player player, String[] args) throws Wrong {
-        if (args.length != 0) Wrong.usage();
+        if (args.length > 1) Wrong.usage();
+        BuyType type;
+        if (args.length >= 1) {
+            try {
+                type = BuyType.valueOf(args[0].toUpperCase());
+            } catch (IllegalArgumentException iae) {
+                throw new Wrong("Invalid type: " + args[0]);
+            }
+        } else {
+            type = BuyType.FLAT;
+        }
         double price = 10000.0;
         long size = 256;
         String sizeFmt = "" + size;
@@ -610,12 +632,14 @@ final class WorldCommand implements TabExecutor {
         cb.append(sizeFmt).color(ChatColor.GREEN);
         cb.append("x").color(ChatColor.GRAY);
         cb.append(sizeFmt).color(ChatColor.GREEN);
-        cb.append(" flat world for ").color(ChatColor.WHITE);
+        cb.append(" ").color(ChatColor.WHITE);
+        cb.append(type.name().toLowerCase()).color(ChatColor.GREEN);
+        cb.append(" world for ").color(ChatColor.WHITE);
         cb.append(plugin.vault.format(price)).color(ChatColor.GREEN);
         cb.append("?").color(ChatColor.WHITE);
         player.sendMessage(cb.create());
         String code = randomString();
-        confirm(player, code, () -> confirmBuy(player, price, size));
+        confirm(player, code, () -> confirmBuy(player, price, size, type));
     }
 
     boolean unlockCommand(Player player, String[] args) throws Wrong {
