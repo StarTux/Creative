@@ -88,3 +88,6 @@ permissions:
   creative.worldedit:
     description: Use WorldEdit in the appropriate worlds
     default: op
+  creative.world.buy:
+    description: Buy a creative world
+    default: op

@@ -614,6 +614,9 @@ final class WorldCommand implements TabExecutor {
     }
 
     void buyCommand(Player player, String[] args) throws Wrong {
+        if (!player.hasPermission("creative.world.buy")) {
+            throw new Wrong("You don't have permission to buy a world!");
+        }
         if (args.length > 1) Wrong.usage();
         BuyType type;
         if (args.length >= 1) {
@@ -644,6 +647,9 @@ final class WorldCommand implements TabExecutor {
     }
 
     boolean unlockCommand(Player player, String[] args) throws Wrong {
+        if (!player.hasPermission("creative.world.buy")) {
+            throw new Wrong("You don't have permission to buy a world!");
+        }
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(player.getWorld());
         UUID uuid = player.getUniqueId();
         if (buildWorld == null || !buildWorld.getTrust(uuid).isOwner()) {
