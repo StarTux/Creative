@@ -63,7 +63,8 @@ final class BuildWorld {
         PISTON("Piston", true, 0),
         REDSTONE("Redstone", true, 0),
         PROJECTILES("Projectiles", false, 0),
-        MOBS("Mobs", false, 0);
+        MOBS("Mobs", false, 0),
+        LIQUIDS("Liquids", false, 0);
 
         public final String key;
         public final boolean defaultValue;

@@ -21,6 +21,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
+import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.block.BlockPistonExtendEvent;
 import org.bukkit.event.block.BlockPistonRetractEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -195,8 +196,8 @@ public final class CreativeListener implements Listener {
         if (buildWorld == null) return;
         if (!buildWorld.isSet(BuildWorld.Flag.EXPLOSION)) {
             event.setCancelled(true);
-            event.blockList().clear();
         }
+        event.blockList().clear();
     }
 
     @EventHandler(priority = EventPriority.LOW)
@@ -205,8 +206,8 @@ public final class CreativeListener implements Listener {
         if (buildWorld == null) return;
         if (!buildWorld.isSet(BuildWorld.Flag.EXPLOSION)) {
             event.setCancelled(true);
-            event.blockList().clear();
         }
+        event.blockList().clear();
     }
 
     @EventHandler(priority = EventPriority.LOW)
@@ -373,6 +374,17 @@ public final class CreativeListener implements Listener {
         default:
             event.setCancelled(true);
             return;
+        }
+    }
+
+    @EventHandler
+    void onBlockFromTo(BlockFromToEvent event) {
+        BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getBlock().getWorld());
+        if (buildWorld == null) return;
+        if (event.getBlock().isLiquid()) {
+            if (!buildWorld.isSet(BuildWorld.Flag.LIQUIDS)) {
+                event.setCancelled(true);
+            }
         }
     }
 }
