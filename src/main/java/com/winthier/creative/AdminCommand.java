@@ -1,6 +1,7 @@
 package com.winthier.creative;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -58,23 +59,36 @@ final class AdminCommand implements TabExecutor {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
-        if (args.length == 2) {
-            String arg = args[1];
-            switch (args[0]) {
-            case "info":
-            case "set":
-            case "remove":
-            case "trust":
-            case "resetowner":
-            case "setowner":
-            case "import":
-            case "load":
-            case "unload":
+        if (args.length == 0) return Collections.emptyList();
+        String arg = args[args.length - 1];
+        switch (args[0]) {
+        case "info":
+        case "remove":
+        case "trust":
+        case "resetowner":
+        case "setowner":
+        case "import":
+        case "load":
+        case "unload":
+            if (args.length == 2) {
                 return tabCompleteWorldPaths(arg);
-            default: return null;
             }
+            return null;
+        case "set":
+            if (args.length == 2) {
+                String argl = arg.toLowerCase();
+                return Stream.of(BuildWorld.Flag.values())
+                    .map(e -> e.key)
+                    .filter(s -> argl.contains(s.toLowerCase()))
+                    .collect(Collectors.toList());
+            } else if (args.length == 3) {
+                return Stream.of("true", "false")
+                    .filter(s -> arg.contains(s))
+                    .collect(Collectors.toList());
+            }
+            return Collections.emptyList();
+        default: return null;
         }
-        return null;
     }
 
     List<String> tabCompleteWorldPaths(String arg) {
@@ -169,7 +183,7 @@ final class AdminCommand implements TabExecutor {
             return true;
         }
         BuildWorld.Flag flag = BuildWorld.Flag.of(key);
-        if (key == null) {
+        if (flag == null) {
             player.sendMessage(ChatColor.RED + "Invalid flag: " + key);
             return true;
         }
