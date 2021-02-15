@@ -12,6 +12,7 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.command.BlockCommandSender;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.minecart.CommandMinecart;
 import org.bukkit.event.Cancellable;
@@ -185,6 +186,12 @@ public final class CreativeListener implements Listener {
     public void onEntityChangeBlock(EntityChangeBlockEvent event) {
         if (event.getEntity() instanceof Player) {
             checkBuildEvent((Player) event.getEntity(), event.getBlock(), event);
+        } else if (event.getEntity() instanceof FallingBlock) {
+            BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getBlock().getWorld());
+            if (buildWorld == null) return;
+            if (!buildWorld.isSet(BuildWorld.Flag.FALLING_BLOCKS)) {
+                event.setCancelled(true);
+            }
         }
     }
 

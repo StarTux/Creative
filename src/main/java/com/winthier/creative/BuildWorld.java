@@ -64,7 +64,8 @@ final class BuildWorld {
         REDSTONE("Redstone", true, 0),
         PROJECTILES("Projectiles", false, 0),
         MOBS("Mobs", false, 0),
-        LIQUIDS("Liquids", false, 0);
+        LIQUIDS("Liquids", false, 0),
+        FALLING_BLOCKS("FallingBlocks", false, -1);
 
         public final String key;
         public final boolean defaultValue;
