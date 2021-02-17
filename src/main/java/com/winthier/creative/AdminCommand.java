@@ -61,6 +61,13 @@ final class AdminCommand implements TabExecutor {
     public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) return Collections.emptyList();
         String arg = args[args.length - 1];
+        if (args.length == 1) {
+            return Stream.of("info", "remove", "trust", "resetowner", "setowner", "import", "load", "unload", "tp", "config", "set",
+                             "debugplot", "deletewarp", "setwarp", "warp", "ignore", "createvoid", "create", "listloaded",
+                             "who", "list", "listunregistered", "reload")
+                .filter(s -> s.contains(arg))
+                .collect(Collectors.toList());
+        }
         switch (args[0]) {
         case "info":
         case "remove":
@@ -70,6 +77,8 @@ final class AdminCommand implements TabExecutor {
         case "import":
         case "load":
         case "unload":
+        case "tp":
+        case "config":
             if (args.length == 2) {
                 return tabCompleteWorldPaths(arg);
             }
