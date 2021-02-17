@@ -65,7 +65,7 @@ final class AdminCommand implements TabExecutor {
             return Stream.of("info", "remove", "trust", "resetowner", "setowner", "import", "load", "unload", "tp", "config", "set",
                              "debugplot", "deletewarp", "setwarp", "warp", "ignore", "createvoid", "create", "listloaded",
                              "who", "list", "listunregistered", "reload")
-                .filter(s -> s.contains(arg))
+                .filter(s -> s.startsWith(arg))
                 .collect(Collectors.toList());
         }
         switch (args[0]) {
@@ -88,11 +88,11 @@ final class AdminCommand implements TabExecutor {
                 String argl = arg.toLowerCase();
                 return Stream.of(BuildWorld.Flag.values())
                     .map(e -> e.key)
-                    .filter(s -> s.toLowerCase().contains(argl))
+                    .filter(s -> s.toLowerCase().startsWith(argl))
                     .collect(Collectors.toList());
             } else if (args.length == 3) {
                 return Stream.of("true", "false")
-                    .filter(s -> s.contains(arg))
+                    .filter(s -> s.startsWith(arg))
                     .collect(Collectors.toList());
             }
             return Collections.emptyList();
