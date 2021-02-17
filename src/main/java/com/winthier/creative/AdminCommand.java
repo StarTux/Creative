@@ -79,11 +79,11 @@ final class AdminCommand implements TabExecutor {
                 String argl = arg.toLowerCase();
                 return Stream.of(BuildWorld.Flag.values())
                     .map(e -> e.key)
-                    .filter(s -> argl.contains(s.toLowerCase()))
+                    .filter(s -> s.toLowerCase().contains(argl))
                     .collect(Collectors.toList());
             } else if (args.length == 3) {
                 return Stream.of("true", "false")
-                    .filter(s -> arg.contains(s))
+                    .filter(s -> s.contains(arg))
                     .collect(Collectors.toList());
             }
             return Collections.emptyList();
