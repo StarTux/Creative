@@ -12,6 +12,7 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.command.BlockCommandSender;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.minecart.CommandMinecart;
@@ -27,6 +28,7 @@ import org.bukkit.event.block.BlockPistonExtendEvent;
 import org.bukkit.event.block.BlockPistonRetractEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.BlockRedstoneEvent;
+import org.bukkit.event.block.EntityBlockFormEvent;
 import org.bukkit.event.block.LeavesDecayEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
@@ -192,6 +194,23 @@ public final class CreativeListener implements Listener {
             if (!buildWorld.isSet(BuildWorld.Flag.FALLING_BLOCKS)) {
                 event.setCancelled(true);
             }
+        } else {
+            BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getBlock().getWorld());
+            if (buildWorld == null) return;
+            event.setCancelled(true);
+            return;
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOW)
+    public void onEntityBlockForm(EntityBlockFormEvent event) {
+        if (event.getEntity() instanceof Player) {
+            checkBuildEvent((Player) event.getEntity(), event.getBlock(), event);
+        } else {
+            BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getBlock().getWorld());
+            if (buildWorld == null) return;
+            event.setCancelled(true);
+            return;
         }
     }
 
@@ -359,6 +378,7 @@ public final class CreativeListener implements Listener {
         if (buildWorld == null) return;
         switch (event.getSpawnReason()) {
         case CUSTOM:
+        case SHOULDER_ENTITY:
             return;
         case SPAWNER_EGG: {
             if (!buildWorld.isSet(BuildWorld.Flag.MOBS)) {
@@ -378,6 +398,8 @@ public final class CreativeListener implements Listener {
             buildWorld.setMobCooldown(now + 2);
             return;
         }
+        case DEFAULT:
+            if (event.getEntityType() == EntityType.ARMOR_STAND) return;
         default:
             event.setCancelled(true);
             return;
