@@ -40,6 +40,7 @@ import org.bukkit.event.entity.EntityPortalEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.entity.FireworkExplodeEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
+import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
@@ -435,6 +436,20 @@ public final class CreativeListener implements Listener {
             if (!buildWorld.isSet(BuildWorld.Flag.LIQUIDS)) {
                 event.setCancelled(true);
             }
+        }
+    }
+
+    @EventHandler
+    void onHangingBreak(HangingBreakEvent event) {
+        BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getEntity().getWorld());
+        if (buildWorld == null) return;
+        switch (event.getCause()) {
+        case OBSTRUCTION:
+        case PHYSICS:
+            event.setCancelled(true);
+            break;
+        default:
+            break;
         }
     }
 }
