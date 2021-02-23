@@ -1,0 +1,39 @@
+package com.winthier.creative.worldedit;
+
+import com.sk89q.worldedit.LocalSession;
+import com.sk89q.worldedit.bukkit.WorldEditPlugin;
+import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldedit.regions.Region;
+import com.sk89q.worldedit.world.World;
+import com.winthier.creative.struct.Cuboid;
+import com.winthier.creative.struct.Vec3i;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
+
+/**
+ * WorldEdit access. Based on WorldEdit 7.2.0.
+ */
+public final class WorldEdit {
+    private WorldEdit() { }
+
+    public static WorldEditPlugin getWorldEdit() {
+        return (WorldEditPlugin) Bukkit.getServer().getPluginManager().getPlugin("WorldEdit");
+    }
+
+    public static Cuboid getSelection(Player player) {
+        WorldEditPlugin we = getWorldEdit();
+        LocalSession session = we.getSession(player);
+        World world = session.getSelectionWorld();
+        final Region region;
+        try {
+            region = session.getSelection(world);
+        } catch (Exception e) {
+            return null;
+        }
+        if (region == null) return null;
+        BlockVector3 min = region.getMinimumPoint();
+        BlockVector3 max = region.getMaximumPoint();
+        return new Cuboid(new Vec3i(min.getBlockX(), min.getBlockY(), min.getBlockZ()),
+                          new Vec3i(max.getBlockX(), max.getBlockY(), max.getBlockZ()));
+    }
+}

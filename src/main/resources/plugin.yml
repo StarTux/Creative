@@ -5,7 +5,7 @@ version: 0.1
 website: https://github.com/StarTux/Creative
 api-version: 1.13
 main: com.winthier.creative.CreativePlugin
-depend: [WorldEdit, PlayerCache, GenericEvents]
+depend: [Core, WorldEdit, PlayerCache, GenericEvents]
 commands:
   world:
     aliases: [ worlds ]
@@ -75,6 +75,15 @@ commands:
     usage: |-
       /plot list - List your plots
       /plot warp <id> - Warp to plot
+  area:
+    aliases: []
+    description: Area setup command
+    permission: creative.area
+    usage: |-
+      /area list [file] - List areas
+      /area highlight <file> <name> - Highlight areas
+      /area add <file> <name> - Create new area from WE
+      /area remove <file> <name> - Remove area you are in
 permissions:
   creative.world:
     descrption: Use /world and /wtp
