@@ -364,6 +364,11 @@ public final class CreativeListener implements Listener {
                 event.setCancelled(true);
             }
             break;
+        case FALLING_BLOCK:
+            if (!buildWorld.isSet(BuildWorld.Flag.FALLING_BLOCKS)) {
+                event.setCancelled(true);
+            }
+            break;
         default:
             break;
         }
