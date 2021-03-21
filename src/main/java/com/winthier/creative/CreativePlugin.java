@@ -120,7 +120,16 @@ public final class CreativePlugin extends JavaPlugin {
 
     public BuildWorld getBuildWorldByPath(String path) {
         for (BuildWorld buildWorld: getBuildWorlds()) {
-            if (path.equalsIgnoreCase(buildWorld.getPath())) {
+            if (path.equals(buildWorld.getPath())) {
+                return buildWorld;
+            }
+        }
+        return null;
+    }
+
+    public BuildWorld getBuildWorldByName(String name) {
+        for (BuildWorld buildWorld: getBuildWorlds()) {
+            if (name.equals(buildWorld.getName()) || name.equals(buildWorld.getName())) {
                 return buildWorld;
             }
         }
@@ -274,5 +283,19 @@ public final class CreativePlugin extends JavaPlugin {
 
     PlotWorld getPlotWorld(World world) {
         return plotWorlds.get(world.getName());
+    }
+
+    public List<String> completeWorldNames(Player player, String arg) {
+        List<String> result = new ArrayList<>();
+        String argl = arg.toLowerCase();
+        UUID uuid = player.getUniqueId();
+        for (BuildWorld buildWorld: getBuildWorlds()) {
+            String name = buildWorld.getName();
+            if (name == null) name = buildWorld.getPath();
+            if (buildWorld.getTrust(uuid).canVisit() && name.toLowerCase().contains(argl)) {
+                result.add(buildWorld.getName());
+            }
+        }
+        return result;
     }
 }

@@ -293,19 +293,21 @@ final class WorldCommand implements TabExecutor {
                                                            "trust", "wetrust", "visittrust", "ownertrust",
                                                            "untrust", "save", "rename", "gamemode", "set",
                                                            "buy", "unlock"));
-        } else if (args.length == 2 && args[0].equalsIgnoreCase("set")) {
+        } else if (args.length == 2 && args[0].equals("set")) {
             return filterStartsWith(args[1], Arrays.asList("name", "description", "authors"));
-        } else if (args.length == 2 && args[0].equalsIgnoreCase("difficulty")) {
+        } else if (args.length == 2 && args[0].equals("difficulty")) {
             return filterStartsWith(args[1], Arrays.asList("easy", "normal", "hard", "peaceful"));
-        } else if (args.length == 2 && args[0].equalsIgnoreCase("buy")) {
+        } else if (args.length == 2 && args[0].equals("buy")) {
             return filterStartsWith(args[1], Stream.of(BuyType.values())
                                     .map(BuyType::name).map(String::toLowerCase).collect(Collectors.toList()));
+        } else if (args.length == 2 && args[0].equals("tp")) {
+            return plugin.completeWorldNames(player, args[1]);
         }
         return null;
     }
 
     boolean worldTeleport(Player player, String worldName) {
-        BuildWorld buildWorld = plugin.getBuildWorldByPath(worldName);
+        BuildWorld buildWorld = plugin.getBuildWorldByName(worldName);
         if (buildWorld == null) {
             Msg.warn(player, "World not found: %s", worldName);
             return false;

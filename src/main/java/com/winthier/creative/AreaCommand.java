@@ -3,7 +3,6 @@ package com.winthier.creative;
 import com.cavetale.core.command.CommandNode;
 import com.cavetale.core.command.CommandWarn;
 import com.winthier.creative.struct.Cuboid;
-import com.winthier.creative.struct.Vec3i;
 import com.winthier.creative.util.Json;
 import com.winthier.creative.worldedit.WorldEdit;
 import java.io.File;
