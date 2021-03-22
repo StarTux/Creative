@@ -129,7 +129,7 @@ public final class CreativePlugin extends JavaPlugin {
 
     public BuildWorld getBuildWorldByName(String name) {
         for (BuildWorld buildWorld: getBuildWorlds()) {
-            if (name.equals(buildWorld.getName()) || name.equals(buildWorld.getName())) {
+            if (name.equals(buildWorld.getName()) || name.equals(buildWorld.getPath())) {
                 return buildWorld;
             }
         }

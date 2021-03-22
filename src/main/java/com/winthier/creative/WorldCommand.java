@@ -356,7 +356,7 @@ final class WorldCommand implements TabExecutor {
             json.add(Msg.button(ChatColor.GREEN,
                                 "&f[&a" + buildWorld.getName() + "&f]",
                                 "Teleport to " + buildWorld.getName(),
-                                "/wtp " + buildWorld.getPath()));
+                                "/wtp " + buildWorld.getName()));
             count += 1;
             if (count >= 3 && !json.isEmpty()) {
                 count = 0;
