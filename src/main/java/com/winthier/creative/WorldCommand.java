@@ -87,9 +87,8 @@ final class WorldCommand implements TabExecutor {
     boolean onCommand(Player player, @NonNull String cmd, String[] args) throws Wrong {
         switch (cmd) {
         case "tp":
-            if (args.length != 1) Wrong.usage();
-            String worldName = args[0];
-            worldTeleport(player, worldName);
+            if (args.length < 1) Wrong.usage();
+            worldTeleport(player, String.join(" ", args));
             break;
         case "ls": case "list":
             if (args.length != 0) Wrong.usage();

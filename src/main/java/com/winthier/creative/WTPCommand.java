@@ -14,11 +14,10 @@ public final class WTPCommand implements TabExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (args.length != 1) return false;
+        if (args.length < 1) return false;
         Player player = sender instanceof Player ? (Player) sender : null;
         if (player == null) return false;
-        String cmd = args.length > 0 ? args[0] : null;
-        plugin.getWorldCommand().worldTeleport(player, cmd);
+        plugin.getWorldCommand().worldTeleport(player, String.join(" ", args));
         return true;
     }
 
