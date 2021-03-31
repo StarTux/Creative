@@ -747,6 +747,10 @@ final class AdminCommand implements TabExecutor {
         }
         buildWorld.trustBuilder(builder, trust);
         plugin.saveBuildWorlds();
+        Player target = builder.toPlayer();
+        if (target != null) {
+            plugin.getPermission().updatePermissions(target);
+        }
         sender.sendMessage(ChatColor.GREEN + playerName + " now has " + trust.nice()
                            + " trust in world " + buildWorld.getName());
         return true;

@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import lombok.Value;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 
@@ -46,5 +47,9 @@ final class Builder {
         UUID uuid = UUID.fromString(config.getString("uuid"));
         String name = config.getString("name");
         return of(uuid, name);
+    }
+
+    public Player toPlayer() {
+        return Bukkit.getPlayer(uuid);
     }
 }
