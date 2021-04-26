@@ -1,11 +1,15 @@
+main: com.winthier.creative.CreativePlugin
+
 name: Creative
 description: Manage Creative Worlds
 author: StarTux
 version: 0.1
 website: https://github.com/StarTux/Creative
 api-version: 1.13
-main: com.winthier.creative.CreativePlugin
-depend: [Core, WorldEdit, PlayerCache, GenericEvents]
+
+depend: [Core, WorldEdit, PlayerCache, GenericEvents, VoidGenerator, FlatGenerator]
+softdepend: []
+
 commands:
   world:
     aliases: [ worlds ]
