@@ -21,6 +21,7 @@ commands:
       /world info - Get world info
       /world buy [type] - Buy a world
       /world unlock - Unlock world features
+      /world grow - Grow your world
       /world spawn - Teleport to spawn
       /world setspawn - Set world spawn
       /world rename <name> - Rename world
