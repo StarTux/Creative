@@ -773,7 +773,7 @@ final class WorldCommand implements TabExecutor {
             throw new Wrong("You cannot grow this world.");
         }
         player.sendMessage(ChatColor.WHITE + "Grow this world by " + ChatColor.GREEN + growBy + ChatColor.WHITE
-                           + " blocks for " + ChatColor.GOLD + GenericEvents.formatMoney(price));
+                           + " blocks for " + ChatColor.GOLD + GenericEvents.formatMoney(price) + ChatColor.WHITE + "?");
         confirm(player, randomString(), () -> {
                 if (!GenericEvents.takePlayerMoney(player.getUniqueId(), price, plugin, "Creative world grow")) {
                     player.sendMessage("You don't have enough money");
