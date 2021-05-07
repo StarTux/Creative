@@ -1,5 +1,6 @@
 package com.winthier.creative;
 
+import com.winthier.generic_events.GenericEvents;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -11,6 +12,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
@@ -167,6 +169,7 @@ final class WorldCommand implements TabExecutor {
             buyCommand(player, args);
             break;
         case "unlock": return unlockCommand(player, args);
+        case "grow": return growCommand(player, args);
         case "confirm":
             confirmCommand(player, args);
             break;
@@ -223,7 +226,7 @@ final class WorldCommand implements TabExecutor {
             path = String.format("%s-%03d", base, suffix++);
         } while (plugin.getBuildWorldByPath(path) != null);
         plugin.getLogger().info("New world for " + base + ": " + path);
-        if (!plugin.vault.take(player, price)) {
+        if (!GenericEvents.takePlayerMoney(player.getUniqueId(), price, plugin, "Buy creative world")) {
             player.sendMessage("You don't have enough money");
             return;
         }
@@ -254,7 +257,7 @@ final class WorldCommand implements TabExecutor {
         }
         buildWorld.saveWorldConfig();
         player.sendMessage("Bought a world for "
-                           + ChatColor.GREEN + plugin.vault.format(price)
+                           + ChatColor.GREEN + GenericEvents.formatMoney(price)
                            + ChatColor.WHITE + ". Please wait...");
         World world = buildWorld.loadWorld();
         buildWorld.teleportToSpawn(player);
@@ -263,7 +266,7 @@ final class WorldCommand implements TabExecutor {
     void confirmUnlock(Player player, BuildWorld buildWorld, BuildWorld.Flag flag) {
         if (flag.price == 0) return;
         if (buildWorld.isSet(flag)) return;
-        if (!plugin.vault.take(player, flag.price)) {
+        if (!GenericEvents.takePlayerMoney(player.getUniqueId(), flag.price, plugin, "Creative world unlock " + flag.key)) {
             player.sendMessage("You don't have enough money");
             return;
         }
@@ -271,7 +274,7 @@ final class WorldCommand implements TabExecutor {
         plugin.saveBuildWorlds();
         plugin.getPermission().updatePermissions(buildWorld.getWorld());
         Msg.info(player, "Unlocked " + flag.key + " for "
-                 + ChatColor.GREEN + plugin.vault.format(flag.price)
+                 + ChatColor.GOLD + GenericEvents.formatMoney(flag.price)
                  + ChatColor.WHITE + ".");
     }
 
@@ -646,7 +649,7 @@ final class WorldCommand implements TabExecutor {
         cb.append(" ").color(ChatColor.WHITE);
         cb.append(type.name().toLowerCase()).color(ChatColor.GREEN);
         cb.append(" world for ").color(ChatColor.WHITE);
-        cb.append(plugin.vault.format(price)).color(ChatColor.GREEN);
+        cb.append(GenericEvents.formatMoney(price)).color(ChatColor.GOLD);
         cb.append("?").color(ChatColor.WHITE);
         player.sendMessage(cb.create());
         String code = randomString();
@@ -677,7 +680,7 @@ final class WorldCommand implements TabExecutor {
             cb.append("Unlock ").color(ChatColor.WHITE);
             cb.append(flag.key).color(ChatColor.GREEN);
             cb.append("  for ").color(ChatColor.WHITE);
-            cb.append(plugin.vault.format(flag.price)).color(ChatColor.GREEN);
+            cb.append(GenericEvents.formatMoney(flag.price)).color(ChatColor.GOLD);
             cb.append("?").color(ChatColor.WHITE);
             player.sendMessage(cb.create());
             String code = randomString();
@@ -735,7 +738,57 @@ final class WorldCommand implements TabExecutor {
             cb.append(flag.key).color(enabled ? ChatColor.YELLOW : ChatColor.WHITE);
             player.sendMessage(cb.create());
         }
+        if (buildWorld.getSize() >= 0) {
+            ComponentBuilder cb = new ComponentBuilder();
+            int growBy = 256;
+            double price = 10000;
+            BaseComponent[] tooltip = new ComponentBuilder().color(ChatColor.GREEN)
+                .append("Grow world by " + growBy + " blocks")
+                .append("\n")
+                .append("in all directions")
+                .append("\n")
+                .append("Price: ")
+                .append(GenericEvents.formatMoney(price)).color(ChatColor.GOLD)
+                .create();
+            cb.append("[GROW]").color(ChatColor.GREEN);
+            cb.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, tooltip));
+            cb.event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/world grow"));
+            cb.append(" ").reset();
+            cb.append("Size " + buildWorld.getSize());
+            player.sendMessage(cb.create());
+        }
         player.sendMessage("");
+    }
+
+    boolean growCommand(Player player, String[] args) throws Wrong {
+        if (args.length != 0) return false;
+        if (!player.hasPermission("creative.world.buy")) {
+            throw new Wrong("You don't have permission to buy a world!");
+        }
+        int growBy = 256;
+        double price = 10000;
+        BuildWorld buildWorld = plugin.getBuildWorldByWorld(player.getWorld());
+        UUID uuid = player.getUniqueId();
+        if (buildWorld == null || !buildWorld.getTrust(uuid).isOwner() || buildWorld.getSize() < 0) {
+            throw new Wrong("You cannot grow this world.");
+        }
+        player.sendMessage(ChatColor.WHITE + "Grow this world by " + ChatColor.GREEN + growBy + ChatColor.WHITE
+                           + " blocks for " + ChatColor.GOLD + GenericEvents.formatMoney(price));
+        confirm(player, randomString(), () -> {
+                if (!GenericEvents.takePlayerMoney(player.getUniqueId(), price, plugin, "Creative world grow")) {
+                    player.sendMessage("You don't have enough money");
+                    return;
+                }
+                buildWorld.setSize(buildWorld.getSize() + growBy);
+                plugin.saveBuildWorlds();
+                World world = buildWorld.getWorld();
+                if (world != null) {
+                    world.getWorldBorder().setSize(buildWorld.getSize());
+                }
+                player.sendMessage("World border grown by " + ChatColor.GREEN + growBy + ChatColor.WHITE
+                                   + " blocks for " + ChatColor.GOLD + GenericEvents.formatMoney(price));
+            });
+        return true;
     }
 
     void confirmCommand(Player player, String[] args) {
