@@ -176,6 +176,9 @@ final class WorldCommand implements TabExecutor {
         case "cancel":
             cancelCommand(player, args);
             break;
+        case "pvp":
+            pvpCommand(player, args);
+            break;
         default:
             Wrong.usage();
         }
@@ -300,7 +303,7 @@ final class WorldCommand implements TabExecutor {
                                                            "time", "spawn", "setspawn", "difficulty",
                                                            "trust", "wetrust", "visittrust", "ownertrust",
                                                            "untrust", "save", "rename", "gamemode", "set",
-                                                           "buy", "unlock", "grow"));
+                                                           "buy", "unlock", "grow", "pvp"));
         } else if (args.length == 2 && args[0].equals("set")) {
             return filterStartsWith(args[1], Arrays.asList("name", "description", "authors"));
         } else if (args.length == 2 && args[0].equals("difficulty")) {
@@ -903,6 +906,10 @@ final class WorldCommand implements TabExecutor {
             commandUsage(player, "set", "<name|description|authors> [...]", "World settings",
                          "/world set ");
             break;
+        case "pvp":
+            commandUsage(player, "pvp", null, "Toggle pvp",
+                         "/world pvp ");
+            break;
         default:
             player.sendMessage(ChatColor.RED + "Unknown command: " + cmd);
         }
@@ -933,6 +940,7 @@ final class WorldCommand implements TabExecutor {
             usage(player, "untrust");
             usage(player, "save");
             usage(player, "set");
+            usage(player, "pvp");
         }
     }
 
@@ -953,5 +961,15 @@ final class WorldCommand implements TabExecutor {
             buildWorld.saveWorldConfig();
             Msg.info(player, "Set world authors to %s.", Msg.fold(args, ", "));
         }
+    }
+
+    void pvpCommand(Player player, String[] args) throws Wrong {
+        World world = player.getWorld();
+        BuildWorld buildWorld = plugin.getBuildWorldByWorld(world);
+        UUID uuid = player.getUniqueId();
+        if (buildWorld == null || !buildWorld.getTrust(uuid).isOwner()) Wrong.noPerm();
+        boolean pvp = !world.getPVP();
+        world.setPVP(pvp);
+        Msg.info(player, "Toggled PVP " + (pvp ? "on" : "off"));
     }
 }
