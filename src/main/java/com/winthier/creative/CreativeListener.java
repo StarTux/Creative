@@ -41,6 +41,7 @@ import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.entity.FireworkExplodeEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.event.hanging.HangingBreakEvent;
+import org.bukkit.event.inventory.InventoryCreativeEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
@@ -50,6 +51,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.ServerCommandEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.spigotmc.event.player.PlayerSpawnLocationEvent;
 
@@ -456,5 +458,16 @@ public final class CreativeListener implements Listener {
         default:
             break;
         }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    void onInventoryCreative(InventoryCreativeEvent event) {
+        ItemStack item = event.getCursor();
+        if (item == null || item.getType() == Material.AIR) return;
+        if (!(event.getWhoClicked() instanceof Player)) return;
+        Player player = (Player) event.getWhoClicked();
+        if (player.isOp()) return;
+        boolean isSimple = item.isSimilar(new ItemStack(item.getType()));
+        if (!isSimple) event.setCancelled(true);
     }
 }
