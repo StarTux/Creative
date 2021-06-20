@@ -467,7 +467,8 @@ public final class CreativeListener implements Listener {
         if (!(event.getWhoClicked() instanceof Player)) return;
         Player player = (Player) event.getWhoClicked();
         if (player.isOp()) return;
-        boolean isSimple = item.isSimilar(new ItemStack(item.getType()));
-        if (!isSimple) event.setCancelled(true);
+        if (item.isSimilar(new ItemStack(item.getType()))) return;
+        if (item.serializeAsBytes().length < 1024) return;
+        event.setCancelled(true);
     }
 }
