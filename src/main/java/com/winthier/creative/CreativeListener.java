@@ -193,10 +193,12 @@ public final class CreativeListener implements Listener {
         if (event.getEntity() instanceof Player) {
             checkBuildEvent((Player) event.getEntity(), event.getBlock(), event);
         } else if (event.getEntity() instanceof FallingBlock) {
-            BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getBlock().getWorld());
-            if (buildWorld == null) return;
-            if (!buildWorld.isSet(BuildWorld.Flag.FALLING_BLOCKS)) {
-                event.setCancelled(true);
+            if (event.getTo().isAir()) {
+                BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getBlock().getWorld());
+                if (buildWorld == null) return;
+                if (!buildWorld.isSet(BuildWorld.Flag.FALLING_BLOCKS)) {
+                    event.setCancelled(true);
+                }
             }
         } else {
             BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getBlock().getWorld());
@@ -358,7 +360,8 @@ public final class CreativeListener implements Listener {
 
     @EventHandler
     public void onEntitySpawn(EntitySpawnEvent event) {
-        BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getEntity().getWorld());
+        World world = event.getEntity().getWorld();
+        BuildWorld buildWorld = plugin.getBuildWorldByWorld(world);
         if (buildWorld == null) return;
         switch (event.getEntity().getType()) {
         case FIREWORK:
@@ -369,6 +372,14 @@ public final class CreativeListener implements Listener {
         case FALLING_BLOCK:
             if (!buildWorld.isSet(BuildWorld.Flag.FALLING_BLOCKS)) {
                 event.setCancelled(true);
+            } else {
+                final int count = world.getEntitiesByClass(FallingBlock.class).size();
+                final int max = 1000;
+                if (count < max) {
+                    event.getEntity().setPersistent(false);
+                } else {
+                    event.setCancelled(true);
+                }
             }
             break;
         default:
