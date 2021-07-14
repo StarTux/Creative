@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -25,13 +26,17 @@ public final class AreaCommand implements TabExecutor {
     public AreaCommand enable() {
         rootNode = new CommandNode("area");
         rootNode.addChild("add")
-            .arguments("<file> <path>")
+            .arguments("<file> <name>")
             .description("Add an area")
             .playerCaller(this::add);
         rootNode.addChild("remove")
-            .arguments("<file> <path>")
-            .description("Remove current area")
+            .arguments("<file> <name> <index>")
+            .description("Remove area")
             .playerCaller(this::remove);
+        rootNode.addChild("list")
+            .arguments("<file> <name>")
+            .description("List areas")
+            .playerCaller(this::list);
         return this;
     }
 
@@ -55,6 +60,23 @@ public final class AreaCommand implements TabExecutor {
         areasFile.areas.computeIfAbsent(nameArg, u -> new ArrayList<>()).add(cuboid);
         saveAreasFile(world, fileArg, areasFile);
         player.sendMessage("Area added to " + world.getName() + "/" + fileArg + "/" + nameArg + ": " + cuboid);
+        return true;
+    }
+
+    boolean list(Player player, String[] args) {
+        if (args.length != 2) return false;
+        String fileArg = args[0];
+        String nameArg = args[1];
+        World world = player.getWorld();
+        AreasFile areasFile = getAreasFile(world, fileArg);
+        List<Cuboid> list = areasFile.areas.get(nameArg);
+        player.sendMessage(ChatColor.YELLOW + world.getName() + "/" + fileArg + "/" + nameArg
+                           + ": " + list.size() + " areas");
+        int index = 0;
+        for (Cuboid cuboid : list) {
+            player.sendMessage("" + ChatColor.YELLOW + index + ") " + ChatColor.WHITE + cuboid);
+            index += 1;
+        }
         return true;
     }
 
