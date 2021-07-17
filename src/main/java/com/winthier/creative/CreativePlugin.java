@@ -36,12 +36,12 @@ public final class CreativePlugin extends JavaPlugin {
     final Vault vault = new Vault(this);
     final Metadata metadata = new Metadata(this);
     final Random random = ThreadLocalRandom.current();
+    // config
+    private int maxFallingBlocks;
 
     @Override
     public void onEnable() {
         instance = this;
-        reloadConfig();
-        saveDefaultConfig();
         try {
             saveResource("permissions.yml", false);
         } catch (IllegalArgumentException iae) {
@@ -62,6 +62,7 @@ public final class CreativePlugin extends JavaPlugin {
         worldEditListener.enable();
         vault.setup();
         loadPlotWorlds();
+        loadConfigurationFile();
     }
 
     @Override
@@ -75,6 +76,7 @@ public final class CreativePlugin extends JavaPlugin {
     }
 
     void reloadAllConfigs() {
+        loadConfigurationFile();
         reloadConfig();
         buildWorlds = null;
         warps = null;
@@ -82,6 +84,13 @@ public final class CreativePlugin extends JavaPlugin {
         permission.reload();
         worldCommand.load();
         loadPlotWorlds();
+    }
+
+    void loadConfigurationFile() {
+        reloadConfig();
+        saveDefaultConfig();
+        maxFallingBlocks = getConfig().getInt("MaxFallingBlocks");
+        getLogger().info("MaxFallingBlocks=" + maxFallingBlocks);
     }
 
     // Build Worlds

@@ -374,7 +374,7 @@ public final class CreativeListener implements Listener {
                 event.setCancelled(true);
             } else {
                 final int count = world.getEntitiesByClass(FallingBlock.class).size();
-                final int max = 1000;
+                final int max = plugin.getMaxFallingBlocks();
                 if (count < max) {
                     event.getEntity().setPersistent(false);
                 } else {
