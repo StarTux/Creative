@@ -46,7 +46,7 @@ public final class WarpCommand implements TabExecutor {
         if (args.length == 0) return null;
         String arg = args[args.length - 1].toLowerCase();
         return plugin.getWarps().keySet().stream()
-            .filter(k -> k.toLowerCase().startsWith(arg))
+            .filter(k -> k.toLowerCase().contains(arg))
             .collect(Collectors.toList());
     }
 

@@ -281,11 +281,11 @@ final class WorldCommand implements TabExecutor {
                  + ChatColor.WHITE + ".");
     }
 
-    List<String> filterStartsWith(String term, List<String> in) {
+    List<String> filterContains(String term, List<String> in) {
         term = term.toLowerCase();
         List<String> out = new ArrayList<>();
         for (String i: in) {
-            if (i.toLowerCase().startsWith(term)) out.add(i);
+            if (i.toLowerCase().contains(term)) out.add(i);
         }
         return out;
     }
@@ -298,19 +298,19 @@ final class WorldCommand implements TabExecutor {
         if (args.length == 0) {
             return null;
         } else if (args.length == 1) {
-            return filterStartsWith(args[0], Arrays.asList("tp",
-                                                           "ls", "list", "visit", "info",
-                                                           "time", "spawn", "setspawn", "difficulty",
-                                                           "trust", "wetrust", "visittrust", "ownertrust",
-                                                           "untrust", "save", "rename", "gamemode", "set",
-                                                           "buy", "unlock", "grow", "pvp"));
+            return filterContains(args[0], Arrays.asList("tp",
+                                                         "ls", "list", "visit", "info",
+                                                         "time", "spawn", "setspawn", "difficulty",
+                                                         "trust", "wetrust", "visittrust", "ownertrust",
+                                                         "untrust", "save", "rename", "gamemode", "set",
+                                                         "buy", "unlock", "grow", "pvp"));
         } else if (args.length == 2 && args[0].equals("set")) {
-            return filterStartsWith(args[1], Arrays.asList("name", "description", "authors"));
+            return filterContains(args[1], Arrays.asList("name", "description", "authors"));
         } else if (args.length == 2 && args[0].equals("difficulty")) {
-            return filterStartsWith(args[1], Arrays.asList("easy", "normal", "hard", "peaceful"));
+            return filterContains(args[1], Arrays.asList("easy", "normal", "hard", "peaceful"));
         } else if (args.length == 2 && args[0].equals("buy")) {
-            return filterStartsWith(args[1], Stream.of(BuyType.values())
-                                    .map(BuyType::name).map(String::toLowerCase).collect(Collectors.toList()));
+            return filterContains(args[1], Stream.of(BuyType.values())
+                                  .map(BuyType::name).map(String::toLowerCase).collect(Collectors.toList()));
         } else if (args.length == 2 && args[0].equals("tp")) {
             return plugin.completeWorldNames(player, args[1]);
         }

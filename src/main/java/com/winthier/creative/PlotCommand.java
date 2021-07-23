@@ -96,7 +96,7 @@ final class PlotCommand implements TabExecutor {
                                       String label, String[] args) {
         if (args.length == 0) return null;
         if (args.length == 1) {
-            return Stream.of("list", "warp").filter(s -> s.startsWith(args[0]))
+            return Stream.of("list", "warp").filter(s -> s.contains(args[0]))
                 .collect(Collectors.toList());
         }
         return null;
