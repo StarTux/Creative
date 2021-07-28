@@ -322,7 +322,7 @@ final class WorldCommand implements TabExecutor {
         for (BuildWorld buildWorld : plugin.getBuildWorlds()) {
             if (!worldName.equals(buildWorld.getName())) continue;
             Trust trust = buildWorld.getTrust(player.getUniqueId());
-            if (trust.canBuild()) {
+            if (trust.isOwner()) {
                 result = buildWorld;
                 break;
             } else if (trust.canVisit()) {
