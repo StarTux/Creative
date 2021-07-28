@@ -318,20 +318,25 @@ final class WorldCommand implements TabExecutor {
     }
 
     boolean worldTeleport(Player player, String worldName) {
-        BuildWorld buildWorld = plugin.getBuildWorldByName(worldName);
-        if (buildWorld == null) {
-            Msg.warn(player, "World not found: %s", worldName);
-            return false;
+        BuildWorld result = null;
+        for (BuildWorld buildWorld : plugin.getBuildWorlds()) {
+            if (!worldName.equals(buildWorld.getName())) continue;
+            Trust trust = buildWorld.getTrust(player.getUniqueId());
+            if (trust.canBuild()) {
+                result = buildWorld;
+                break;
+            } else if (trust.canVisit()) {
+                result = buildWorld;
+            }
         }
-        UUID uuid = player.getUniqueId();
-        if (!buildWorld.getTrust(uuid).canVisit()) {
+        if (result == null) {
             Msg.warn(player, "World not found: %s", worldName);
             return false;
         }
         Msg.info(player, "Please wait.");
-        buildWorld.loadWorld();
-        buildWorld.teleportToSpawn(player);
-        Msg.info(player, "Teleported to %s.", buildWorld.getName());
+        result.loadWorld();
+        result.teleportToSpawn(player);
+        Msg.info(player, "Teleported to %s.", result.getName());
         return true;
     }
 
