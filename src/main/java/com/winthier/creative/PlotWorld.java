@@ -1,16 +1,16 @@
 package com.winthier.creative;
 
-import com.winthier.generic_events.GenericEvents;
+import com.winthier.playercache.PlayerCache;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
+import lombok.RequiredArgsConstructor;
 import lombok.Value;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
-import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public final class PlotWorld {
@@ -111,7 +111,7 @@ public final class PlotWorld {
         if (innerZ >= plotSize) return "road " + coordStr;
         Plot plot = getPlot(gridX, gridZ);
         if (plot == null) return "empty plot " + coordStr;
-        return "plot " + GenericEvents.cachedPlayerName(plot.owner)
+        return "plot " + PlayerCache.nameForUuid(plot.owner)
             + " " + coordStr;
     }
 }

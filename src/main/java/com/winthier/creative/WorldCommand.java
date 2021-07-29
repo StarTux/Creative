@@ -1,6 +1,6 @@
 package com.winthier.creative;
 
-import com.winthier.generic_events.GenericEvents;
+import com.cavetale.money.Money;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -229,7 +229,7 @@ final class WorldCommand implements TabExecutor {
             path = String.format("%s-%03d", base, suffix++);
         } while (plugin.getBuildWorldByPath(path) != null);
         plugin.getLogger().info("New world for " + base + ": " + path);
-        if (!GenericEvents.takePlayerMoney(player.getUniqueId(), price, plugin, "Buy creative world")) {
+        if (!Money.take(player.getUniqueId(), price, plugin, "Buy creative world")) {
             player.sendMessage("You don't have enough money");
             return;
         }
@@ -260,7 +260,7 @@ final class WorldCommand implements TabExecutor {
         }
         buildWorld.saveWorldConfig();
         player.sendMessage("Bought a world for "
-                           + ChatColor.GREEN + GenericEvents.formatMoney(price)
+                           + ChatColor.GREEN + Money.format(price)
                            + ChatColor.WHITE + ". Please wait...");
         World world = buildWorld.loadWorld();
         buildWorld.teleportToSpawn(player);
@@ -269,7 +269,7 @@ final class WorldCommand implements TabExecutor {
     void confirmUnlock(Player player, BuildWorld buildWorld, BuildWorld.Flag flag) {
         if (flag.price == 0) return;
         if (buildWorld.isSet(flag)) return;
-        if (!GenericEvents.takePlayerMoney(player.getUniqueId(), flag.price, plugin, "Creative world unlock " + flag.key)) {
+        if (!Money.take(player.getUniqueId(), flag.price, plugin, "Creative world unlock " + flag.key)) {
             player.sendMessage("You don't have enough money");
             return;
         }
@@ -277,7 +277,7 @@ final class WorldCommand implements TabExecutor {
         plugin.saveBuildWorlds();
         plugin.getPermission().updatePermissions(buildWorld.getWorld());
         Msg.info(player, "Unlocked " + flag.key + " for "
-                 + ChatColor.GOLD + GenericEvents.formatMoney(flag.price)
+                 + ChatColor.GOLD + Money.format(flag.price)
                  + ChatColor.WHITE + ".");
     }
 
@@ -657,7 +657,7 @@ final class WorldCommand implements TabExecutor {
         cb.append(" ").color(ChatColor.WHITE);
         cb.append(type.name().toLowerCase()).color(ChatColor.GREEN);
         cb.append(" world for ").color(ChatColor.WHITE);
-        cb.append(GenericEvents.formatMoney(price)).color(ChatColor.GOLD);
+        cb.append(Money.format(price)).color(ChatColor.GOLD);
         cb.append("?").color(ChatColor.WHITE);
         player.sendMessage(cb.create());
         String code = randomString();
@@ -688,7 +688,7 @@ final class WorldCommand implements TabExecutor {
             cb.append("Unlock ").color(ChatColor.WHITE);
             cb.append(flag.key).color(ChatColor.GREEN);
             cb.append("  for ").color(ChatColor.WHITE);
-            cb.append(GenericEvents.formatMoney(flag.price)).color(ChatColor.GOLD);
+            cb.append(Money.format(flag.price)).color(ChatColor.GOLD);
             cb.append("?").color(ChatColor.WHITE);
             player.sendMessage(cb.create());
             String code = randomString();
@@ -756,7 +756,7 @@ final class WorldCommand implements TabExecutor {
                 .append("in all directions")
                 .append("\n")
                 .append("Price: ")
-                .append(GenericEvents.formatMoney(price)).color(ChatColor.GOLD)
+                .append(Money.format(price)).color(ChatColor.GOLD)
                 .create();
             cb.append("[GROW]").color(ChatColor.GREEN);
             cb.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, tooltip));
@@ -781,9 +781,9 @@ final class WorldCommand implements TabExecutor {
             throw new Wrong("You cannot grow this world.");
         }
         player.sendMessage(ChatColor.WHITE + "Grow this world by " + ChatColor.GREEN + growBy + ChatColor.WHITE
-                           + " blocks for " + ChatColor.GOLD + GenericEvents.formatMoney(price) + ChatColor.WHITE + "?");
+                           + " blocks for " + ChatColor.GOLD + Money.format(price) + ChatColor.WHITE + "?");
         confirm(player, randomString(), () -> {
-                if (!GenericEvents.takePlayerMoney(player.getUniqueId(), price, plugin, "Creative world grow")) {
+                if (!Money.take(player.getUniqueId(), price, plugin, "Creative world grow")) {
                     player.sendMessage("You don't have enough money");
                     return;
                 }
@@ -794,7 +794,7 @@ final class WorldCommand implements TabExecutor {
                     world.getWorldBorder().setSize(buildWorld.getSize());
                 }
                 player.sendMessage("World border grown by " + ChatColor.GREEN + growBy + ChatColor.WHITE
-                                   + " blocks for " + ChatColor.GOLD + GenericEvents.formatMoney(price));
+                                   + " blocks for " + ChatColor.GOLD + Money.format(price));
             });
         return true;
     }

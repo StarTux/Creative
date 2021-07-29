@@ -1,6 +1,6 @@
 package com.winthier.creative;
 
-import com.winthier.generic_events.PlayerCanBuildEvent;
+import com.cavetale.core.event.block.PlayerCanBuildEvent;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
