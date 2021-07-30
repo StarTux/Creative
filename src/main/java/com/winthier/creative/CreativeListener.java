@@ -4,6 +4,7 @@ import com.cavetale.core.event.block.PlayerCanBuildEvent;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -68,7 +69,7 @@ public final class CreativeListener implements Listener {
         // Reset Permissions
         plugin.getPermission().resetPermissions(player);
         // Unload Empty World
-        unloadEmptyWorld(player.getWorld());
+        unloadEmptyWorldLater(player.getWorld());
     }
 
     @EventHandler
@@ -104,7 +105,7 @@ public final class CreativeListener implements Listener {
     @EventHandler
     public void onPlayerChangedWorld(PlayerChangedWorldEvent event) {
         updatePermissions(event.getPlayer());
-        unloadEmptyWorld(event.getFrom());
+        unloadEmptyWorldLater(event.getFrom());
     }
 
     void updatePermissions(Player player) {
@@ -115,21 +116,19 @@ public final class CreativeListener implements Listener {
         }.runTask(plugin);
     }
 
-    void unloadEmptyWorld(World world) {
+    private void unloadEmptyWorldLater(final World theWorld) {
         if (!plugin.isEnabled()) return;
-        BuildWorld buildWorld = plugin.getBuildWorldByWorld(world);
+        if (!theWorld.getPlayers().isEmpty()) return;
+        BuildWorld buildWorld = plugin.getBuildWorldByWorld(theWorld);
         if (buildWorld == null) return;
         if (buildWorld.isSet(BuildWorld.Flag.KEEP_IN_MEMORY)) return;
-        final String name = world.getName();
-        new BukkitRunnable() {
-            @Override public void run() {
-                World world = plugin.getServer().getWorld(name);
-                if (world == null) return;
-                if (!world.getPlayers().isEmpty()) return;
-                if (!plugin.getServer().unloadWorld(world, true)) return;
-                plugin.getLogger().info("Unloaded world " + name);
-            }
-        }.runTaskLater(plugin, 200L);
+        final String name = theWorld.getName();
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                World world = Bukkit.getWorld(name);
+                if (world != null) {
+                    plugin.unloadEmptyWorld(world);
+                }
+            }, 600L);
     }
 
     // Build Permission Check

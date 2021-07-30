@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import lombok.Getter;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -73,6 +74,22 @@ public final class CreativePlugin extends JavaPlugin {
             storeLogoutLocation(player);
         }
         saveLogoutLocations();
+        // Unload all empty worlds!
+        for (BuildWorld buildWorld : buildWorlds) {
+            World world = buildWorld.getWorld();
+            if (world != null) {
+                unloadEmptyWorld(world);
+            }
+        }
+    }
+
+    protected boolean unloadEmptyWorld(final World world) {
+        if (world == null) return false;
+        if (!world.getPlayers().isEmpty()) return false;
+        world.save();
+        if (!Bukkit.unloadWorld(world, true)) return false;
+        getLogger().info("Unloaded world " + world.getName());
+        return true;
     }
 
     void reloadAllConfigs() {
