@@ -53,7 +53,6 @@ import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.spigotmc.event.player.PlayerSpawnLocationEvent;
 
 @RequiredArgsConstructor
@@ -109,11 +108,7 @@ public final class CreativeListener implements Listener {
     }
 
     void updatePermissions(Player player) {
-        new BukkitRunnable() {
-            @Override public void run() {
-                plugin.getPermission().updatePermissions(player);
-            }
-        }.runTask(plugin);
+        Bukkit.getScheduler().runTask(plugin, () -> plugin.getPermission().updatePermissions(player));
     }
 
     private void unloadEmptyWorldLater(final World theWorld) {
