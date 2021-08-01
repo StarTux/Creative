@@ -172,8 +172,7 @@ public final class CreativeListener implements Listener {
             event.setCancelled(true);
             return;
         }
-        case RIGHT_CLICK_BLOCK:
-        case LEFT_CLICK_BLOCK: {
+        case RIGHT_CLICK_BLOCK: {
             if (!event.hasBlock()) return;
             Material blockType = event.getClickedBlock().getType();
             if (blockType == Material.CAKE) {
