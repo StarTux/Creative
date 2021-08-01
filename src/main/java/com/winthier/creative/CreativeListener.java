@@ -1,6 +1,8 @@
 package com.winthier.creative;
 
+import com.cavetale.core.event.block.PlayerBreakBlockEvent;
 import com.cavetale.core.event.block.PlayerCanBuildEvent;
+import com.destroystokyo.paper.event.block.TNTPrimeEvent;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +23,6 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.block.BlockFormEvent;
@@ -126,8 +127,9 @@ public final class CreativeListener implements Listener {
             }, 600L);
     }
 
-    // Build Permission Check
-
+    /**
+     * Generic build permission check.
+     */
     void checkBuildEvent(Player player, Block block, Cancellable event) {
         if (plugin.doesIgnore(player)) return;
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(player.getWorld());
@@ -159,15 +161,28 @@ public final class CreativeListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOW)
     public void onPlayerInteract(PlayerInteractEvent event) {
-        if (event.getAction() == Action.PHYSICAL && event.hasBlock()) {
+        checkBuildEvent(event.getPlayer(), event.getClickedBlock(), event);
+        if (event.isCancelled()) return;
+        switch (event.getAction()) {
+        case PHYSICAL: {
+            if (!event.hasBlock()) return;
             // Turtle eggs, farmland, maybe more
             Material mat = event.getClickedBlock().getType();
-            if (!Tag.PRESSURE_PLATES.isTagged(mat)) {
+            if (Tag.PRESSURE_PLATES.isTagged(mat)) return;
+            event.setCancelled(true);
+            return;
+        }
+        case RIGHT_CLICK_BLOCK:
+        case LEFT_CLICK_BLOCK: {
+            if (!event.hasBlock()) return;
+            Material blockType = event.getClickedBlock().getType();
+            if (blockType == Material.CAKE) {
                 event.setCancelled(true);
                 return;
             }
         }
-        checkBuildEvent(event.getPlayer(), event.getClickedBlock(), event);
+        default: break;
+        }
     }
 
     @EventHandler(priority = EventPriority.LOW)
@@ -266,7 +281,12 @@ public final class CreativeListener implements Listener {
     }
 
     @EventHandler
-    public void playerCanBuild(PlayerCanBuildEvent event) {
+    public void onPlayerCanBuild(PlayerCanBuildEvent event) {
+        checkBuildEvent(event.getPlayer(), event.getBlock(), event);
+    }
+
+    @EventHandler
+    public void onPlayerBreakBlock(PlayerBreakBlockEvent event) {
         checkBuildEvent(event.getPlayer(), event.getBlock(), event);
     }
 
@@ -474,6 +494,13 @@ public final class CreativeListener implements Listener {
         if (player.isOp()) return;
         if (item.isSimilar(new ItemStack(item.getType()))) return;
         if (item.serializeAsBytes().length < 1024) return;
+        event.setCancelled(true);
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    void onTNTPrime(TNTPrimeEvent event) {
+        BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getBlock().getWorld());
+        if (buildWorld == null) return;
         event.setCancelled(true);
     }
 }
