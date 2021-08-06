@@ -212,7 +212,7 @@ public final class CreativePlugin extends JavaPlugin {
         BuildWorld buildWorld = getBuildWorldByPath(worldName);
         if (buildWorld == null) return null;
         if (!doesIgnore(uuid) && !buildWorld.getTrust(uuid).canVisit()) return null;
-        World world = buildWorld.loadWorld();
+        World world = buildWorld.getWorld();
         if (world == null) return null;
         double x = config.getDouble("x");
         double y = config.getDouble("y");
