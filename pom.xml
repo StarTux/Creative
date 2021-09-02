@@ -75,14 +75,6 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- Vault -->
-    <dependency>
-      <groupId>net.milkbowl.vault</groupId>
-      <artifactId>VaultAPI</artifactId>
-      <version>1.7</version>
-      <scope>provided</scope>
-    </dependency>
-
     <!-- Money -->
     <dependency>
       <groupId>com.cavetale.money</groupId>

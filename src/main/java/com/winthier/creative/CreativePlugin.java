@@ -34,7 +34,6 @@ public final class CreativePlugin extends JavaPlugin {
     private final Set<UUID> ignores = new HashSet<>();
     @Getter private static CreativePlugin instance = null;
     WorldEditListener worldEditListener = new WorldEditListener(this);
-    final Vault vault = new Vault(this);
     final Metadata metadata = new Metadata(this);
     final Random random = ThreadLocalRandom.current();
     // config
@@ -61,7 +60,6 @@ public final class CreativePlugin extends JavaPlugin {
         }
         getBuildWorlds();
         worldEditListener.enable();
-        vault.setup();
         loadPlotWorlds();
         loadConfigurationFile();
     }
