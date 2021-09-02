@@ -1,7 +1,7 @@
 package com.winthier.creative;
 
+import com.cavetale.core.event.block.PlayerBlockAbilityQuery;
 import com.cavetale.core.event.block.PlayerBreakBlockEvent;
-import com.cavetale.core.event.block.PlayerCanBuildEvent;
 import com.destroystokyo.paper.event.block.TNTPrimeEvent;
 import java.time.Instant;
 import java.util.UUID;
@@ -280,8 +280,8 @@ public final class CreativeListener implements Listener {
     }
 
     @EventHandler
-    public void onPlayerCanBuild(PlayerCanBuildEvent event) {
-        checkBuildEvent(event.getPlayer(), event.getBlock(), event);
+    public void onPlayerBlockAbility(PlayerBlockAbilityQuery query) {
+        checkBuildEvent(query.getPlayer(), query.getBlock(), query);
     }
 
     @EventHandler
