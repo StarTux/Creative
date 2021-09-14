@@ -766,7 +766,7 @@ final class AdminCommand implements TabExecutor {
     }
 
     boolean clearTrustCommand(CommandSender sender, String[] args) {
-        if (args.length != 3) return false;
+        if (args.length != 1) return false;
         String worldName = args[0];
         BuildWorld buildWorld = plugin.getBuildWorldByPath(worldName);
         if (buildWorld == null) {
