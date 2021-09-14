@@ -2,7 +2,10 @@ package com.winthier.creative;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +44,7 @@ final class AdminCommand implements TabExecutor {
         case "tp": return tpCommand(sender, argl);
         case "remove": return removeCommand(sender, argl);
         case "trust": return trustCommand(sender, argl);
+        case "cleartrust": return clearTrustCommand(sender, argl);
         case "resetowner": return resetOwnerCommand(sender, argl);
         case "setowner": return setOwnerCommand(sender, argl);
         case "create": return createCommand(sender, argl);
@@ -62,9 +66,13 @@ final class AdminCommand implements TabExecutor {
         if (args.length == 0) return Collections.emptyList();
         String arg = args[args.length - 1];
         if (args.length == 1) {
-            return Stream.of("info", "remove", "trust", "resetowner", "setowner", "import", "load", "unload", "tp", "config", "set",
-                             "debugplot", "deletewarp", "setwarp", "warp", "ignore", "createvoid", "create", "listloaded",
-                             "who", "list", "listunregistered", "reload")
+            return Stream.of("info", "remove", "trust", "cleartrust",
+                             "resetowner", "setowner", "import",
+                             "load", "unload", "tp", "config", "set",
+                             "debugplot", "deletewarp", "setwarp",
+                             "warp", "ignore", "createvoid", "create",
+                             "listloaded", "who", "list",
+                             "listunregistered", "reload")
                 .filter(s -> s.contains(arg))
                 .collect(Collectors.toList());
         }
@@ -72,6 +80,7 @@ final class AdminCommand implements TabExecutor {
         case "info":
         case "remove":
         case "trust":
+        case "cleartrust":
         case "resetowner":
         case "setowner":
         case "import":
@@ -753,6 +762,30 @@ final class AdminCommand implements TabExecutor {
         }
         sender.sendMessage(ChatColor.GREEN + playerName + " now has " + trust.nice()
                            + " trust in world " + buildWorld.getName());
+        return true;
+    }
+
+    boolean clearTrustCommand(CommandSender sender, String[] args) {
+        if (args.length != 3) return false;
+        String worldName = args[0];
+        BuildWorld buildWorld = plugin.getBuildWorldByPath(worldName);
+        if (buildWorld == null) {
+            sender.sendMessage(ChatColor.RED + "World not found: " + worldName);
+            return true;
+        }
+        int count = 0;
+        for (Iterator<Map.Entry<UUID, Trusted>> iter = buildWorld.getTrusted().entrySet().iterator(); iter.hasNext();) {
+            if (!iter.next().getValue().getTrust().isOwner()) {
+                iter.remove();
+                count += 1;
+            }
+        }
+        if (count == 0) {
+            sender.sendMessage(ChatColor.RED + "Nobody is trusted in " + buildWorld.getPath() + "!");
+            return true;
+        }
+        plugin.saveBuildWorlds();
+        sender.sendMessage(ChatColor.YELLOW + "Removed " + count + " players who were trusted in " + buildWorld.getPath());
         return true;
     }
 }
