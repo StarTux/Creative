@@ -304,4 +304,13 @@ final class BuildWorld {
     public void set(Flag flag, boolean value) {
         flags.put(flag, value);
     }
+
+    /**
+     * Used by AdminCommand::rankTrustCommand.
+     */
+    protected int trustedScore() {
+        return publicTrust.canBuild()
+            ? Integer.MAX_VALUE
+            : trusted.size();
+    }
 }

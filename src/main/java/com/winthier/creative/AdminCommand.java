@@ -1,5 +1,6 @@
 package com.winthier.creative;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
@@ -9,6 +10,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -45,6 +48,7 @@ final class AdminCommand implements TabExecutor {
         case "remove": return removeCommand(sender, argl);
         case "trust": return trustCommand(sender, argl);
         case "cleartrust": return clearTrustCommand(sender, argl);
+        case "ranktrust": return rankTrustCommand(sender, argl);
         case "resetowner": return resetOwnerCommand(sender, argl);
         case "setowner": return setOwnerCommand(sender, argl);
         case "create": return createCommand(sender, argl);
@@ -67,10 +71,11 @@ final class AdminCommand implements TabExecutor {
         String arg = args[args.length - 1];
         if (args.length == 1) {
             return Stream.of("info", "remove", "trust", "cleartrust",
-                             "resetowner", "setowner", "import",
-                             "load", "unload", "tp", "config", "set",
-                             "debugplot", "deletewarp", "setwarp",
-                             "warp", "ignore", "createvoid", "create",
+                             "ranktrust", "resetowner", "setowner",
+                             "import", "load", "unload", "tp",
+                             "config", "set", "debugplot",
+                             "deletewarp", "setwarp", "warp",
+                             "ignore", "createvoid", "create",
                              "listloaded", "who", "list",
                              "listunregistered", "reload")
                 .filter(s -> s.contains(arg))
@@ -773,6 +778,11 @@ final class AdminCommand implements TabExecutor {
             sender.sendMessage(ChatColor.RED + "World not found: " + worldName);
             return true;
         }
+        boolean publicTrust = false;
+        if (buildWorld.getPublicTrust().canBuild()) {
+            buildWorld.setPublicTrust(Trust.VISIT);
+            publicTrust = true;
+        }
         int count = 0;
         for (Iterator<Map.Entry<UUID, Trusted>> iter = buildWorld.getTrusted().entrySet().iterator(); iter.hasNext();) {
             if (!iter.next().getValue().getTrust().isOwner()) {
@@ -780,12 +790,49 @@ final class AdminCommand implements TabExecutor {
                 count += 1;
             }
         }
-        if (count == 0) {
+        if (!publicTrust && count == 0) {
             sender.sendMessage(ChatColor.RED + "Nobody is trusted in " + buildWorld.getPath() + "!");
             return true;
         }
         plugin.saveBuildWorlds();
+        if (publicTrust) {
+            sender.sendMessage(ChatColor.YELLOW + "Reset public trust to visit in " + buildWorld.getPath());
+        }
         sender.sendMessage(ChatColor.YELLOW + "Removed " + count + " players who were trusted in " + buildWorld.getPath());
+        return true;
+    }
+
+    boolean rankTrustCommand(CommandSender sender, String[] args) {
+        if (args.length > 1) return false;
+        int page = 0;
+        if (args.length >= 1) {
+            try {
+                page = Integer.parseInt(args[0]);
+            } catch (NumberFormatException nfe) {
+                sender.sendMessage(ChatColor.RED + "Invalid page: " + args[0]);
+                return true;
+            }
+        }
+        List<BuildWorld> worlds = new ArrayList<>(plugin.getBuildWorlds());
+        final int pageSize = 20;
+        final int maxPageIndex = worlds.size() / pageSize;
+        if (page < 0 || page > maxPageIndex) {
+            sender.sendMessage(ChatColor.RED + "Page index out of bounds: " + page);
+            return true;
+        }
+        Collections.sort(worlds, (b, a) -> (Integer.compare(a.trustedScore(), b.trustedScore())));
+        List<Component> lines = new ArrayList<>();
+        lines.add(Component.text("World trust list (page " + page + ")", NamedTextColor.YELLOW));
+        final int startIndex = page * pageSize;
+        final int endIndex = startIndex + pageSize;
+        for (int i = startIndex; i < endIndex; i += 1) {
+            if (i >= worlds.size()) break;
+            BuildWorld world = worlds.get(i);
+            lines.add(Component.text("#" + i, NamedTextColor.GRAY)
+                      .append(Component.text(" " + Math.min(999, world.trustedScore()), NamedTextColor.YELLOW))
+                      .append(Component.text(" " + world.getPath(), NamedTextColor.WHITE)));
+        }
+        sender.sendMessage(Component.join(Component.newline(), lines));
         return true;
     }
 }
