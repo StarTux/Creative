@@ -130,23 +130,25 @@ public final class CreativeListener implements Listener {
     /**
      * Generic build permission check.
      */
-    void checkBuildEvent(Player player, Block block, Cancellable event) {
-        if (plugin.doesIgnore(player)) return;
+    protected boolean checkBuildEvent(Player player, Block block, Cancellable event) {
+        if (plugin.doesIgnore(player)) return true;
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(player.getWorld());
         if (buildWorld == null) {
             event.setCancelled(true);
-            return;
+            return false;
         }
         if (block != null && plugin.isPlotWorld(block.getWorld())) {
             if (!plugin.canBuildInPlot(player, block)) {
                 event.setCancelled(true);
+                return false;
             }
-            return;
+            return true;
         }
         if (!buildWorld.getTrust(player.getUniqueId()).canBuild()) {
             event.setCancelled(true);
-            return;
+            return false;
         }
+        return true;
     }
 
     @EventHandler(priority = EventPriority.LOW)
@@ -159,9 +161,10 @@ public final class CreativeListener implements Listener {
         checkBuildEvent(event.getPlayer(), event.getBlock(), event);
     }
 
-    @EventHandler(priority = EventPriority.LOW)
+    @EventHandler(ignoreCancelled = false, priority = EventPriority.LOW)
     public void onPlayerInteract(PlayerInteractEvent event) {
-        checkBuildEvent(event.getPlayer(), event.getClickedBlock(), event);
+        final Player player = event.getPlayer();
+        checkBuildEvent(player, event.getClickedBlock(), event);
         if (event.isCancelled()) return;
         switch (event.getAction()) {
         case PHYSICAL: {
