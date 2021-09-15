@@ -174,6 +174,7 @@ public final class CreativeListener implements Listener {
         }
         case RIGHT_CLICK_BLOCK: {
             if (!event.hasBlock()) return;
+            if (player.isSneaking()) return;
             Material blockType = event.getClickedBlock().getType();
             if (blockType == Material.CAKE) {
                 event.setCancelled(true);
