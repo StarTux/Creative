@@ -547,16 +547,16 @@ final class WorldCommand implements TabExecutor {
         Trust playerTrust = buildWorld.getTrust(player.getUniqueId());
         if (!playerTrust.canVisit()) Wrong.noPerm();
         Msg.info(player, "&l%s &3World Info", buildWorld.getName());
+        listTrusted(player, buildWorld, Trust.OWNER);
+        listTrusted(player, buildWorld, Trust.WORLD_EDIT);
+        listTrusted(player, buildWorld, Trust.BUILD);
+        listTrusted(player, buildWorld, Trust.VISIT);
         if (!buildWorld.getBuildGroups().isEmpty()) {
             player.sendMessage(Component.text().color(NamedTextColor.WHITE)
                                .append(Component.text(" Build Groups ", NamedTextColor.DARK_AQUA, TextDecoration.ITALIC))
                                .append(Component.text(String.join(" ", buildWorld.getBuildGroups()
                                                                   .stream().map(Msg::camelCase).collect(Collectors.toList())))));
         }
-        listTrusted(player, buildWorld, Trust.OWNER);
-        listTrusted(player, buildWorld, Trust.WORLD_EDIT);
-        listTrusted(player, buildWorld, Trust.BUILD);
-        listTrusted(player, buildWorld, Trust.VISIT);
         if (buildWorld.getPublicTrust() != null && buildWorld.getPublicTrust() != Trust.NONE) {
             Msg.send(player, " &3&oPublic Trust &r%s", buildWorld.getPublicTrust().nice());
         }
