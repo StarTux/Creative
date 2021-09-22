@@ -33,7 +33,7 @@ final class BuildWorld {
     private Trust publicTrust = Trust.NONE;
     private YamlConfiguration worldConfig = null;
     Map<Flag, Boolean> flags = new EnumMap<>(Flag.class);
-    private String buildGroup = null;
+    private List<String> buildGroups = new ArrayList<>();
     // World Border
     private int centerX = 0;
     private int centerZ = 0;
@@ -109,7 +109,11 @@ final class BuildWorld {
     Trust getTrust(UUID uuid) {
         if (getPlugin().doesIgnore(uuid)) return Trust.OWNER;
         if (owner != null && owner.getUuid().equals(uuid)) return Trust.OWNER;
-        if (buildGroup != null && Perm.isInGroup(uuid, buildGroup)) return Trust.WORLD_EDIT;
+        if (!buildGroups.isEmpty()) {
+            for (String buildGroup : buildGroups) {
+                if (Perm.isInGroup(uuid, buildGroup)) return Trust.WORLD_EDIT;
+            }
+        }
         Trusted t = trusted.get(uuid);
         if (t == null) return publicTrust;
         Trust result = t.getTrust();
@@ -263,7 +267,7 @@ final class BuildWorld {
             result.put("owner", owner.serialize());
         }
         Map<String, Object> trustedMap = new LinkedHashMap<>();
-        result.put("buildGroup", buildGroup);
+        result.put("buildGroups", new ArrayList<String>(buildGroups));
         result.put("trusted", trustedMap);
         result.put("publicTrust", publicTrust.name());
         for (Map.Entry<UUID, Trusted> e: this.trusted.entrySet()) {
@@ -283,7 +287,7 @@ final class BuildWorld {
         String path = config.getString("path");
         Builder owner = Builder.deserialize(config.getConfigurationSection("owner"));
         BuildWorld result = new BuildWorld(name, path, owner);
-        result.buildGroup = config.getString("buildGroup");
+        result.buildGroups = config.getStringList("buildGroups");
         ConfigurationSection trustedSection = config.getConfigurationSection("trusted");
         if (trustedSection != null) {
             for (String key: trustedSection.getKeys(false)) {
