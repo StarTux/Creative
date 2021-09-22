@@ -11,6 +11,9 @@ import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
@@ -541,6 +544,11 @@ final class WorldCommand implements TabExecutor {
     void worldInfo(Player player) throws Wrong {
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(player.getWorld());
         if (buildWorld == null) Wrong.noPerm();
+        if (!buildWorld.getBuildGroups().isEmpty()) {
+            player.sendMessage(Component.text().color(NamedTextColor.WHITE)
+                               .append(Component.text(" Build Groups ", NamedTextColor.DARK_AQUA, TextDecoration.ITALIC))
+                               .append(Component.text(String.join(" ", buildWorld.getBuildGroups()))));
+        }
         Trust playerTrust = buildWorld.getTrust(player.getUniqueId());
         if (!playerTrust.canVisit()) Wrong.noPerm();
         Msg.info(player, "&l%s &3World Info", buildWorld.getName());
