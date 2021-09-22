@@ -61,6 +61,7 @@ final class AdminCommand implements TabExecutor {
         case "setwarp": return setWarpCommand(sender, argl);
         case "deletewarp": return deleteWarpCommand(sender, argl);
         case "debugplot": return debugPlotCommand(sender, argl);
+        case "buildgroup": return buildGroupCommand(sender, argl);
         default: return false;
         }
     }
@@ -77,7 +78,8 @@ final class AdminCommand implements TabExecutor {
                              "deletewarp", "setwarp", "warp",
                              "ignore", "createvoid", "create",
                              "listloaded", "who", "list",
-                             "listunregistered", "reload")
+                             "listunregistered", "reload",
+                             "buildgroup")
                 .filter(s -> s.contains(arg))
                 .collect(Collectors.toList());
         }
@@ -93,6 +95,7 @@ final class AdminCommand implements TabExecutor {
         case "unload":
         case "tp":
         case "config":
+        case "buildgroup":
             if (args.length == 2) {
                 return tabCompleteWorldPaths(arg);
             }
@@ -154,6 +157,7 @@ final class AdminCommand implements TabExecutor {
         sender.sendMessage("Name: " + buildWorld.getName());
         sender.sendMessage("Path: " + buildWorld.getPath());
         sender.sendMessage("Owner: " + buildWorld.getOwnerName());
+        sender.sendMessage("BuildGroup: " + buildWorld.getBuildGroup());
         sender.sendMessage("Trusted: " + buildWorld.getTrusted().values().stream()
                            .map(trusted -> trusted.getBuilder().getName()
                                 + "=" + trusted.getTrust().nice())
@@ -833,6 +837,26 @@ final class AdminCommand implements TabExecutor {
                       .append(Component.text(" " + world.getPath(), NamedTextColor.WHITE)));
         }
         sender.sendMessage(Component.join(Component.newline(), lines));
+        return true;
+    }
+
+    boolean buildGroupCommand(CommandSender sender, String[] args) {
+        if (args.length != 1 && args.length != 2) return false;
+        BuildWorld buildWorld = plugin.getBuildWorldByPath(args[0]);
+        if (buildWorld == null) {
+            sender.sendMessage("World not found: " + args[0]);
+            return true;
+        }
+        String buildGroup = args.length >= 2 ? args[1] : null;
+        buildWorld.setBuildGroup(buildGroup);
+        plugin.saveBuildWorlds();
+        if (buildWorld != null) {
+            sender.sendMessage(Component.text("Build group of " + buildWorld.getName() + " set to " + buildGroup,
+                                              NamedTextColor.YELLOW));
+        } else {
+            sender.sendMessage(Component.text("Build group of " + buildWorld.getName() + " reset",
+                                              NamedTextColor.YELLOW));
+        }
         return true;
     }
 }

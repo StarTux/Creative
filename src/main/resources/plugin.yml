@@ -7,7 +7,7 @@ version: 0.1
 website: https://github.com/StarTux/Creative
 api-version: 1.17
 
-depend: [Core, WorldEdit, PlayerCache, Money, VoidGenerator, FlatGenerator]
+depend: [Core, WorldEdit, PlayerCache, Money, VoidGenerator, FlatGenerator, Perm]
 softdepend: []
 
 commands:
