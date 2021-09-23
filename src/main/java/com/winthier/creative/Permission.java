@@ -42,6 +42,7 @@ final class Permission {
                 givePermission(player, perm);
             }
         }
+        player.updateCommands();
     }
 
     void updatePermissions(World world) {
