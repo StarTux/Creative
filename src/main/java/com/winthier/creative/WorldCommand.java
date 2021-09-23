@@ -165,7 +165,7 @@ final class WorldCommand implements TabExecutor {
                 Wrong.noPerm();
             }
             changeWorldSetting(player, buildWorld, args[0].toLowerCase(),
-                               Arrays.asList(Arrays.copyOfRange(args, 1, args.length)));
+                               List.of(Arrays.copyOfRange(args, 1, args.length)));
             break;
         }
         case "buy":
@@ -301,21 +301,24 @@ final class WorldCommand implements TabExecutor {
         if (args.length == 0) {
             return null;
         } else if (args.length == 1) {
-            return filterContains(args[0], Arrays.asList("tp",
-                                                         "ls", "list", "visit", "info",
-                                                         "time", "spawn", "setspawn", "difficulty",
-                                                         "trust", "wetrust", "visittrust", "ownertrust",
-                                                         "untrust", "save", "rename", "gamemode", "set",
-                                                         "buy", "unlock", "grow", "pvp"));
+            return filterContains(args[0], List.of("tp",
+                                                   "ls", "list", "visit", "info",
+                                                   "time", "spawn", "setspawn", "difficulty",
+                                                   "trust", "wetrust", "visittrust", "ownertrust",
+                                                   "untrust", "save", "rename", "gamemode", "set",
+                                                   "buy", "unlock", "grow", "pvp"));
         } else if (args.length == 2 && args[0].equals("set")) {
-            return filterContains(args[1], Arrays.asList("name", "description", "authors"));
+            return filterContains(args[1], List.of("name", "description", "authors"));
         } else if (args.length == 2 && args[0].equals("difficulty")) {
-            return filterContains(args[1], Arrays.asList("easy", "normal", "hard", "peaceful"));
+            return filterContains(args[1], List.of("easy", "normal", "hard", "peaceful"));
         } else if (args.length == 2 && args[0].equals("buy")) {
             return filterContains(args[1], Stream.of(BuyType.values())
                                   .map(BuyType::name).map(String::toLowerCase).collect(Collectors.toList()));
         } else if (args.length == 2 && args[0].equals("tp")) {
             return plugin.completeWorldNames(player, args[1]);
+        } else if (args.length == 2 && args[0].equals("gamemode")) {
+            return filterContains(args[1], List.of("0", "1", "2", "3",
+                                                   "survival", "creative", "adventure", "spectator"));
         }
         return null;
     }
@@ -614,7 +617,7 @@ final class WorldCommand implements TabExecutor {
     void gamemodeCommand(Player player, String[] args) throws Wrong {
         if (args.length != 1) Wrong.usage();
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(player.getWorld());
-        if (buildWorld == null || !buildWorld.getTrust(player.getUniqueId()).isOwner()) {
+        if (buildWorld == null || !buildWorld.getTrust(player.getUniqueId()).canBuild()) {
             Wrong.noPerm();
         }
         GameMode newGM;
@@ -622,9 +625,11 @@ final class WorldCommand implements TabExecutor {
         case "0": newGM = GameMode.SURVIVAL; break;
         case "1": newGM = GameMode.CREATIVE; break;
         case "2": newGM = GameMode.ADVENTURE; break;
+        case "3": newGM = GameMode.SPECTATOR; break;
         case "survival": newGM = GameMode.SURVIVAL; break;
         case "creative": newGM = GameMode.CREATIVE; break;
         case "adventure": newGM = GameMode.ADVENTURE; break;
+        case "spectator": newGM = GameMode.SPECTATOR; break;
         default:
             newGM = null;
         }
