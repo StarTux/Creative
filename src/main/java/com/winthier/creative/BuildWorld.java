@@ -109,12 +109,13 @@ final class BuildWorld {
     Trust getTrust(UUID uuid) {
         if (getPlugin().doesIgnore(uuid)) return Trust.OWNER;
         if (owner != null && owner.getUuid().equals(uuid)) return Trust.OWNER;
+        Trusted t = trusted.get(uuid);
+        if (t != null && t.getTrust().isOwner()) return t.getTrust();
         if (!buildGroups.isEmpty()) {
             for (String buildGroup : buildGroups) {
                 if (Perm.isInGroup(uuid, buildGroup)) return Trust.WORLD_EDIT;
             }
         }
-        Trusted t = trusted.get(uuid);
         if (t == null) return publicTrust;
         Trust result = t.getTrust();
         if (publicTrust.priority > result.priority) return publicTrust;
