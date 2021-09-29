@@ -1,16 +1,18 @@
 main: com.winthier.creative.CreativePlugin
-
 name: Creative
+
+version: 0.1
+api-version: 1.17
+
 description: Manage Creative Worlds
 author: StarTux
-version: 0.1
 website: https://github.com/StarTux/Creative
-api-version: 1.17
 
 depend: [Core, WorldEdit, PlayerCache, Money, VoidGenerator, FlatGenerator, Perm]
 softdepend: []
 
 commands:
+
   world:
     aliases: [ worlds ]
     description: User interface
@@ -32,10 +34,12 @@ commands:
       /world untrust <player> - Revoke trust
       /world confirm - Confirm action
       /world cancel - Cancel action
+
   wtp:
     description: World Teleport
     permission: creative.world
     usage: /wtp <world>
+
   creativeadmin:
     aliases: [ ca ]
     description: Admin Interface
@@ -68,11 +72,13 @@ commands:
       /ca unload <world>
       /ca setwarp <name> - Set warp at player location
       /ca deletewarp <name> - Delete warp
+
   warp:
     description: Warps
     permission: creative.warp
     usage: |-
       /warp [name]
+
   plot:
     aliases: [plots]
     description: Plot interface
@@ -80,28 +86,25 @@ commands:
     usage: |-
       /plot list - List your plots
       /plot warp <id> - Warp to plot
-  area:
-    aliases: []
-    description: Area setup command
-    permission: creative.area
-    usage: |-
-      /area list [file] - List areas
-      /area highlight <file> <name> - Highlight areas
-      /area add <file> <name> - Create new area from WE
-      /area remove <file> <name> - Remove area you are in
+
 permissions:
+
   creative.world:
     descrption: Use /world and /wtp
     default: op
+
   creative.warp:
     descrption: Use /warp
     default: op
+
   creative.admin:
     description: Use /CreativeAdmin
     default: op
+
   creative.worldedit:
     description: Use WorldEdit in the appropriate worlds
     default: op
+
   creative.world.buy:
     description: Buy a creative world
     default: op

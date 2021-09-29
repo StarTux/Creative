@@ -53,7 +53,6 @@ public final class CreativePlugin extends JavaPlugin {
         getCommand("creativeadmin").setExecutor(new AdminCommand(this));
         getCommand("warp").setExecutor(new WarpCommand(this));
         getCommand("plot").setExecutor(new PlotCommand(this));
-        getCommand("area").setExecutor(new AreaCommand(this).enable());
         getServer().getPluginManager().registerEvents(new CreativeListener(this), this);
         for (Player player: getServer().getOnlinePlayers()) {
             permission.updatePermissions(player);
