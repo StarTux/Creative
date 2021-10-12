@@ -1,8 +1,9 @@
 package com.winthier.creative;
 
-import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -17,7 +18,11 @@ public final class WTPCommand implements TabExecutor {
         if (args.length < 1) return false;
         Player player = sender instanceof Player ? (Player) sender : null;
         if (player == null) return false;
-        plugin.getWorldCommand().worldTeleport(player, String.join(" ", args));
+        try {
+            plugin.getWorldCommand().worldTeleport(player, String.join(" ", args));
+        } catch (WorldCommand.Wrong wrong) {
+            sender.sendMessage(Component.text(wrong.getMessage(), NamedTextColor.RED));
+        }
         return true;
     }
 
@@ -27,6 +32,6 @@ public final class WTPCommand implements TabExecutor {
         if (args.length == 1) {
             return plugin.completeWorldNames((Player) sender, args[0]);
         }
-        return Collections.emptyList();
+        return List.of();
     }
 }

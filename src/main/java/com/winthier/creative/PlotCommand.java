@@ -6,10 +6,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.chat.ClickEvent;
-import net.md_5.bungee.api.chat.ComponentBuilder;
-import net.md_5.bungee.api.chat.HoverEvent;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.JoinConfiguration;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -38,24 +39,23 @@ final class PlotCommand implements TabExecutor {
             if (args.length != 0) return false;
             List<PlotWorld.Plot> list = listPlots(player);
             if (list.isEmpty()) {
-                player.sendMessage(ChatColor.RED + "You don't have any plots");
+                player.sendMessage(Component.text("You don't have any plots", NamedTextColor.RED));
                 return true;
             }
             int i = 0;
             int size = list.size();
-            player.sendMessage(ChatColor.AQUA + "You have " + size
-                               + (size == 1 ? " plot:" : " plots:"));
+            List<Component> lines = new ArrayList<>();
+            lines.add(Component.text("You have " + (size == 1 ? " one plot" : size + " plots") + ":", NamedTextColor.GRAY));
             for (PlotWorld.Plot plot : list) {
                 int index = i++;
-                ComponentBuilder cb = new ComponentBuilder();
-                cb.append("" + index + ") ").color(ChatColor.AQUA);
                 String scmd = "/plot warp " + index;
-                cb.event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, scmd));
-                cb.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Msg.lore(scmd)));
-                cb.append(plot.plotWorld.name).color(ChatColor.WHITE);
-                cb.append(" " + plot.x + "," + plot.z).color(ChatColor.GRAY);
-                player.spigot().sendMessage(cb.create());
+                lines.add(Component.text("" + index + ") ", NamedTextColor.AQUA)
+                          .append(Component.text(plot.plotWorld.name, NamedTextColor.WHITE))
+                          .append(Component.text(" " + plot.x + "," + plot.z, NamedTextColor.GRAY))
+                          .clickEvent(ClickEvent.runCommand(scmd))
+                          .hoverEvent(HoverEvent.showText(Component.text(scmd, NamedTextColor.GREEN))));
             }
+            player.sendMessage(Component.join(JoinConfiguration.separator(Component.newline()), lines));
             return true;
         }
         case "warp": {
@@ -64,26 +64,26 @@ final class PlotCommand implements TabExecutor {
             try {
                 index = Integer.parseInt(args[0]);
             } catch (NumberFormatException nfe) {
-                player.sendMessage(ChatColor.RED + "Bad index: " + args[0]);
+                player.sendMessage(Component.text("Bad index: " + args[0], NamedTextColor.RED));
                 return true;
             }
             List<PlotWorld.Plot> list = listPlots(player);
             if (index < 0 || index >= list.size()) {
-                player.sendMessage(ChatColor.RED + "Bad index: " + index);
+                player.sendMessage(Component.text("Bad index: " + index, NamedTextColor.RED));
                 return true;
             }
             PlotWorld.Plot plot = list.get(index);
             BuildWorld buildWorld = plugin.getBuildWorldByPath(plot.plotWorld.name);
             if (buildWorld == null) {
-                player.sendMessage(ChatColor.RED
-                                   + "An error occured. Please contact an administrator.");
+                player.sendMessage(Component.text("An error occured. Please contact an administrator",
+                                                  NamedTextColor.RED));
                 return true;
             }
-            Msg.info(player, "Please wait");
+            player.sendMessage(Component.text("Please wait", NamedTextColor.GREEN));
             World world = buildWorld.loadWorld();
             plot.getCornerBlock(world, b -> {
                     player.teleport(b.getLocation().add(0.5, 1.5, 0.5));
-                    player.sendMessage(ChatColor.AQUA + "Warped to plot.");
+                    player.sendMessage(Component.text("Warped to plot", NamedTextColor.GREEN));
                 });
             return true;
         }

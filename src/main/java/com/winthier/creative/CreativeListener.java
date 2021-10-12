@@ -20,6 +20,7 @@ import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.minecart.CommandMinecart;
 import org.bukkit.event.Cancellable;
+import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -165,7 +166,7 @@ public final class CreativeListener implements Listener {
     public void onPlayerInteract(PlayerInteractEvent event) {
         final Player player = event.getPlayer();
         checkBuildEvent(player, event.getClickedBlock(), event);
-        if (event.isCancelled()) return;
+        if (event.useInteractedBlock() == Event.Result.DENY) return;
         switch (event.getAction()) {
         case PHYSICAL: {
             if (!event.hasBlock()) return;

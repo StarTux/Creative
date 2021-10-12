@@ -57,26 +57,26 @@ final class WorldEditListener {
         }
 
         @Override
-        public boolean setBlock(final BlockVector3 loc, final BlockStateHolder bl)
+        public <T extends BlockStateHolder<T>> boolean setBlock(final BlockVector3 blockVector, final T block)
             throws WorldEditException {
             if (player.isOp()) {
-                return extent.setBlock(loc, bl);
+                return extent.setBlock(blockVector, block);
             }
             if (plugin.doesIgnore(uuid)) {
-                return extent.setBlock(loc, bl);
+                return extent.setBlock(blockVector, block);
             }
             if (!buildWorld.getTrust(uuid).canUseWorldEdit()) {
                 return false;
             }
-            BlockType type = bl.getBlockType();
-            switch (bl.getBlockType().getId()) {
+            BlockType type = block.getBlockType();
+            switch (block.getBlockType().getId()) {
             case "minecraft:chain_command_block":
             case "minecraft:command_block":
             case "minecraft:repeating_command_block":
                 return false;
             default: break;
             }
-            return extent.setBlock(loc, bl);
+            return extent.setBlock(blockVector, block);
         }
     }
 }

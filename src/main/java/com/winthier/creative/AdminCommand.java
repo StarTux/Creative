@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.JoinConfiguration;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -273,44 +274,50 @@ final class AdminCommand implements TabExecutor {
             return true;
         }
         PlayerWorldList list = plugin.getPlayerWorldList(builder.getUuid());
-        Msg.send(sender, "&e%s World List", builder.getName());
+        List<Component> lines = new ArrayList<>();
+        lines.add(Component.text(builder.getName() + " World List", NamedTextColor.YELLOW));
         final String delim = ChatColor.GRAY + " " + ChatColor.GREEN;
         if (!list.owner.isEmpty()) {
-            Msg.send(sender, "&7Owner (&r%d&7)&a %s", list.owner.size(),
-                     list.owner.stream()
-                     .map(BuildWorld::getPath)
-                     .collect(Collectors.joining(delim)));
+            lines.add(Component.text("Owner (" + list.owner.size() + ") ")
+                      .append(Component.text(list.owner.stream()
+                                             .map(BuildWorld::getPath)
+                                             .collect(Collectors.joining(delim)),
+                                             NamedTextColor.GREEN)));
         }
         if (!list.build.isEmpty()) {
-            Msg.send(sender, "&7Build (&r%d&7)&a %s", list.build.size(),
-                     list.build.stream()
-                     .map(BuildWorld::getPath)
-                     .collect(Collectors.joining(delim)));
+            lines.add(Component.text("Build (" + list.build.size() + ") ")
+                      .append(Component.text(list.build.stream()
+                                             .map(BuildWorld::getPath)
+                                             .collect(Collectors.joining(delim)),
+                                             NamedTextColor.GREEN)));
         }
         if (!list.visit.isEmpty()) {
-            Msg.send(sender, "&7Visit (&r%d&7)&a %s", list.visit.size(),
-                     list.visit.stream()
-                     .map(BuildWorld::getPath)
-                     .collect(Collectors.joining(delim)));
+            lines.add(Component.text("Visit (" + list.visit.size() + ") ")
+                      .append(Component.text(list.visit.stream()
+                                             .map(BuildWorld::getPath)
+                                             .collect(Collectors.joining(delim)),
+                                             NamedTextColor.GREEN)));
         }
-        Msg.send(sender, "&7Total (&r%d&7)", list.count());
+        lines.add(Component.text("Total (" + list.count() + ")", NamedTextColor.GRAY));
+        sender.sendMessage(Component.join(JoinConfiguration.separator(Component.newline()), lines));
         return true;
     }
 
     boolean whoCommand(CommandSender sender, String[] args) {
         if (args.length != 0) return false;
-        Msg.send(sender, "&eWorld Player List");
+        List<Component> lines = new ArrayList<>();
+        lines.add(Component.text("World Player List", NamedTextColor.YELLOW));
         for (World world: plugin.getServer().getWorlds()) {
             List<Player> players = world.getPlayers();
             if (players.isEmpty()) continue;
-            String s = Msg.format("&7%s &8(&r%d&8)&r",
-                                  world.getName(), players.size());
-            StringBuilder sb = new StringBuilder(s);
+            StringBuilder sb = new StringBuilder();
             for (Player p: players) {
                 sb.append(" ").append(p.getName());
             }
-            sender.sendMessage(sb.toString());
+            lines.add(Component.text(world.getName() + "(" + players.size() + ") ", NamedTextColor.GRAY)
+                      .append(Component.text(sb.toString(), NamedTextColor.GREEN)));
         }
+        sender.sendMessage(Component.join(JoinConfiguration.separator(Component.newline()), lines));
         return true;
     }
 
@@ -359,7 +366,9 @@ final class AdminCommand implements TabExecutor {
         }
         buildWorld.loadWorld();
         buildWorld.teleportToSpawn(target);
-        Msg.send(sender, "&eTeleported %s to world %s.", target.getName(), buildWorld.getName());
+        sender.sendMessage(Component.text("Teleported " + target.getName()
+                                          + " to world " + buildWorld.getName(),
+                                          NamedTextColor.YELLOW));
         return true;
     }
 
@@ -373,7 +382,8 @@ final class AdminCommand implements TabExecutor {
         }
         plugin.getBuildWorlds().remove(buildWorld);
         plugin.saveBuildWorlds();
-        sender.sendMessage("World removed: " + buildWorld.getPath());
+        sender.sendMessage(Component.text("World removed: " + buildWorld.getPath(),
+                                          NamedTextColor.YELLOW));
         return true;
     }
 
@@ -666,9 +676,9 @@ final class AdminCommand implements TabExecutor {
             : null;
         if (player == null) return false;
         if (plugin.toggleIgnore(player)) {
-            Msg.info(player, "Ignoring world perms");
+            player.sendMessage(Component.text("Ignoring world perms", NamedTextColor.YELLOW));
         } else {
-            Msg.info(player, "No longer ignoring world perms");
+            player.sendMessage(Component.text("No longer ignoring world perms", NamedTextColor.YELLOW));
         }
         plugin.getPermission().updatePermissions(player);
         return true;
@@ -683,16 +693,16 @@ final class AdminCommand implements TabExecutor {
         String name = Stream.of(args).collect(Collectors.joining(" "));
         Warp warp = plugin.getWarps().get(name);
         if (warp == null) {
-            Msg.warn(player, "Warp not found: %s", name);
+            player.sendMessage(Component.text("Warp not found: " + name, NamedTextColor.RED));
             return true;
         }
         Location loc = warp.getLocation();
         if (loc == null) {
-            Msg.warn(player, "Warp not found: %s", warp.getName());
+            player.sendMessage(Component.text("Warp not found: " + warp.getName(), NamedTextColor.RED));
             return true;
         }
         player.teleport(loc);
-        Msg.info(player, "Warped to %s", warp.getName());
+        player.sendMessage(Component.text("Warped to " + warp.getName(), NamedTextColor.YELLOW));
         return true;
     }
 
@@ -707,7 +717,7 @@ final class AdminCommand implements TabExecutor {
         Warp warp = Warp.of(name, loc);
         plugin.getWarps().put(name, warp);
         plugin.saveWarps();
-        Msg.info(player, "Created warp '%s'", name);
+        player.sendMessage(Component.text("Created warp " + name, NamedTextColor.YELLOW));
         return true;
     }
 
@@ -734,7 +744,8 @@ final class AdminCommand implements TabExecutor {
             player.sendMessage("No plot world!");
             return true;
         }
-        player.sendMessage(Msg.toString(block) + ": " + plotWorld.debug(block));
+        player.sendMessage(Component.text(block.getX() + "," + block.getY() + "," + block.getZ()
+                                          + ": " + plotWorld.debug(block), NamedTextColor.YELLOW));
         return true;
     }
 
@@ -836,7 +847,7 @@ final class AdminCommand implements TabExecutor {
                       .append(Component.text(" " + Math.min(999, world.trustedScore()), NamedTextColor.YELLOW))
                       .append(Component.text(" " + world.getPath(), NamedTextColor.WHITE)));
         }
-        sender.sendMessage(Component.join(Component.newline(), lines));
+        sender.sendMessage(Component.join(JoinConfiguration.separator(Component.newline()), lines));
         return true;
     }
 

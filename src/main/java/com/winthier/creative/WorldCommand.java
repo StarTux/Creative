@@ -1,6 +1,7 @@
 package com.winthier.creative;
 
 import com.cavetale.money.Money;
+import com.winthier.creative.util.Text;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -12,15 +13,15 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.ComponentLike;
+import net.kyori.adventure.text.JoinConfiguration;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.ClickEvent;
-import net.md_5.bungee.api.chat.ComponentBuilder;
-import net.md_5.bungee.api.chat.HoverEvent;
 import org.bukkit.Difficulty;
 import org.bukkit.GameMode;
+import org.bukkit.GameRule;
 import org.bukkit.World;
 import org.bukkit.WorldType;
 import org.bukkit.command.Command;
@@ -33,7 +34,6 @@ final class WorldCommand implements TabExecutor {
     final CreativePlugin plugin;
 
     void load() {
-        // Here we could load some data if we wanted...
     }
 
     static final class Wrong extends Exception {
@@ -44,8 +44,8 @@ final class WorldCommand implements TabExecutor {
             this.message = null;
         }
 
-        Wrong(final String msg, final Object... o) {
-            this.message = Msg.format(msg, o);
+        Wrong(final String msg) {
+            this.message = msg;
         }
 
         static void noPerm() throws Wrong {
@@ -83,7 +83,7 @@ final class WorldCommand implements TabExecutor {
             if (ce.usage) {
                 usage(player, cmd);
             } else {
-                Msg.warn(player, "%s", ce.getMessage());
+                player.sendMessage(Component.text(ce.getMessage(), NamedTextColor.RED));
             }
         }
         return true;
@@ -148,7 +148,7 @@ final class WorldCommand implements TabExecutor {
                 Wrong.noPerm();
             }
             world.save();
-            Msg.info(player, "Saved your current world to disk.");
+            player.sendMessage(Component.text("Saved your current world to disk.", NamedTextColor.GREEN));
             break;
         }
         case "rename":
@@ -192,19 +192,15 @@ final class WorldCommand implements TabExecutor {
         Meta meta = plugin.metaOf(player);
         meta.confirmCode = code;
         meta.confirmCallback = callback;
-        ComponentBuilder cb = Msg.componentBuilder();
-        cb.append("[Confirm]").color(ChatColor.GREEN);
-        cb.event(new ClickEvent(ClickEvent.Action.RUN_COMMAND,
-                                "/world confirm " + code));
-        cb.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                                Msg.lore(ChatColor.GREEN + "Confirm")));
-        cb.append(" ").reset();
-        cb.append("[Cancel]").color(ChatColor.RED);
-        cb.event(new ClickEvent(ClickEvent.Action.RUN_COMMAND,
-                                "/world cancel " + code));
-        cb.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                                Msg.lore(ChatColor.RED + "Cancel")));
-        player.sendMessage(cb.create());
+        player.sendMessage(Component.join(JoinConfiguration.noSeparators(), new Component[] {
+                    Component.text("[Confirm]", NamedTextColor.GREEN)
+                    .clickEvent(ClickEvent.runCommand("/world confirm " + code))
+                    .hoverEvent(HoverEvent.showText(Component.text("Confirm", NamedTextColor.GREEN))),
+                    Component.text(" "),
+                    Component.text("[Cancel]", NamedTextColor.RED)
+                    .clickEvent(ClickEvent.runCommand("/world cancel " + code))
+                    .hoverEvent(HoverEvent.showText(Component.text("Cancel", NamedTextColor.RED))),
+                }));
     }
 
     /**
@@ -262,9 +258,9 @@ final class WorldCommand implements TabExecutor {
             break;
         }
         buildWorld.saveWorldConfig();
-        player.sendMessage("Bought a world for "
-                           + ChatColor.GREEN + Money.format(price)
-                           + ChatColor.WHITE + ". Please wait...");
+        player.sendMessage(Component.text("Bought a world for ")
+                           .append(Component.text(Money.format(price), NamedTextColor.GOLD))
+                           .append(Component.text(". Please wait...")));
         World world = buildWorld.loadWorld();
         buildWorld.teleportToSpawn(player);
     }
@@ -273,15 +269,14 @@ final class WorldCommand implements TabExecutor {
         if (flag.price == 0) return;
         if (buildWorld.isSet(flag)) return;
         if (!Money.take(player.getUniqueId(), flag.price, plugin, "Creative world unlock " + flag.key)) {
-            player.sendMessage("You don't have enough money");
+            player.sendMessage(Component.text("You don't have enough money", NamedTextColor.RED));
             return;
         }
         buildWorld.set(flag, true);
         plugin.saveBuildWorlds();
         plugin.getPermission().updatePermissions(buildWorld.getWorld());
-        Msg.info(player, "Unlocked " + flag.key + " for "
-                 + ChatColor.GOLD + Money.format(flag.price)
-                 + ChatColor.WHITE + ".");
+        player.sendMessage(Component.text("Unlocked " + flag.key + " for ")
+                           .append(Component.text(Money.format(flag.price), NamedTextColor.GOLD)));
     }
 
     List<String> filterContains(String term, List<String> in) {
@@ -323,7 +318,7 @@ final class WorldCommand implements TabExecutor {
         return null;
     }
 
-    boolean worldTeleport(Player player, String worldName) {
+    boolean worldTeleport(Player player, String worldName) throws Wrong {
         BuildWorld result = null;
         for (BuildWorld buildWorld : plugin.getBuildWorlds()) {
             if (!worldName.equals(buildWorld.getName())) continue;
@@ -336,28 +331,27 @@ final class WorldCommand implements TabExecutor {
             }
         }
         if (result == null) {
-            Msg.warn(player, "World not found: %s", worldName);
-            return false;
+            throw new Wrong("World not found: " + worldName);
         }
-        Msg.info(player, "Please wait.");
+        player.sendMessage(Component.text("Please wait.", NamedTextColor.GREEN));
         result.loadWorld();
         result.teleportToSpawn(player);
-        Msg.info(player, "Teleported to %s.", result.getName());
+        player.sendMessage(Component.text("Teleported to " + result.getName(), NamedTextColor.GREEN));
         return true;
     }
 
     void listWorlds(Player player) {
         PlayerWorldList list = plugin.getPlayerWorldList(player.getUniqueId());
-        Msg.info(player, "Your World List");
+        player.sendMessage(Component.text("Your World List", NamedTextColor.GREEN));
         if (!list.owner.isEmpty()) {
             listWorlds(player, list.owner, "Worlds you own");
         }
-        Msg.send(player, "&7Total %d worlds", list.owner.size());
+        player.sendMessage(Component.text("Total " + list.owner.size() + " worlds", NamedTextColor.GREEN));
     }
 
     void listVisits(Player player) {
         PlayerWorldList list = plugin.getPlayerWorldList(player.getUniqueId());
-        Msg.info(player, "World List");
+        player.sendMessage(Component.text("World List", NamedTextColor.GREEN));
         if (!list.build.isEmpty()) {
             listWorlds(player, list.build, "Worlds you can build in");
         }
@@ -365,30 +359,21 @@ final class WorldCommand implements TabExecutor {
             listWorlds(player, list.visit, "Worlds you can visit");
         }
         int total = list.build.size() + list.visit.size();
-        Msg.send(player, "&7Total %d worlds", total);
+        player.sendMessage(Component.text("Total " + total + " worlds", NamedTextColor.GREEN));
     }
 
     private void listWorlds(Player player, List<BuildWorld> list, String prefix) {
-        Collections.sort(list, BuildWorld.NAME_SORT);
-        List<Object> json = new ArrayList<>();
-        json.add(Msg.button(ChatColor.WHITE, prefix, null, null));
-        int count = 1;
-        for (BuildWorld buildWorld: list) {
-            json.add(" ");
-            json.add(Msg.button(ChatColor.GREEN,
-                                "&f[&a" + buildWorld.getName() + "&f]",
-                                "Teleport to " + buildWorld.getName(),
-                                "/wtp " + buildWorld.getName()));
-            count += 1;
-            if (count >= 3 && !json.isEmpty()) {
-                count = 0;
-                Msg.raw(player, json);
-                json.clear();
-            }
-        }
-        if (!json.isEmpty()) {
-            Msg.raw(player, json);
-        }
+        List<Component> components = list.stream()
+            .sorted(BuildWorld.NAME_SORT)
+            .map(buildWorld -> Component.text("[" + buildWorld.getName() + "]", NamedTextColor.GREEN)
+                 .hoverEvent(HoverEvent.showText(Component.text("Teleport to " + buildWorld.getName(),
+                                                                NamedTextColor.GREEN)))
+                 .clickEvent(ClickEvent.runCommand("/wtp " + buildWorld.getName())))
+            .collect(Collectors.toList());
+        player.sendMessage(Component.join(JoinConfiguration.builder()
+                                          .prefix(Component.text(prefix + " "))
+                                          .separator(Component.text(" "))
+                                          .build(), components));
     }
 
     void worldTime(Player player, String arg) throws Wrong {
@@ -397,8 +382,8 @@ final class WorldCommand implements TabExecutor {
         if (buildWorld == null || !buildWorld.getTrust(uuid).isOwner()) Wrong.noPerm();
         if (arg == null) {
             long time = player.getWorld().getTime();
-            Msg.send(player, "World time &a%02d&r:&a%02d&r (&2%d&r)",
-                     hours(time), minutes(time), time);
+            String timeFormat = String.format("&a%02d&r:&a%02d&r (&2%d&r)", hours(time), minutes(time), time);
+            player.sendMessage(Component.text("World time " + timeFormat, NamedTextColor.GREEN));
         } else {
             long time;
             if ("day".equalsIgnoreCase(arg)) {
@@ -410,34 +395,34 @@ final class WorldCommand implements TabExecutor {
             } else if ("midnight".equalsIgnoreCase(arg)) {
                 time = 18000;
             } else if ("lock".equalsIgnoreCase(arg)) {
-                player.getWorld().setGameRuleValue("doDaylightCycle", "false");
-                Msg.info(player, "Time locked");
+                player.getWorld().setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false);
+                player.sendMessage(Component.text("Time locked", NamedTextColor.GREEN));
                 return;
             } else if ("unlock".equalsIgnoreCase(arg)) {
-                player.getWorld().setGameRuleValue("doDaylightCycle", "true");
-                Msg.info(player, "Time unlocked");
+                player.getWorld().setGameRule(GameRule.DO_DAYLIGHT_CYCLE, true);
+                player.sendMessage(Component.text("Time unlocked", NamedTextColor.GREEN));
                 return;
             } else if (arg.contains(":")) {
                 String[] arr = arg.split(":");
-                if (arr.length != 2) throw new Wrong("Time expected: %s", arg);
+                if (arr.length != 2) throw new Wrong("Time expected: " + arg);
                 long hours;
                 long minutes;
                 try {
                     hours = Long.parseLong(arr[0]);
                     minutes = Long.parseLong(arr[1]);
                 } catch (NumberFormatException nfe) {
-                    throw new Wrong("Time expected: %s", arg);
+                    throw new Wrong("Time expected: " + arg);
                 }
                 time = raw(hours, minutes);
             } else {
                 try {
                     time = Long.parseLong(arg);
                 } catch (NumberFormatException nfe) {
-                    throw new Wrong("Time expected: %s", arg);
+                    throw new Wrong("Time expected: " + arg);
                 }
             }
             player.getWorld().setTime(time);
-            Msg.info(player, "Time set to %d.", time);
+            player.sendMessage(Component.text("Time set to " + time, NamedTextColor.GREEN));
         }
     }
 
@@ -470,7 +455,7 @@ final class WorldCommand implements TabExecutor {
         } else {
             buildWorld.teleportToSpawn(player);
         }
-        Msg.info(player, "Teleported to the world spawn.");
+        player.sendMessage(Component.text("Teleported to the world spawn.", NamedTextColor.GREEN));
     }
 
     void setWorldSpawn(Player player) throws Wrong {
@@ -479,7 +464,7 @@ final class WorldCommand implements TabExecutor {
         if (buildWorld == null || !buildWorld.getTrust(uuid).isOwner()) Wrong.noPerm();
         buildWorld.setSpawnLocation(player.getLocation());
         buildWorld.saveWorldConfig();
-        Msg.info(player, "World spawn was set to your current location.");
+        player.sendMessage(Component.text("World spawn was set to your current location.", NamedTextColor.GREEN));
     }
 
     void trustCommand(Player player, String target, Trust trust) throws Wrong {
@@ -491,86 +476,88 @@ final class WorldCommand implements TabExecutor {
             buildWorld.setPublicTrust(trust);
             plugin.saveBuildWorlds();
             if (trust == Trust.NONE) {
-                Msg.info(player, "Revoked public trust.");
+                player.sendMessage(Component.text("Revoked public trust.", NamedTextColor.GREEN));
             } else {
-                Msg.info(player, "Changed public trust to %s", trust.nice());
+                player.sendMessage(Component.text("Changed public trust to " + trust.nice(), NamedTextColor.GREEN));
             }
         } else {
             Builder builder = Builder.find(target);
-            if (builder == null) throw new Wrong("Player not found: %s.", target);
+            if (builder == null) throw new Wrong("Player not found: " + target);
             if (!buildWorld.trustBuilder(builder, trust)) {
-                throw new Wrong("Could not change trust level of %s.", builder.getName());
+                throw new Wrong("Could not change trust level of " + builder.getName());
             }
             plugin.saveBuildWorlds();
             if (trust == Trust.NONE) {
-                Msg.info(player, "Revoked trust of %s.", builder.getName());
+                player.sendMessage(Component.text("Revoked trust of " + builder.getName(), NamedTextColor.GREEN));
             } else {
-                Msg.info(player, "Gave %s trust to %s.", trust.nice(), builder.getName());
+                player.sendMessage(Component.text("Gave " + trust.nice() + " trust to " + builder.getName(), NamedTextColor.GREEN));
             }
         }
         plugin.getPermission().updatePermissions(player.getWorld());
     }
 
-    void listTrusted(Player player, BuildWorld buildWorld, Trust trust) throws Wrong {
+    private Component listTrusted(Player player, BuildWorld buildWorld, Trust trust) throws Wrong {
         List<String> names = new ArrayList<>();
         for (Builder builder: buildWorld.listTrusted(trust)) names.add(builder.getName());
         if (trust == Trust.OWNER && buildWorld.getOwner() != null) {
             names.add(buildWorld.getOwnerName());
         }
-        if (names.isEmpty()) return;
         Collections.sort(names);
-        List<Object> json = new ArrayList<>();
+        Component prefix;
         if (trust == Trust.OWNER) {
-            json.add(Msg.format(" &3&o%s", trust.nice()));
+            prefix = Component.text("Owner", NamedTextColor.GRAY);
         } else {
-            json.add(Msg.format(" &3&o%s Trust", trust.nice()));
+            prefix = Component.text(trust.nice() + " Trust", NamedTextColor.GRAY);
         }
+        if (names.isEmpty()) return prefix;
         Trust playerTrust = buildWorld.getTrust(player.getUniqueId());
-        for (String name: names) {
-            json.add(" ");
+        List<Component> components = new ArrayList<>();
+        for (String name : names) {
             if (playerTrust.isOwner()) {
-                json.add(Msg.button(
-                             ChatColor.WHITE,
-                             name, "Untrust " + name,
-                             "/world untrust " + name));
+                components.add(Component.text(name, NamedTextColor.WHITE)
+                               .clickEvent(ClickEvent.runCommand("/world untrust " + name))
+                               .hoverEvent(HoverEvent.showText(Component.text("Untrust " + name,
+                                                                              NamedTextColor.RED))));
             } else {
-                json.add(Msg.button(
-                             ChatColor.WHITE,
-                             name,
-                             null,
-                             null));
+                components.add(Component.text(name, NamedTextColor.WHITE));
             }
         }
-        Msg.raw(player, json);
+        return Component.join(JoinConfiguration.builder()
+                              .prefix(prefix)
+                              .separator(Component.empty())
+                              .build(),
+                              components);
     }
 
-    void worldInfo(Player player) throws Wrong {
+    protected void worldInfo(Player player) throws Wrong {
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(player.getWorld());
         if (buildWorld == null) Wrong.noPerm();
         Trust playerTrust = buildWorld.getTrust(player.getUniqueId());
         if (!playerTrust.canVisit()) Wrong.noPerm();
-        Msg.info(player, "&l%s &3World Info", buildWorld.getName());
-        listTrusted(player, buildWorld, Trust.OWNER);
-        listTrusted(player, buildWorld, Trust.WORLD_EDIT);
-        listTrusted(player, buildWorld, Trust.BUILD);
-        listTrusted(player, buildWorld, Trust.VISIT);
+        List<ComponentLike> lines = new ArrayList<>();
+        lines.add(Component.text("World Info " + buildWorld.getName(), NamedTextColor.GREEN, TextDecoration.BOLD));
+        lines.add(listTrusted(player, buildWorld, Trust.OWNER));
+        lines.add(listTrusted(player, buildWorld, Trust.WORLD_EDIT));
+        lines.add(listTrusted(player, buildWorld, Trust.BUILD));
+        lines.add(listTrusted(player, buildWorld, Trust.VISIT));
         if (!buildWorld.getBuildGroups().isEmpty()) {
-            player.sendMessage(Component.text().color(NamedTextColor.WHITE)
-                               .append(Component.text(" Build Groups ", NamedTextColor.DARK_AQUA, TextDecoration.ITALIC))
-                               .append(Component.text(String.join(" ", buildWorld.getBuildGroups()
-                                                                  .stream().map(Msg::camelCase).collect(Collectors.toList())))));
+            lines.add(Component.text().color(NamedTextColor.WHITE)
+                      .append(Component.text(" Build Groups ", NamedTextColor.DARK_AQUA, TextDecoration.ITALIC))
+                      .append(Component.text(String.join(" ", buildWorld.getBuildGroups()
+                                                         .stream().map(Text::enumToCamelCase).collect(Collectors.toList())))));
         }
         if (buildWorld.getPublicTrust() != null && buildWorld.getPublicTrust() != Trust.NONE) {
-            Msg.send(player, " &3&oPublic Trust &r%s", buildWorld.getPublicTrust().nice());
+            lines.add(Component.text(" Public Trust " + buildWorld.getPublicTrust().nice(), NamedTextColor.GREEN));
         }
         String description = buildWorld.getWorldConfig().getString("user.Description");
         if (description != null && !description.isEmpty()) {
-            Msg.send(player, " &3&oDescription &r%s", description);
+            lines.add(Component.text(" Description " + description, NamedTextColor.GREEN));
         }
         List<String> authors = buildWorld.getWorldConfig().getStringList("user.Authors");
         if (!authors.isEmpty()) {
-            Msg.send(player, " &3&oAuthors &r%s", Msg.fold(authors, ", "));
+            lines.add(Component.text(" Authors " + String.join(", ", authors), NamedTextColor.GREEN));
         }
+        player.sendMessage(Component.join(JoinConfiguration.separator(Component.newline()), lines));
     }
 
     void difficultyCommand(Player player, String[] args) throws Wrong {
@@ -581,17 +568,16 @@ final class WorldCommand implements TabExecutor {
         }
         if (args.length < 1) {
             Difficulty difficulty = player.getWorld().getDifficulty();
-            Msg.info(player, "World difficulty is %s.", Msg.camelCase(difficulty.name()));
+            player.sendMessage(Component.text("World difficulty is " + Text.enumToCamelCase(difficulty.name()), NamedTextColor.GREEN));
         } else if (args.length == 1) {
             Difficulty difficulty;
             try {
                 difficulty = Difficulty.valueOf(args[0].toUpperCase());
             } catch (IllegalArgumentException iae) {
-                throw new Wrong("Unknown difficulty: %s", args[0]);
+                throw new Wrong("Unknown difficulty: " + args[0]);
             }
             world.setDifficulty(difficulty);
-            Msg.info(player, "World difficulty set to %s.",
-                     Msg.camelCase(difficulty.name()));
+            player.sendMessage(Component.text("World difficulty set to " + Text.enumToCamelCase(difficulty.name()), NamedTextColor.GREEN));
         } else {
             Wrong.usage();
         }
@@ -611,7 +597,7 @@ final class WorldCommand implements TabExecutor {
         String name = sb.toString();
         buildWorld.setName(name);
         plugin.saveBuildWorlds();
-        Msg.info(player, "Renamed your current world to '%s'.", name);
+        player.sendMessage(Component.text("Renamed your current world to " + name, NamedTextColor.GREEN));
     }
 
     void gamemodeCommand(Player player, String[] args) throws Wrong {
@@ -634,10 +620,10 @@ final class WorldCommand implements TabExecutor {
             newGM = null;
         }
         if (newGM == null) {
-            Msg.warn(player, "Invalid GameMode: %s", args[0]);
+            throw new Wrong("Invalid GameMode: " + args[0]);
         } else {
             player.setGameMode(newGM);
-            Msg.info(player, "Set GameMode to %s", newGM.name());
+            player.sendMessage(Component.text("Set GameMode to " + newGM.name(), NamedTextColor.GREEN));
         }
     }
 
@@ -663,17 +649,14 @@ final class WorldCommand implements TabExecutor {
         double price = 10000.0;
         long size = 256;
         String sizeFmt = "" + size;
-        ComponentBuilder cb = Msg.componentBuilder();
-        cb.append("Buy a ").color(ChatColor.WHITE);
-        cb.append(sizeFmt).color(ChatColor.GREEN);
-        cb.append("x").color(ChatColor.GRAY);
-        cb.append(sizeFmt).color(ChatColor.GREEN);
-        cb.append(" ").color(ChatColor.WHITE);
-        cb.append(type.name().toLowerCase()).color(ChatColor.GREEN);
-        cb.append(" world for ").color(ChatColor.WHITE);
-        cb.append(Money.format(price)).color(ChatColor.GOLD);
-        cb.append("?").color(ChatColor.WHITE);
-        player.sendMessage(cb.create());
+        player.sendMessage(Component.join(JoinConfiguration.noSeparators(), new Component[] {
+                    Component.text("Buy a "),
+                    Component.text(sizeFmt + "x" + sizeFmt + " " + Text.enumToCamelCase(type.name()),
+                                   NamedTextColor.GREEN),
+                    Component.text(" world for "),
+                    Component.text(Money.format(price), NamedTextColor.GOLD),
+                    Component.text("?"),
+                }));
         String code = randomString();
         confirm(player, code, () -> confirmBuy(player, price, size, type));
     }
@@ -698,13 +681,13 @@ final class WorldCommand implements TabExecutor {
         if (args.length == 1) {
             if (flag.price == 0) throw new Wrong("Cannot unlock");
             if (buildWorld.isSet(flag)) throw new Wrong("Already unlocked");
-            ComponentBuilder cb = Msg.componentBuilder();
-            cb.append("Unlock ").color(ChatColor.WHITE);
-            cb.append(flag.key).color(ChatColor.GREEN);
-            cb.append("  for ").color(ChatColor.WHITE);
-            cb.append(Money.format(flag.price)).color(ChatColor.GOLD);
-            cb.append("?").color(ChatColor.WHITE);
-            player.sendMessage(cb.create());
+            player.sendMessage(Component.join(JoinConfiguration.noSeparators(), new Component[] {
+                        Component.text("Unlock "),
+                        Component.text(flag.key, NamedTextColor.GREEN),
+                        Component.text("  for "),
+                        Component.text(Money.format(flag.price), NamedTextColor.GOLD),
+                        Component.text("?"),
+                    }));
             String code = randomString();
             confirm(player, code, () -> confirmUnlock(player, buildWorld, flag));
         } else if (args.length == 2) {
@@ -715,7 +698,7 @@ final class WorldCommand implements TabExecutor {
             buildWorld.set(flag, newValue);
             plugin.saveBuildWorlds();
             sendWorldFeatures(player, buildWorld);
-            Msg.info(player, flag.key + " " + (newValue ? "enabled" : "disabled"));
+            player.sendMessage(Component.text(flag.key + " " + (newValue ? "enabled" : "disabled"), NamedTextColor.GREEN));
             plugin.getPermission().updatePermissions(buildWorld.getWorld());
         } else {
             return false;
@@ -724,62 +707,62 @@ final class WorldCommand implements TabExecutor {
     }
 
     void sendWorldFeatures(Player player, BuildWorld buildWorld) {
-        player.sendMessage("");
-        final String line = "  "
-            + ChatColor.GRAY + ChatColor.STRIKETHROUGH + "      "
-            + ChatColor.RESET + "  ";
-        player.sendMessage(line
-                           + ChatColor.RESET + ChatColor.BOLD + "World Features"
-                           + line);
+        List<ComponentLike> lines = new ArrayList<>();
+        lines.add(Component.empty());
+        lines.add(Component.text("World Features", NamedTextColor.GREEN));
         for (BuildWorld.Flag flag : BuildWorld.Flag.values()) {
             if (!flag.userCanEdit()) continue;
             boolean enabled = buildWorld.isSet(flag);
-            ComponentBuilder cb = new ComponentBuilder();
             if (flag.price == 0) {
-                cb.append("[ON]").color(enabled ? ChatColor.GREEN : ChatColor.DARK_GRAY);
-                String cmd;
-                cmd = "/world unlock " + flag.key + " on";
-                cb.event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, cmd));
-                cb.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Msg.lore(cmd)));
-                cb.append(" ").reset();
-                cb.append("[OFF]").color(!enabled ? ChatColor.RED : ChatColor.DARK_GRAY);
-                cmd = "/world unlock " + flag.key + " off";
-                cb.event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, cmd));
-                cb.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Msg.lore(cmd)));
+                String cmd = "/world unlock " + flag.key + " on";
+                String cmd2 = "/world unlock " + flag.key + " off";
+                lines.add(Component.join(JoinConfiguration.noSeparators(), new Component[] {
+                            Component.text("[ON]", (enabled ? NamedTextColor.GREEN : NamedTextColor.DARK_GRAY))
+                            .clickEvent(ClickEvent.runCommand(cmd))
+                            .hoverEvent(HoverEvent.showText(Component.text(cmd, NamedTextColor.GREEN))),
+                            Component.space(),
+                            Component.text("[OFF]", (!enabled ? NamedTextColor.RED : NamedTextColor.DARK_GRAY))
+                            .clickEvent(ClickEvent.runCommand(cmd2))
+                            .hoverEvent(HoverEvent.showText(Component.text(cmd2, NamedTextColor.GREEN))),
+                            Component.space(),
+                            Component.text(flag.key, (enabled ? NamedTextColor.YELLOW : NamedTextColor.WHITE)),
+                        }));
             } else {
                 if (enabled) {
-                    cb.append("[UNLOCKED]").color(ChatColor.DARK_GRAY);
+                    lines.add(Component.join(JoinConfiguration.noSeparators(), new Component[] {
+                                Component.text("[UNLOCKED]", NamedTextColor.DARK_GRAY),
+                                Component.space(),
+                                Component.text(flag.key, (enabled ? NamedTextColor.YELLOW : NamedTextColor.WHITE)),
+                            }));
                 } else {
-                    cb.append("[UNLOCK]").color(ChatColor.GREEN);
                     String cmd = "/world unlock " + flag.key;
-                    cb.event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, cmd));
-                    cb.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Msg.lore(cmd)));
+                    lines.add(Component.join(JoinConfiguration.noSeparators(), new Component[] {
+                                Component.text("[UNLOCK]", NamedTextColor.GREEN)
+                                .clickEvent(ClickEvent.runCommand(cmd))
+                                .hoverEvent(HoverEvent.showText(Component.text(cmd, NamedTextColor.GREEN))),
+                                Component.space(),
+                                Component.text(flag.key, (enabled ? NamedTextColor.YELLOW : NamedTextColor.WHITE)),
+                            }));
                 }
             }
-            cb.append(" ").reset();
-            cb.append(flag.key).color(enabled ? ChatColor.YELLOW : ChatColor.WHITE);
-            player.sendMessage(cb.create());
         }
         if (buildWorld.getSize() >= 0) {
-            ComponentBuilder cb = new ComponentBuilder();
             int growBy = 256;
             double price = 10000;
-            BaseComponent[] tooltip = new ComponentBuilder().color(ChatColor.GREEN)
-                .append("Grow world by " + growBy + " blocks")
-                .append("\n")
-                .append("in all directions")
-                .append("\n")
-                .append("Price: ")
-                .append(Money.format(price)).color(ChatColor.GOLD)
-                .create();
-            cb.append("[GROW]").color(ChatColor.GREEN);
-            cb.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, tooltip));
-            cb.event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/world grow"));
-            cb.append(" ").reset();
-            cb.append("Size " + buildWorld.getSize());
-            player.sendMessage(cb.create());
+            Component tooltip = Component.join(JoinConfiguration.separator(Component.newline()), new Component[] {
+                    Component.text("Grow world by " + growBy + " blocks"),
+                    Component.text("in all directions"),
+                    Component.text("Price: " + Money.format(price), NamedTextColor.GOLD),
+                }).color(NamedTextColor.GREEN);
+            lines.add(Component.join(JoinConfiguration.noSeparators(), new Component[] {
+                        Component.text("[GROW]", NamedTextColor.GREEN)
+                        .clickEvent(ClickEvent.runCommand("/world grow"))
+                        .hoverEvent(HoverEvent.showText(tooltip)),
+                        Component.text(" Size " + buildWorld.getSize()),
+                    }));
         }
-        player.sendMessage("");
+        lines.add(Component.empty());
+        player.sendMessage(Component.join(JoinConfiguration.separator(Component.newline()), lines));
     }
 
     boolean growCommand(Player player, String[] args) throws Wrong {
@@ -794,11 +777,16 @@ final class WorldCommand implements TabExecutor {
         if (buildWorld == null || !buildWorld.getTrust(uuid).isOwner() || buildWorld.getSize() < 0) {
             throw new Wrong("You cannot grow this world.");
         }
-        player.sendMessage(ChatColor.WHITE + "Grow this world by " + ChatColor.GREEN + growBy + ChatColor.WHITE
-                           + " blocks for " + ChatColor.GOLD + Money.format(price) + ChatColor.WHITE + "?");
+        player.sendMessage(Component.join(JoinConfiguration.noSeparators(), new Component[] {
+                    Component.text("Grow this world by "),
+                    Component.text(growBy, NamedTextColor.GREEN),
+                    Component.text(" blocks for "),
+                    Component.text(Money.format(price), NamedTextColor.GOLD),
+                    Component.text("?"),
+                }));
         confirm(player, randomString(), () -> {
                 if (!Money.take(player.getUniqueId(), price, plugin, "Creative world grow")) {
-                    player.sendMessage("You don't have enough money");
+                    player.sendMessage(Component.text("You don't have enough money", NamedTextColor.RED));
                     return;
                 }
                 buildWorld.setSize(buildWorld.getSize() + growBy);
@@ -807,8 +795,12 @@ final class WorldCommand implements TabExecutor {
                 if (world != null) {
                     world.getWorldBorder().setSize(buildWorld.getSize());
                 }
-                player.sendMessage("World border grown by " + ChatColor.GREEN + growBy + ChatColor.WHITE
-                                   + " blocks for " + ChatColor.GOLD + Money.format(price));
+                player.sendMessage(Component.join(JoinConfiguration.noSeparators(), new Component[] {
+                            Component.text("World border grown by "),
+                            Component.text(growBy, NamedTextColor.GREEN),
+                            Component.text(" blocks for "),
+                            Component.text(Money.format(price), NamedTextColor.GOLD),
+                        }));
             });
         return true;
     }
@@ -831,31 +823,25 @@ final class WorldCommand implements TabExecutor {
         if (!code.equals(meta.confirmCode)) return;
         meta.confirmCode = null;
         meta.confirmCallback = null;
-        player.sendMessage(ChatColor.RED + "Cancelled.");
+        player.sendMessage(Component.text("Cancelled", NamedTextColor.RED));
     }
 
-    void commandUsage(Player player, String sub, String args,
-                      String description, String suggestion) {
-        String cmd;
-        if (args == null) {
-            cmd = "/world " + sub;
-        } else {
-            cmd = "/world " + sub + " &o" + args;
+    protected void commandUsage(Player player, String sub, String args, String description, String suggestion) {
+        Component message = Component.text("/world " + sub, NamedTextColor.YELLOW);
+        if (args != null) {
+            message = message.append(Component.text(" " + args, NamedTextColor.GOLD, TextDecoration.ITALIC));
         }
-        String tooltip = "&a" + cmd + "\n" + description;
-        Msg.raw(player,
-                Msg.button(ChatColor.YELLOW,
-                           cmd,
-                           tooltip,
-                           suggestion),
-                Msg.format("&8 - &7"),
-                Msg.button(ChatColor.GRAY,
-                           description,
-                           tooltip,
-                           suggestion));
+        message = message.append(Component.text(" " + description, NamedTextColor.GRAY));
+        Component tooltip = Component.join(JoinConfiguration.separator(Component.newline()),
+                                           Component.text(suggestion, NamedTextColor.GREEN),
+                                           Component.text(description, NamedTextColor.GRAY));
+        message = message
+            .hoverEvent(HoverEvent.showText(tooltip))
+            .clickEvent(ClickEvent.suggestCommand(suggestion));
+        player.sendMessage(message);
     }
 
-    void usage(Player player, String cmd) {
+    protected void usage(Player player, String cmd) {
         switch (cmd) {
         case "list":
             commandUsage(player, "list", null, "List your worlds", "/world list");
@@ -930,14 +916,14 @@ final class WorldCommand implements TabExecutor {
                          "/world pvp ");
             break;
         default:
-            player.sendMessage(ChatColor.RED + "Unknown command: " + cmd);
+            player.sendMessage(Component.text("Unknown command: " + cmd, NamedTextColor.RED));
         }
     }
 
     void usage(Player player) {
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(player.getWorld());
         boolean owner = buildWorld != null && buildWorld.getTrust(player.getUniqueId()).isOwner();
-        Msg.info(player, "&lWorld&3 Command Usage");
+        player.sendMessage(Component.text("World Command Usage", NamedTextColor.GREEN));
         usage(player, "list");
         usage(player, "visit");
         usage(player, "info");
@@ -965,20 +951,20 @@ final class WorldCommand implements TabExecutor {
 
     void changeWorldSetting(Player player, BuildWorld buildWorld, String key, List<String> args) {
         if (key.equals("name")) {
-            String name = Msg.fold(args, " ");
+            String name = String.join(" ", args);
             buildWorld.getWorldConfig().set("user.Name", name);
             buildWorld.setName(name);
             buildWorld.saveWorldConfig();
             plugin.saveBuildWorlds();
-            Msg.info(player, "Set world name to '%s'.", Msg.fold(args, " "));
+            player.sendMessage(Component.text("Set world name to " + String.join(" ", args), NamedTextColor.GREEN));
         } else if (key.equals("description")) {
-            buildWorld.getWorldConfig().set("user.Description", Msg.fold(args, " "));
+            buildWorld.getWorldConfig().set("user.Description", String.join(" ", args));
             buildWorld.saveWorldConfig();
-            Msg.info(player, "Set world description to '%s'.", Msg.fold(args, " "));
+            player.sendMessage(Component.text("Set world description to " + String.join(" ", args), NamedTextColor.GREEN));
         } else if (key.equals("authors")) {
             buildWorld.getWorldConfig().set("user.Authors", args);
             buildWorld.saveWorldConfig();
-            Msg.info(player, "Set world authors to %s.", Msg.fold(args, ", "));
+            player.sendMessage(Component.text("Set world authors to " + String.join(", ", args), NamedTextColor.GREEN));
         }
     }
 
@@ -989,6 +975,6 @@ final class WorldCommand implements TabExecutor {
         if (buildWorld == null || !buildWorld.getTrust(uuid).isOwner()) Wrong.noPerm();
         boolean pvp = !world.getPVP();
         world.setPVP(pvp);
-        Msg.info(player, "Toggled PVP " + (pvp ? "on" : "off"));
+        player.sendMessage(Component.text("Toggled PVP " + (pvp ? "on" : "off"), NamedTextColor.GREEN));
     }
 }

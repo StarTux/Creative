@@ -7,6 +7,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
+import org.bukkit.Chunk;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
@@ -34,7 +35,7 @@ public final class PlotWorld {
         void getCornerBlock(World world, Consumer<Block> callback) {
             int bx = (x - 1) * plotWorld.gridSize + plotWorld.roadSize / 2;
             int bz = (z - 1) * plotWorld.gridSize + plotWorld.roadSize / 2;
-            world.getChunkAtAsync(bx, bz, c -> {
+            world.getChunkAtAsync(bx, bz, (Consumer<Chunk>) c -> {
                     Block block = world.getHighestBlockAt(bx, bz);
                     callback.accept(block);
                 });

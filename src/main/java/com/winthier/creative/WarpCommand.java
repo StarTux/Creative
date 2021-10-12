@@ -5,7 +5,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import net.md_5.bungee.api.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.JoinConfiguration;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -32,11 +36,11 @@ public final class WarpCommand implements TabExecutor {
                 || (warp.getPermission() != null
                     && !warp.getPermission().isEmpty()
                     && !player.hasPermission(warp.getPermission()))) {
-                Msg.warn(player, "Warp not found: %s", name);
+                player.sendMessage(Component.text("Warp not found: " + name, NamedTextColor.RED));
                 return true;
             }
             player.teleport(warp.getLocation());
-            Msg.info(player, "Warped to %s", warp.getName());
+            player.sendMessage(Component.text("Warped to " + warp.getName(), NamedTextColor.GREEN));
         }
         return true;
     }
@@ -51,26 +55,20 @@ public final class WarpCommand implements TabExecutor {
     }
 
     private void listWarps(Player player) {
-        List<Object> json = new ArrayList<>();
-        json.add(Msg.button(ChatColor.WHITE, "Warps", null, null));
-        int count = 1;
+        Component prefix = Component.text("Warps ", NamedTextColor.GRAY);
         List<Warp> warps = new ArrayList<>(plugin.getWarps().values());
         Collections.sort(warps, Warp.NAME_SORT);
+        List<Component> components = new ArrayList<>(warps.size());
         for (Warp warp: warps) {
-            json.add(" ");
-            json.add(Msg.button(ChatColor.GREEN,
-                                "&f[&a" + warp.getDisplayName() + "&f]",
-                                "Warp to " + warp.getDisplayName(),
-                                "/warp " + warp.getName()));
-            count += 1;
-            if (count >= 3 && !json.isEmpty()) {
-                count = 0;
-                Msg.raw(player, json);
-                json.clear();
-            }
+            String cmd = "/warp " + warp.getName();
+            components.add(Component.text("[" + warp.getDisplayName() + "]", NamedTextColor.GREEN)
+                           .clickEvent(ClickEvent.runCommand(cmd))
+                           .hoverEvent(HoverEvent.showText(Component.text(cmd, NamedTextColor.GREEN))));
         }
-        if (!json.isEmpty()) {
-            Msg.raw(player, json);
-        }
+        player.sendMessage(Component.join(JoinConfiguration.builder()
+                                          .prefix(prefix)
+                                          .separator(Component.space())
+                                          .build(),
+                                          components));
     }
 }
