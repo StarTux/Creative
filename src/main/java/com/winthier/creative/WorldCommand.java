@@ -505,9 +505,9 @@ final class WorldCommand implements TabExecutor {
         Collections.sort(names);
         Component prefix;
         if (trust == Trust.OWNER) {
-            prefix = Component.text("Owner", NamedTextColor.GRAY);
+            prefix = Component.text("Owner ", NamedTextColor.GRAY);
         } else {
-            prefix = Component.text(trust.nice() + " Trust", NamedTextColor.GRAY);
+            prefix = Component.text(trust.nice() + " Trust ", NamedTextColor.GRAY);
         }
         if (names.isEmpty()) return prefix;
         Trust playerTrust = buildWorld.getTrust(player.getUniqueId());
@@ -524,7 +524,7 @@ final class WorldCommand implements TabExecutor {
         }
         return Component.join(JoinConfiguration.builder()
                               .prefix(prefix)
-                              .separator(Component.empty())
+                              .separator(Component.space())
                               .build(),
                               components);
     }
