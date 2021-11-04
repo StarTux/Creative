@@ -306,6 +306,9 @@ final class WorldCommand implements TabExecutor {
             return filterContains(args[1], List.of("name", "description", "authors"));
         } else if (args.length == 2 && args[0].equals("difficulty")) {
             return filterContains(args[1], List.of("easy", "normal", "hard", "peaceful"));
+        } else if (args.length == 2 && args[0].equals("time")) {
+            String arg = args[1];
+            return filterContains(arg, List.of("day", "night", "noon", "midnight", "lock", "unlock"));
         } else if (args[0].equals("buy")) {
             if (args.length == 2) {
                 return filterContains(args[1], Stream.of(BuyType.values())
@@ -389,7 +392,7 @@ final class WorldCommand implements TabExecutor {
         if (buildWorld == null || !buildWorld.getTrust(uuid).isOwner()) Wrong.noPerm();
         if (arg == null) {
             long time = player.getWorld().getTime();
-            String timeFormat = String.format("&a%02d&r:&a%02d&r (&2%d&r)", hours(time), minutes(time), time);
+            String timeFormat = String.format("%02d:%02d (%d)", hours(time), minutes(time), time);
             player.sendMessage(Component.text("World time " + timeFormat, NamedTextColor.GREEN));
         } else {
             long time;
