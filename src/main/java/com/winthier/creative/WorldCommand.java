@@ -220,7 +220,7 @@ final class WorldCommand implements TabExecutor {
     /**
      * Callback for /world buy, then /world confirm.
      */
-    void confirmBuy(Player player, double price, long size, BuyType type) {
+    void confirmBuy(Player player, double price, long size, BuyType type, DimensionType dimension) {
         String base = player.getName().toLowerCase();
         String path;
         int suffix = 1;
@@ -240,7 +240,7 @@ final class WorldCommand implements TabExecutor {
         plugin.saveBuildWorlds();
         buildWorld.getWorldConfig().set("world.Seed", 0);
         buildWorld.getWorldConfig().set("world.WorldType", WorldType.FLAT.name());
-        buildWorld.getWorldConfig().set("world.Environment", World.Environment.NORMAL.name());
+        buildWorld.getWorldConfig().set("world.Environment", dimension.environment.name());
         buildWorld.getWorldConfig().set("world.GenerateStructures", false);
         buildWorld.getWorldConfig().set("world.GeneratorSettings", "");
         buildWorld.getWorldConfig().set("world.SpawnLocation.x", 256);
@@ -306,9 +306,16 @@ final class WorldCommand implements TabExecutor {
             return filterContains(args[1], List.of("name", "description", "authors"));
         } else if (args.length == 2 && args[0].equals("difficulty")) {
             return filterContains(args[1], List.of("easy", "normal", "hard", "peaceful"));
-        } else if (args.length == 2 && args[0].equals("buy")) {
-            return filterContains(args[1], Stream.of(BuyType.values())
-                                  .map(BuyType::name).map(String::toLowerCase).collect(Collectors.toList()));
+        } else if (args[0].equals("buy")) {
+            if (args.length == 2) {
+                return filterContains(args[1], Stream.of(BuyType.values())
+                                      .map(BuyType::name).map(String::toLowerCase).collect(Collectors.toList()));
+            }
+            if (args.length == 3) {
+                return filterContains(args[2], Stream.of(DimensionType.values())
+                                      .map(DimensionType::name).map(String::toLowerCase).collect(Collectors.toList()));
+            }
+            return List.of();
         } else if (args.length == 2 && args[0].equals("tp")) {
             return plugin.completeWorldNames(player, args[1]);
         } else if (args.length == 2 && args[0].equals("gamemode")) {
@@ -635,7 +642,7 @@ final class WorldCommand implements TabExecutor {
         if (!player.hasPermission("creative.world.buy")) {
             throw new Wrong("You don't have permission to buy a world!");
         }
-        if (args.length > 1) Wrong.usage();
+        if (args.length > 2) Wrong.usage();
         BuyType type;
         if (args.length >= 1) {
             try {
@@ -646,6 +653,17 @@ final class WorldCommand implements TabExecutor {
         } else {
             type = BuyType.VOID;
         }
+        DimensionType dimension;
+        if (args.length >= 2) {
+            String arg = args[1];
+            try {
+                dimension = DimensionType.valueOf(arg.toUpperCase());
+            } catch (IllegalArgumentException iae) {
+                throw new Wrong("Invalid dimension: " + arg);
+            }
+        } else {
+            dimension = DimensionType.OVERWORLD;
+        }
         double price = 10000.0;
         long size = 256;
         String sizeFmt = "" + size;
@@ -653,12 +671,12 @@ final class WorldCommand implements TabExecutor {
                     Component.text("Buy a "),
                     Component.text(sizeFmt + "x" + sizeFmt + " " + Text.enumToCamelCase(type.name()),
                                    NamedTextColor.GREEN),
-                    Component.text(" world for "),
+                    Component.text(" " + dimension.displayName + " for "),
                     Component.text(Money.format(price), NamedTextColor.GOLD),
                     Component.text("?"),
                 }));
         String code = randomString();
-        confirm(player, code, () -> confirmBuy(player, price, size, type));
+        confirm(player, code, () -> confirmBuy(player, price, size, type, dimension));
     }
 
     boolean unlockCommand(Player player, String[] args) throws Wrong {
@@ -853,7 +871,7 @@ final class WorldCommand implements TabExecutor {
             commandUsage(player, "info", null, "Get world info", "/world info");
             break;
         case "buy":
-            commandUsage(player, "buy", null, "Buy a world", "/world buy");
+            commandUsage(player, "buy", null, "Buy a world", "/world buy [type] [dimension]");
             break;
         case "unlock":
             commandUsage(player, "unlock", null, "Unlock world features", "/world unlock");
@@ -976,5 +994,15 @@ final class WorldCommand implements TabExecutor {
         boolean pvp = !world.getPVP();
         world.setPVP(pvp);
         player.sendMessage(Component.text("Toggled PVP " + (pvp ? "on" : "off"), NamedTextColor.GREEN));
+    }
+
+    @RequiredArgsConstructor
+    public enum DimensionType {
+        OVERWORLD(World.Environment.NORMAL, "Overworld"),
+        NETHER(World.Environment.NETHER, "Nether"),
+        END(World.Environment.THE_END, "End");
+
+        public final World.Environment environment;
+        public final String displayName;
     }
 }

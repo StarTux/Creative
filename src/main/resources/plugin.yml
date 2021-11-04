@@ -21,7 +21,7 @@ commands:
       /world list - List your worlds
       /world visit - List worlds you can join
       /world info - Get world info
-      /world buy [type] - Buy a world
+      /world buy [type] [dimension] - Buy a world
       /world unlock - Unlock world features
       /world grow - Grow your world
       /world spawn - Teleport to spawn
