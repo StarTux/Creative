@@ -311,11 +311,12 @@ public final class CreativeListener implements Listener {
     @EventHandler
     public void onServerCommand(ServerCommandEvent event) {
         Block block;
+        CommandMinecart cart = null;
         if (event.getSender() instanceof BlockCommandSender) {
             BlockCommandSender sender = (BlockCommandSender) event.getSender();
             block = sender.getBlock();
         } else if (event.getSender() instanceof CommandMinecart) {
-            CommandMinecart cart = (CommandMinecart) event.getSender();
+            cart = (CommandMinecart) event.getSender();
             block = cart.getLocation().getBlock();
         } else {
             return;
@@ -331,6 +332,11 @@ public final class CreativeListener implements Listener {
         plugin.getLogger().info(msg);
         if (!buildWorld.isSet(BuildWorld.Flag.COMMAND_BLOCKS)) {
             event.setCancelled(true);
+            if (cart != null) {
+                cart.remove();
+            } else {
+                block.setType(Material.AIR, false);
+            }
         }
     }
 
