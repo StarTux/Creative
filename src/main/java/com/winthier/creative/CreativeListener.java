@@ -115,7 +115,7 @@ public final class CreativeListener implements Listener {
 
     private void unloadEmptyWorldLater(final World theWorld) {
         if (!plugin.isEnabled()) return;
-        if (!theWorld.getPlayers().isEmpty()) return;
+        if (theWorld.getPlayers().size() > 1) return;
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(theWorld);
         if (buildWorld == null) return;
         if (buildWorld.isSet(BuildWorld.Flag.KEEP_IN_MEMORY)) return;
