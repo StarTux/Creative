@@ -314,7 +314,7 @@ final class AdminCommand implements TabExecutor {
             for (Player p: players) {
                 sb.append(" ").append(p.getName());
             }
-            lines.add(Component.text(world.getName() + "(" + players.size() + ") ", NamedTextColor.GRAY)
+            lines.add(Component.text(world.getName() + "(" + players.size() + ")", NamedTextColor.GRAY)
                       .append(Component.text(sb.toString(), NamedTextColor.GREEN)));
         }
         sender.sendMessage(Component.join(JoinConfiguration.separator(Component.newline()), lines));
