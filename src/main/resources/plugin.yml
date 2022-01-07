@@ -8,7 +8,7 @@ description: Manage Creative Worlds
 author: StarTux
 website: https://github.com/StarTux/Creative
 
-depend: [Core, WorldEdit, PlayerCache, Money, VoidGenerator, FlatGenerator, Perm]
+depend: [Core, WorldEdit, PlayerCache, Money, VoidGenerator, FlatGenerator, Perm, Mytems]
 softdepend: []
 
 commands:
@@ -87,6 +87,12 @@ commands:
       /plot list - List your plots
       /plot warp <id> - Warp to plot
 
+  kit:
+    aliases: []
+    description: Open the Creative kit
+    permission: creative.kit
+    usage: /kit
+
 permissions:
 
   creative.world:
@@ -107,4 +113,8 @@ permissions:
 
   creative.world.buy:
     description: Buy a creative world
+    default: op
+
+  creative.kit:
+    description: Open the kit
     default: op

@@ -51,6 +51,7 @@ public final class CreativePlugin extends JavaPlugin {
         worldCommand.load();
         getCommand("wtp").setExecutor(new WTPCommand(this));
         getCommand("creativeadmin").setExecutor(new AdminCommand(this));
+        getCommand("kit").setExecutor(new KitCommand(this));
         getCommand("warp").setExecutor(new WarpCommand(this));
         getCommand("plot").setExecutor(new PlotCommand(this));
         getServer().getPluginManager().registerEvents(new CreativeListener(this), this);
