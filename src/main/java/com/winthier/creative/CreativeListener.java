@@ -4,6 +4,7 @@ import com.cavetale.core.event.block.PlayerBlockAbilityQuery;
 import com.cavetale.core.event.block.PlayerBreakBlockEvent;
 import com.destroystokyo.paper.event.block.TNTPrimeEvent;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.Bukkit;
@@ -53,9 +54,12 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.inventory.ItemStack;
 import org.spigotmc.event.player.PlayerSpawnLocationEvent;
+import static net.kyori.adventure.text.Component.text;
+import static net.kyori.adventure.text.format.NamedTextColor.*;
 
 @RequiredArgsConstructor
 public final class CreativeListener implements Listener {
@@ -512,5 +516,19 @@ public final class CreativeListener implements Listener {
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getBlock().getWorld());
         if (buildWorld == null) return;
         event.setCancelled(true);
+    }
+
+    /**
+     * Intercept teleports into locked worlds.
+     */
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    protected void onPlayerTeleportWorlds(PlayerTeleportEvent event) {
+        if (Objects.equals(event.getFrom().getWorld(), event.getTo().getWorld())) return;
+        BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getTo().getWorld());
+        if (!buildWorld.isSet(BuildWorld.Flag.LOCKED)) return;
+        Player player = event.getPlayer();
+        if (buildWorld.getTrust(player.getUniqueId()).canVisit()) return;
+        event.setCancelled(true);
+        player.sendMessage(text("This world is locked", RED));
     }
 }

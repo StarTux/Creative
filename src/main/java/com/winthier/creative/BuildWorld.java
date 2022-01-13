@@ -68,7 +68,8 @@ final class BuildWorld {
         PROJECTILES("Projectiles", false, 0),
         MOBS("Mobs", false, 0),
         LIQUIDS("Liquids", false, 0),
-        FALLING_BLOCKS("FallingBlocks", false, 0);
+        FALLING_BLOCKS("FallingBlocks", false, 0),
+        LOCKED("Locked", false, -1);
 
         public final String key;
         public final boolean defaultValue;
