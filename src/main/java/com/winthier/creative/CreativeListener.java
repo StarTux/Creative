@@ -123,6 +123,7 @@ public final class CreativeListener implements Listener {
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(theWorld);
         if (buildWorld == null) return;
         if (buildWorld.isSet(BuildWorld.Flag.KEEP_IN_MEMORY)) return;
+        if (buildWorld.isKeepInMemory()) return;
         final String name = theWorld.getName();
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 World world = Bukkit.getWorld(name);

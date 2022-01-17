@@ -40,6 +40,7 @@ final class BuildWorld {
     private int centerZ = 0;
     private long size = -1;
     private transient long mobCooldown = 0;
+    private transient boolean keepInMemory;
 
     public static final Comparator<BuildWorld> NAME_SORT = new Comparator<BuildWorld>() {
         @Override public int compare(BuildWorld a, BuildWorld b) {

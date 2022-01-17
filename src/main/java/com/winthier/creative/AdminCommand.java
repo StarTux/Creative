@@ -63,6 +63,7 @@ final class AdminCommand implements TabExecutor {
         case "deletewarp": return deleteWarpCommand(sender, argl);
         case "debugplot": return debugPlotCommand(sender, argl);
         case "buildgroups": return buildGroupsCommand(sender, argl);
+        case "autoconvert": return autoConvertCommand(sender, argl);
         default: return false;
         }
     }
@@ -80,7 +81,7 @@ final class AdminCommand implements TabExecutor {
                              "ignore", "createvoid", "create",
                              "listloaded", "who", "list",
                              "listunregistered", "reload",
-                             "buildgroups")
+                             "buildgroups", "autoconvert")
                 .filter(s -> s.contains(arg))
                 .collect(Collectors.toList());
         }
@@ -868,6 +869,14 @@ final class AdminCommand implements TabExecutor {
             sender.sendMessage(Component.text("Build groups of " + buildWorld.getName() + " reset",
                                               NamedTextColor.YELLOW));
         }
+        return true;
+    }
+
+    protected boolean autoConvertCommand(CommandSender sender, String[] args) {
+        if (args.length != 0) return false;
+        sender.sendMessage("Starging auto conversion. See console...");
+        AutoConverter autoConverter = new AutoConverter(plugin);
+        autoConverter.start();
         return true;
     }
 }
