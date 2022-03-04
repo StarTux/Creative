@@ -19,6 +19,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.entity.minecart.CommandMinecart;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
@@ -44,6 +45,7 @@ import org.bukkit.event.entity.EntityPortalEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.entity.FireworkExplodeEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
+import org.bukkit.event.hanging.HangingBreakByEntityEvent;
 import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.inventory.InventoryCreativeEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
@@ -531,5 +533,20 @@ public final class CreativeListener implements Listener {
         if (buildWorld.getTrust(player.getUniqueId()).canVisit()) return;
         event.setCancelled(true);
         player.sendMessage(text("This world is locked", RED));
+    }
+
+    @EventHandler
+    void onHangingBreakByEntity(HangingBreakByEntityEvent event) {
+        if (event.getRemover() instanceof Player player) {
+            checkBuildEvent(player, event.getEntity().getLocation().getBlock(), event);
+        } else if (event.getRemover() instanceof Projectile projectile) {
+            if (projectile.getShooter() instanceof Player player) {
+                checkBuildEvent(player, event.getEntity().getLocation().getBlock(), event);
+            } else {
+                event.setCancelled(true);
+            }
+        } else {
+            event.setCancelled(true);
+        }
     }
 }
