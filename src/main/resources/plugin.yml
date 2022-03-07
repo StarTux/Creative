@@ -2,7 +2,7 @@ main: com.winthier.creative.CreativePlugin
 name: Creative
 
 version: 0.1
-api-version: 1.17
+api-version: 1.18
 
 description: Manage Creative Worlds
 author: StarTux
