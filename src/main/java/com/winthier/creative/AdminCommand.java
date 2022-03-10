@@ -1,5 +1,6 @@
 package com.winthier.creative;
 
+import com.winthier.playercache.PlayerCache;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -12,7 +13,6 @@ import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.JoinConfiguration;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -25,6 +25,8 @@ import org.bukkit.command.TabExecutor;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
+import static net.kyori.adventure.text.Component.text;
+import static net.kyori.adventure.text.format.NamedTextColor.*;
 
 @RequiredArgsConstructor
 final class AdminCommand implements TabExecutor {
@@ -64,6 +66,7 @@ final class AdminCommand implements TabExecutor {
         case "debugplot": return debugPlotCommand(sender, argl);
         case "buildgroups": return buildGroupsCommand(sender, argl);
         case "autoconvert": return autoConvertCommand(sender, argl);
+        case "transfer": return transferCommand(sender, argl);
         default: return false;
         }
     }
@@ -81,7 +84,8 @@ final class AdminCommand implements TabExecutor {
                              "ignore", "createvoid", "create",
                              "listloaded", "who", "list",
                              "listunregistered", "reload",
-                             "buildgroups", "autoconvert")
+                             "buildgroups", "autoconvert",
+                             "transfer")
                 .filter(s -> s.contains(arg))
                 .collect(Collectors.toList());
         }
@@ -115,6 +119,12 @@ final class AdminCommand implements TabExecutor {
                     .collect(Collectors.toList());
             }
             return Collections.emptyList();
+        case "transfer":
+            if (args.length == 1 || args.length == 2) {
+                return List.of("TODO");
+            } else {
+                return List.of();
+            }
         default: return null;
         }
     }
@@ -276,30 +286,30 @@ final class AdminCommand implements TabExecutor {
         }
         PlayerWorldList list = plugin.getPlayerWorldList(builder.getUuid());
         List<Component> lines = new ArrayList<>();
-        lines.add(Component.text(builder.getName() + " World List", NamedTextColor.YELLOW));
+        lines.add(Component.text(builder.getName() + " World List", YELLOW));
         final String delim = ChatColor.GRAY + " " + ChatColor.GREEN;
         if (!list.owner.isEmpty()) {
             lines.add(Component.text("Owner (" + list.owner.size() + ") ")
                       .append(Component.text(list.owner.stream()
                                              .map(BuildWorld::getPath)
                                              .collect(Collectors.joining(delim)),
-                                             NamedTextColor.GREEN)));
+                                             GREEN)));
         }
         if (!list.build.isEmpty()) {
             lines.add(Component.text("Build (" + list.build.size() + ") ")
                       .append(Component.text(list.build.stream()
                                              .map(BuildWorld::getPath)
                                              .collect(Collectors.joining(delim)),
-                                             NamedTextColor.GREEN)));
+                                             GREEN)));
         }
         if (!list.visit.isEmpty()) {
             lines.add(Component.text("Visit (" + list.visit.size() + ") ")
                       .append(Component.text(list.visit.stream()
                                              .map(BuildWorld::getPath)
                                              .collect(Collectors.joining(delim)),
-                                             NamedTextColor.GREEN)));
+                                             GREEN)));
         }
-        lines.add(Component.text("Total (" + list.count() + ")", NamedTextColor.GRAY));
+        lines.add(Component.text("Total (" + list.count() + ")", GRAY));
         sender.sendMessage(Component.join(JoinConfiguration.separator(Component.newline()), lines));
         return true;
     }
@@ -307,7 +317,7 @@ final class AdminCommand implements TabExecutor {
     boolean whoCommand(CommandSender sender, String[] args) {
         if (args.length != 0) return false;
         List<Component> lines = new ArrayList<>();
-        lines.add(Component.text("World Player List", NamedTextColor.YELLOW));
+        lines.add(Component.text("World Player List", YELLOW));
         for (World world: plugin.getServer().getWorlds()) {
             List<Player> players = world.getPlayers();
             if (players.isEmpty()) continue;
@@ -315,8 +325,8 @@ final class AdminCommand implements TabExecutor {
             for (Player p: players) {
                 sb.append(" ").append(p.getName());
             }
-            lines.add(Component.text(world.getName() + "(" + players.size() + ")", NamedTextColor.GRAY)
-                      .append(Component.text(sb.toString(), NamedTextColor.GREEN)));
+            lines.add(Component.text(world.getName() + "(" + players.size() + ")", GRAY)
+                      .append(Component.text(sb.toString(), GREEN)));
         }
         sender.sendMessage(Component.join(JoinConfiguration.separator(Component.newline()), lines));
         return true;
@@ -369,7 +379,7 @@ final class AdminCommand implements TabExecutor {
         buildWorld.teleportToSpawn(target);
         sender.sendMessage(Component.text("Teleported " + target.getName()
                                           + " to world " + buildWorld.getName(),
-                                          NamedTextColor.YELLOW));
+                                          YELLOW));
         return true;
     }
 
@@ -384,7 +394,7 @@ final class AdminCommand implements TabExecutor {
         plugin.getBuildWorlds().remove(buildWorld);
         plugin.saveBuildWorlds();
         sender.sendMessage(Component.text("World removed: " + buildWorld.getPath(),
-                                          NamedTextColor.YELLOW));
+                                          YELLOW));
         return true;
     }
 
@@ -677,9 +687,9 @@ final class AdminCommand implements TabExecutor {
             : null;
         if (player == null) return false;
         if (plugin.toggleIgnore(player)) {
-            player.sendMessage(Component.text("Ignoring world perms", NamedTextColor.YELLOW));
+            player.sendMessage(Component.text("Ignoring world perms", YELLOW));
         } else {
-            player.sendMessage(Component.text("No longer ignoring world perms", NamedTextColor.YELLOW));
+            player.sendMessage(Component.text("No longer ignoring world perms", YELLOW));
         }
         plugin.getPermission().updatePermissions(player);
         return true;
@@ -694,16 +704,16 @@ final class AdminCommand implements TabExecutor {
         String name = Stream.of(args).collect(Collectors.joining(" "));
         Warp warp = plugin.getWarps().get(name);
         if (warp == null) {
-            player.sendMessage(Component.text("Warp not found: " + name, NamedTextColor.RED));
+            player.sendMessage(Component.text("Warp not found: " + name, RED));
             return true;
         }
         Location loc = warp.getLocation();
         if (loc == null) {
-            player.sendMessage(Component.text("Warp not found: " + warp.getName(), NamedTextColor.RED));
+            player.sendMessage(Component.text("Warp not found: " + warp.getName(), RED));
             return true;
         }
         player.teleport(loc);
-        player.sendMessage(Component.text("Warped to " + warp.getName(), NamedTextColor.YELLOW));
+        player.sendMessage(Component.text("Warped to " + warp.getName(), YELLOW));
         return true;
     }
 
@@ -718,7 +728,7 @@ final class AdminCommand implements TabExecutor {
         Warp warp = Warp.of(name, loc);
         plugin.getWarps().put(name, warp);
         plugin.saveWarps();
-        player.sendMessage(Component.text("Created warp " + name, NamedTextColor.YELLOW));
+        player.sendMessage(Component.text("Created warp " + name, YELLOW));
         return true;
     }
 
@@ -746,7 +756,7 @@ final class AdminCommand implements TabExecutor {
             return true;
         }
         player.sendMessage(Component.text(block.getX() + "," + block.getY() + "," + block.getZ()
-                                          + ": " + plotWorld.debug(block), NamedTextColor.YELLOW));
+                                          + ": " + plotWorld.debug(block), YELLOW));
         return true;
     }
 
@@ -838,15 +848,15 @@ final class AdminCommand implements TabExecutor {
         }
         Collections.sort(worlds, (b, a) -> (Integer.compare(a.trustedScore(), b.trustedScore())));
         List<Component> lines = new ArrayList<>();
-        lines.add(Component.text("World trust list (page " + page + ")", NamedTextColor.YELLOW));
+        lines.add(Component.text("World trust list (page " + page + ")", YELLOW));
         final int startIndex = page * pageSize;
         final int endIndex = startIndex + pageSize;
         for (int i = startIndex; i < endIndex; i += 1) {
             if (i >= worlds.size()) break;
             BuildWorld world = worlds.get(i);
-            lines.add(Component.text("#" + i, NamedTextColor.GRAY)
-                      .append(Component.text(" " + Math.min(999, world.trustedScore()), NamedTextColor.YELLOW))
-                      .append(Component.text(" " + world.getPath(), NamedTextColor.WHITE)));
+            lines.add(Component.text("#" + i, GRAY)
+                      .append(Component.text(" " + Math.min(999, world.trustedScore()), YELLOW))
+                      .append(Component.text(" " + world.getPath(), WHITE)));
         }
         sender.sendMessage(Component.join(JoinConfiguration.separator(Component.newline()), lines));
         return true;
@@ -864,10 +874,10 @@ final class AdminCommand implements TabExecutor {
         plugin.saveBuildWorlds();
         if (!buildGroups.isEmpty()) {
             sender.sendMessage(Component.text("Build groups of " + buildWorld.getName() + " set to " + buildGroups,
-                                              NamedTextColor.YELLOW));
+                                              YELLOW));
         } else {
             sender.sendMessage(Component.text("Build groups of " + buildWorld.getName() + " reset",
-                                              NamedTextColor.YELLOW));
+                                              YELLOW));
         }
         return true;
     }
@@ -877,6 +887,51 @@ final class AdminCommand implements TabExecutor {
         sender.sendMessage("Starging auto conversion. See console...");
         AutoConverter autoConverter = new AutoConverter(plugin);
         autoConverter.start();
+        return true;
+    }
+
+    protected boolean transferCommand(CommandSender sender, String[] args) {
+        if (args.length != 2) return false;
+        PlayerCache from = PlayerCache.forArg(args[0]);
+        if (from == null) {
+            sender.sendMessage(text("Player not found: " + args[0], RED));
+            return true;
+        }
+        PlayerCache to = PlayerCache.forArg(args[1]);
+        if (to == null) {
+            sender.sendMessage(text("Player not found: " + args[1], RED));
+            return true;
+        }
+        if (from.equals(to)) {
+            sender.sendMessage(text("Players are identical: " + from.getName(), RED));
+            return true;
+        }
+        int total = 0;
+        int worldCount = 0;
+        int trustCount = 0;
+        Builder toBuilder = Builder.of(to.uuid);
+        for (BuildWorld buildWorld : plugin.getBuildWorlds()) {
+            if (buildWorld.getOwner() != null && from.uuid.equals(buildWorld.getOwner().getUuid())) {
+                buildWorld.setOwner(toBuilder);
+                total += 1;
+                worldCount += 1;
+            }
+            Trusted trusted = buildWorld.getTrusted().remove(from.uuid);
+            if (trusted != null) {
+                buildWorld.getTrusted().put(to.uuid, new Trusted(toBuilder, trusted.getTrust()));
+                total += 1;
+                trustCount += 1;
+            }
+        }
+        if (total == 0) {
+            sender.sendMessage(text(from.name + " does not have any creative worlds", RED));
+            return true;
+        }
+        plugin.saveBuildWorlds();
+        sender.sendMessage(text("Transferred worlds from " + from.name + " to " + to.name + ":"
+                                + " worlds=" + worldCount
+                                + " trust=" + trustCount,
+                                YELLOW));
         return true;
     }
 }

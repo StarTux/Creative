@@ -17,16 +17,20 @@ final class Builder {
         return PlayerCache.nameForUuid(uuid);
     }
 
-    private Builder(final UUID uuid, final String name) {
+    private Builder(final UUID uuid) {
         this.uuid = uuid;
     }
 
+    public static Builder of(UUID uuid) {
+        return new Builder(uuid);
+    }
+
     public static Builder of(UUID uuid, String name) {
-        return new Builder(uuid, name);
+        return of(uuid);
     }
 
     public static Builder of(Player player) {
-        return of(player.getUniqueId(), player.getName());
+        return of(player.getUniqueId());
     }
 
     public static Builder find(String name) {
