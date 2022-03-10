@@ -73,6 +73,7 @@ commands:
       /ca setwarp <name> - Set warp at player location
       /ca deletewarp <name> - Delete warp
       /ca autoconvert - Auto convert worlds
+      /ca transferall <from> <to> - Transfer all worlds
 
   warp:
     description: Warps

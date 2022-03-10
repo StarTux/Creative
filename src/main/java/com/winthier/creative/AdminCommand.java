@@ -66,7 +66,7 @@ final class AdminCommand implements TabExecutor {
         case "debugplot": return debugPlotCommand(sender, argl);
         case "buildgroups": return buildGroupsCommand(sender, argl);
         case "autoconvert": return autoConvertCommand(sender, argl);
-        case "transfer": return transferCommand(sender, argl);
+        case "transferall": return transferAllCommand(sender, argl);
         default: return false;
         }
     }
@@ -85,7 +85,7 @@ final class AdminCommand implements TabExecutor {
                              "listloaded", "who", "list",
                              "listunregistered", "reload",
                              "buildgroups", "autoconvert",
-                             "transfer")
+                             "transferall")
                 .filter(s -> s.contains(arg))
                 .collect(Collectors.toList());
         }
@@ -119,7 +119,7 @@ final class AdminCommand implements TabExecutor {
                     .collect(Collectors.toList());
             }
             return Collections.emptyList();
-        case "transfer":
+        case "transferall":
             if (args.length == 1 || args.length == 2) {
                 return List.of("TODO");
             } else {
@@ -890,7 +890,7 @@ final class AdminCommand implements TabExecutor {
         return true;
     }
 
-    protected boolean transferCommand(CommandSender sender, String[] args) {
+    protected boolean transferAllCommand(CommandSender sender, String[] args) {
         if (args.length != 2) return false;
         PlayerCache from = PlayerCache.forArg(args[0]);
         if (from == null) {
