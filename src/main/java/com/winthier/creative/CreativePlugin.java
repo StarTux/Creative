@@ -36,6 +36,7 @@ public final class CreativePlugin extends JavaPlugin {
     WorldEditListener worldEditListener = new WorldEditListener(this);
     final Metadata metadata = new Metadata(this);
     final Random random = ThreadLocalRandom.current();
+    protected AdminCommand adminCommand = new AdminCommand(this);
     // config
     private int maxFallingBlocks;
 
@@ -50,11 +51,14 @@ public final class CreativePlugin extends JavaPlugin {
         getCommand("world").setExecutor(worldCommand);
         worldCommand.load();
         getCommand("wtp").setExecutor(new WTPCommand(this));
-        getCommand("creativeadmin").setExecutor(new AdminCommand(this));
+        getCommand("creativeadmin").setExecutor(adminCommand);
         getCommand("kit").setExecutor(new KitCommand(this));
         getCommand("warp").setExecutor(new WarpCommand(this));
         getCommand("plot").setExecutor(new PlotCommand(this));
         getServer().getPluginManager().registerEvents(new CreativeListener(this), this);
+        if (Bukkit.getPluginManager().isPluginEnabled("Shutdown")) {
+            Bukkit.getPluginManager().registerEvents(new ShutdownListener(this), this);
+        }
         for (Player player: getServer().getOnlinePlayers()) {
             permission.updatePermissions(player);
         }

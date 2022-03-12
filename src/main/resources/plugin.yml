@@ -9,7 +9,7 @@ author: StarTux
 website: https://github.com/StarTux/Creative
 
 depend: [Core, WorldEdit, PlayerCache, Money, VoidGenerator, FlatGenerator, Perm, Mytems]
-softdepend: []
+softdepend: [Shutdown]
 
 commands:
 

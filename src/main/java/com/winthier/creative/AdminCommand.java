@@ -24,14 +24,13 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
 
 @RequiredArgsConstructor
 final class AdminCommand implements TabExecutor {
     final CreativePlugin plugin;
-    private BukkitRunnable updateTask;
+    protected AutoConverter autoConverter;
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -884,8 +883,12 @@ final class AdminCommand implements TabExecutor {
 
     protected boolean autoConvertCommand(CommandSender sender, String[] args) {
         if (args.length != 0) return false;
+        if (autoConverter != null) {
+            sender.sendMessage(text("An auto convesion task is already running", RED));
+            return true;
+        }
         sender.sendMessage("Starging auto conversion. See console...");
-        AutoConverter autoConverter = new AutoConverter(plugin);
+        autoConverter = new AutoConverter(plugin);
         autoConverter.start();
         return true;
     }
