@@ -1,6 +1,8 @@
 package com.winthier.creative;
 
 import com.cavetale.mytems.Mytems;
+import com.cavetale.mytems.MytemsCategory;
+import com.cavetale.mytems.MytemsTag;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.Bukkit;
@@ -33,6 +35,9 @@ final class KitCommand implements TabExecutor {
         inventory.addItem(new ItemStack(Material.LIGHT));
         inventory.addItem(Mytems.ARMOR_STAND_EDITOR.createItemStack());
         inventory.addItem(Mytems.MAGIC_MAP.createItemStack());
+        for (Mytems mytems : MytemsTag.of(MytemsCategory.TREE_SEED).getMytems()) {
+            inventory.addItem(mytems.createItemStack());
+        }
         player.openInventory(inventory);
         player.playSound(player.getLocation(), Sound.BLOCK_CHEST_OPEN, SoundCategory.MASTER, 0.5f, 1.2f);
         return true;
