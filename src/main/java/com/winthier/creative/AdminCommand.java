@@ -1,5 +1,6 @@
 package com.winthier.creative;
 
+import com.winthier.creative.util.Files;
 import com.winthier.playercache.PlayerCache;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -128,7 +129,7 @@ final class AdminCommand implements TabExecutor {
         }
     }
 
-    List<String> tabCompleteWorldPaths(String arg) {
+    private List<String> tabCompleteWorldPaths(String arg) {
         String lower = arg.toLowerCase();
         return plugin.getBuildWorlds().stream()
             .map(BuildWorld::getPath)
@@ -136,14 +137,14 @@ final class AdminCommand implements TabExecutor {
             .collect(Collectors.toList());
     }
 
-    boolean reloadCommand(CommandSender sender, String[] args) {
+    private boolean reloadCommand(CommandSender sender, String[] args) {
         if (args.length != 0) return false;
         plugin.reloadAllConfigs();
         sender.sendMessage("Configs reloaded");
         return true;
     }
 
-    boolean infoCommand(CommandSender sender, String[] args) {
+    private boolean infoCommand(CommandSender sender, String[] args) {
         if (args.length > 1) return false;
         BuildWorld buildWorld;
         if (args.length == 0) {
@@ -182,7 +183,7 @@ final class AdminCommand implements TabExecutor {
         return true;
     }
 
-    boolean setCommand(CommandSender sender, String[] args) {
+    private boolean setCommand(CommandSender sender, String[] args) {
         Player player = sender instanceof Player
             ? (Player) sender
             : null;
@@ -235,7 +236,7 @@ final class AdminCommand implements TabExecutor {
         return true;
     }
 
-    boolean configCommand(CommandSender sender, String[] args) {
+    private boolean configCommand(CommandSender sender, String[] args) {
         if (args.length != 1) return false;
         String name = args[0];
         BuildWorld buildWorld = plugin.getBuildWorldByPath(name);
@@ -251,7 +252,7 @@ final class AdminCommand implements TabExecutor {
         return true;
     }
 
-    boolean listUnregisteredCommand(CommandSender sender, String[] args) {
+    private boolean listUnregisteredCommand(CommandSender sender, String[] args) {
         if (args.length != 0) return false;
         sender.sendMessage("Unregistered worlds:");
         int count = 0;
@@ -265,7 +266,7 @@ final class AdminCommand implements TabExecutor {
         return true;
     }
 
-    boolean listCommand(CommandSender sender, String[] args) {
+    private boolean listCommand(CommandSender sender, String[] args) {
         if (args.length > 1) return false;
         if (args.length == 0) {
             int count = 0;
@@ -313,7 +314,7 @@ final class AdminCommand implements TabExecutor {
         return true;
     }
 
-    boolean whoCommand(CommandSender sender, String[] args) {
+    private boolean whoCommand(CommandSender sender, String[] args) {
         if (args.length != 0) return false;
         List<Component> lines = new ArrayList<>();
         lines.add(Component.text("World Player List", YELLOW));
@@ -331,7 +332,7 @@ final class AdminCommand implements TabExecutor {
         return true;
     }
 
-    boolean listLoadedCommand(CommandSender sender, String[] args) {
+    private boolean listLoadedCommand(CommandSender sender, String[] args) {
         if (args.length != 0) return false;
         int count = 0;
         for (World world: plugin.getServer().getWorlds()) {
@@ -348,7 +349,7 @@ final class AdminCommand implements TabExecutor {
         return true;
     }
 
-    boolean tpCommand(CommandSender sender, String[] args) {
+    private boolean tpCommand(CommandSender sender, String[] args) {
         Player player = sender instanceof Player
             ? (Player) sender
             : null;
@@ -382,22 +383,27 @@ final class AdminCommand implements TabExecutor {
         return true;
     }
 
-    boolean removeCommand(CommandSender sender, String[] args) {
+    private boolean removeCommand(CommandSender sender, String[] args) {
         if (args.length != 1) return false;
         String worldKey = args[0];
         BuildWorld buildWorld = plugin.getBuildWorldByPath(worldKey);
         if (buildWorld == null) {
-            sender.sendMessage("World not found: " + worldKey);
+            sender.sendMessage(ChatColor.RED + "World not found: " + worldKey);
+            return true;
+        }
+        if (buildWorld.getWorld() != null) {
+            sender.sendMessage(ChatColor.RED + "World still loaded: " + buildWorld.getName());
             return true;
         }
         plugin.getBuildWorlds().remove(buildWorld);
         plugin.saveBuildWorlds();
+        Files.deleteRecursively(buildWorld.getWorldFolder());
         sender.sendMessage(Component.text("World removed: " + buildWorld.getPath(),
                                           YELLOW));
         return true;
     }
 
-    boolean resetOwnerCommand(CommandSender sender, String[] args) {
+    private boolean resetOwnerCommand(CommandSender sender, String[] args) {
         if (args.length > 1) return false;
         BuildWorld buildWorld;
         if (args.length >= 1) {
@@ -424,7 +430,7 @@ final class AdminCommand implements TabExecutor {
         return true;
     }
 
-    boolean setOwnerCommand(CommandSender sender, String[] args) {
+    private boolean setOwnerCommand(CommandSender sender, String[] args) {
         if (args.length != 2) return false;
         String worldKey = args[0];
         String ownerName = args[1];
@@ -445,7 +451,7 @@ final class AdminCommand implements TabExecutor {
         return true;
     }
 
-    boolean createCommand(CommandSender sender, String[] args) {
+    private boolean createCommand(CommandSender sender, String[] args) {
         if (args.length == 0) {
             sender.sendMessage("/ca create"
                                + " n:name"
@@ -561,7 +567,7 @@ final class AdminCommand implements TabExecutor {
         return true;
     }
 
-    boolean createVoidCommand(CommandSender sender, String[] args) {
+    private boolean createVoidCommand(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) {
             sender.sendMessage("Player expected");
             return true;
@@ -601,7 +607,7 @@ final class AdminCommand implements TabExecutor {
         return true;
     }
 
-    boolean importCommand(CommandSender sender, String[] args) {
+    private boolean importCommand(CommandSender sender, String[] args) {
         if (args.length != 2) return false;
         String name = args[0];
         String generator = args[1];
@@ -629,7 +635,7 @@ final class AdminCommand implements TabExecutor {
         return true;
     }
 
-    boolean loadCommand(CommandSender sender, String[] args) {
+    private boolean loadCommand(CommandSender sender, String[] args) {
         if (args.length != 1) return false;
         String name = args[0];
         BuildWorld buildWorld = plugin.getBuildWorldByPath(name);
@@ -647,7 +653,7 @@ final class AdminCommand implements TabExecutor {
         return true;
     }
 
-    boolean unloadCommand(CommandSender sender, String[] args) {
+    private boolean unloadCommand(CommandSender sender, String[] args) {
         if (args.length > 2) return false;
         String name = args[0];
         BuildWorld buildWorld = plugin.getBuildWorldByPath(name);
@@ -679,7 +685,7 @@ final class AdminCommand implements TabExecutor {
         return true;
     }
 
-    boolean ignoreCommand(CommandSender sender, String[] args) {
+    private boolean ignoreCommand(CommandSender sender, String[] args) {
         if (args.length != 0) return false;
         Player player = sender instanceof Player
             ? (Player) sender
@@ -694,7 +700,7 @@ final class AdminCommand implements TabExecutor {
         return true;
     }
 
-    boolean warpCommand(CommandSender sender, String[] args) {
+    private boolean warpCommand(CommandSender sender, String[] args) {
         if (args.length == 0) return false;
         Player player = sender instanceof Player
             ? (Player) sender
@@ -716,7 +722,7 @@ final class AdminCommand implements TabExecutor {
         return true;
     }
 
-    boolean setWarpCommand(CommandSender sender, String[] args) {
+    private boolean setWarpCommand(CommandSender sender, String[] args) {
         if (args.length == 0) return false;
         Player player = sender instanceof Player
             ? (Player) sender
@@ -731,7 +737,7 @@ final class AdminCommand implements TabExecutor {
         return true;
     }
 
-    boolean deleteWarpCommand(CommandSender sender, String[] args) {
+    private boolean deleteWarpCommand(CommandSender sender, String[] args) {
         if (args.length == 0) return false;
         String name = Stream.of(args).collect(Collectors.joining(" "));
         if (plugin.getWarps().remove(name) != null) {
@@ -743,7 +749,7 @@ final class AdminCommand implements TabExecutor {
         return true;
     }
 
-    boolean debugPlotCommand(CommandSender sender, String[] args) {
+    private boolean debugPlotCommand(CommandSender sender, String[] args) {
         Player player = sender instanceof Player
             ? (Player) sender
             : null;
@@ -759,7 +765,7 @@ final class AdminCommand implements TabExecutor {
         return true;
     }
 
-    boolean trustCommand(CommandSender sender, String[] args) {
+    private boolean trustCommand(CommandSender sender, String[] args) {
         if (args.length != 3) return false;
         String worldName = args[0];
         String playerName = args[1];
@@ -795,7 +801,7 @@ final class AdminCommand implements TabExecutor {
         return true;
     }
 
-    boolean clearTrustCommand(CommandSender sender, String[] args) {
+    private boolean clearTrustCommand(CommandSender sender, String[] args) {
         if (args.length != 1) return false;
         String worldName = args[0];
         BuildWorld buildWorld = plugin.getBuildWorldByPath(worldName);
@@ -827,7 +833,7 @@ final class AdminCommand implements TabExecutor {
         return true;
     }
 
-    boolean rankTrustCommand(CommandSender sender, String[] args) {
+    private boolean rankTrustCommand(CommandSender sender, String[] args) {
         if (args.length > 1) return false;
         int page = 0;
         if (args.length >= 1) {
@@ -861,7 +867,7 @@ final class AdminCommand implements TabExecutor {
         return true;
     }
 
-    boolean buildGroupsCommand(CommandSender sender, String[] args) {
+    private boolean buildGroupsCommand(CommandSender sender, String[] args) {
         if (args.length == 0) return false;
         BuildWorld buildWorld = plugin.getBuildWorldByPath(args[0]);
         if (buildWorld == null) {
@@ -881,7 +887,7 @@ final class AdminCommand implements TabExecutor {
         return true;
     }
 
-    protected boolean autoConvertCommand(CommandSender sender, String[] args) {
+    private boolean autoConvertCommand(CommandSender sender, String[] args) {
         if (args.length != 0) return false;
         if (autoConverter != null) {
             sender.sendMessage(text("An auto convesion task is already running", RED));
@@ -893,7 +899,7 @@ final class AdminCommand implements TabExecutor {
         return true;
     }
 
-    protected boolean transferAllCommand(CommandSender sender, String[] args) {
+    private boolean transferAllCommand(CommandSender sender, String[] args) {
         if (args.length != 2) return false;
         PlayerCache from = PlayerCache.forArg(args[0]);
         if (from == null) {
