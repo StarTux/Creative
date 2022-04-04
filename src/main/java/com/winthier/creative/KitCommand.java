@@ -38,6 +38,7 @@ final class KitCommand implements TabExecutor {
         for (Mytems mytems : MytemsTag.of(MytemsCategory.TREE_SEED).getMytems()) {
             inventory.addItem(mytems.createItemStack());
         }
+        inventory.addItem(Mytems.FERTILIZER.createItemStack(64));
         player.openInventory(inventory);
         player.playSound(player.getLocation(), Sound.BLOCK_CHEST_OPEN, SoundCategory.MASTER, 0.5f, 1.2f);
         return true;
