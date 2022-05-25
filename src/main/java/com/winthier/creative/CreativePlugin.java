@@ -37,8 +37,14 @@ public final class CreativePlugin extends JavaPlugin {
     final Metadata metadata = new Metadata(this);
     final Random random = ThreadLocalRandom.current();
     protected AdminCommand adminCommand = new AdminCommand(this);
+    private final CoreWorlds coreWorlds = new CoreWorlds(this);
     // config
     private int maxFallingBlocks;
+
+    @Override
+    public void onLoad() {
+        coreWorlds.register();
+    }
 
     @Override
     public void onEnable() {
@@ -83,6 +89,7 @@ public final class CreativePlugin extends JavaPlugin {
                 unloadEmptyWorld(world);
             }
         }
+        coreWorlds.unregister();
     }
 
     protected boolean unloadEmptyWorld(final World world) {
