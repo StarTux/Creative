@@ -70,16 +70,8 @@ commands:
       /ca import <world>
       /ca load <world>
       /ca unload <world>
-      /ca setwarp <name> - Set warp at player location
-      /ca deletewarp <name> - Delete warp
       /ca autoconvert - Auto convert worlds
       /ca transferall <from> <to> - Transfer all worlds
-
-  warp:
-    description: Warps
-    permission: creative.warp
-    usage: |-
-      /warp [name]
 
   plot:
     aliases: [plots]
@@ -99,10 +91,6 @@ permissions:
 
   creative.world:
     descrption: Use /world and /wtp
-    default: op
-
-  creative.warp:
-    descrption: Use /warp
     default: op
 
   creative.admin:

@@ -3,7 +3,6 @@ package com.winthier.creative;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -27,7 +26,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 public final class CreativePlugin extends JavaPlugin {
     private List<BuildWorld> buildWorlds;
     Map<String, PlotWorld> plotWorlds = new LinkedHashMap<>();
-    private Map<String, Warp> warps;
     private YamlConfiguration logoutLocations = null;
     private final WorldCommand worldCommand = new WorldCommand(this);
     private final Permission permission = new Permission(this);
@@ -59,7 +57,6 @@ public final class CreativePlugin extends JavaPlugin {
         getCommand("wtp").setExecutor(new WTPCommand(this));
         getCommand("creativeadmin").setExecutor(adminCommand);
         getCommand("kit").setExecutor(new KitCommand(this));
-        getCommand("warp").setExecutor(new WarpCommand(this));
         getCommand("plot").setExecutor(new PlotCommand(this));
         getServer().getPluginManager().registerEvents(new CreativeListener(this), this);
         if (Bukkit.getPluginManager().isPluginEnabled("Shutdown")) {
@@ -105,7 +102,6 @@ public final class CreativePlugin extends JavaPlugin {
         loadConfigurationFile();
         reloadConfig();
         buildWorlds = null;
-        warps = null;
         logoutLocations = null;
         permission.reload();
         worldCommand.load();
@@ -248,34 +244,6 @@ public final class CreativePlugin extends JavaPlugin {
 
     public boolean doesIgnore(UUID uuid) {
         return ignores.contains(uuid);
-    }
-
-    public Map<String, Warp> getWarps() {
-        if (warps == null) {
-            warps = new HashMap<>();
-            File file = new File(getDataFolder(), "warps.yml");
-            YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
-            for (String key: config.getKeys(false)) {
-                Warp warp = Warp.deserialize(key, config.getConfigurationSection(key));
-                warps.put(warp.getName(), warp);
-            }
-        }
-        return warps;
-    }
-
-    public void saveWarps() {
-        if (warps == null) return;
-        YamlConfiguration config = new YamlConfiguration();
-        for (Warp warp: warps.values()) {
-            ConfigurationSection section = config.createSection(warp.getName());
-            warp.serialize(section);
-        }
-        File file = new File(getDataFolder(), "warps.yml");
-        try {
-            config.save(file);
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-        }
     }
 
     Meta metaOf(Player player) {

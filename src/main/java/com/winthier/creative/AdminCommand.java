@@ -15,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.JoinConfiguration;
 import org.bukkit.ChatColor;
-import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.WorldCreator;
 import org.bukkit.WorldType;
@@ -60,9 +59,6 @@ final class AdminCommand implements TabExecutor {
         case "load": return loadCommand(sender, argl);
         case "unload": return unloadCommand(sender, argl);
         case "ignore": return ignoreCommand(sender, argl);
-        case "warp": return warpCommand(sender, argl);
-        case "setwarp": return setWarpCommand(sender, argl);
-        case "deletewarp": return deleteWarpCommand(sender, argl);
         case "debugplot": return debugPlotCommand(sender, argl);
         case "buildgroups": return buildGroupsCommand(sender, argl);
         case "autoconvert": return autoConvertCommand(sender, argl);
@@ -80,7 +76,6 @@ final class AdminCommand implements TabExecutor {
                              "ranktrust", "resetowner", "setowner",
                              "import", "load", "unload", "tp",
                              "config", "set", "debugplot",
-                             "deletewarp", "setwarp", "warp",
                              "ignore", "createvoid", "create",
                              "listloaded", "who", "list",
                              "listunregistered", "reload",
@@ -697,55 +692,6 @@ final class AdminCommand implements TabExecutor {
             player.sendMessage(Component.text("No longer ignoring world perms", YELLOW));
         }
         plugin.getPermission().updatePermissions(player);
-        return true;
-    }
-
-    private boolean warpCommand(CommandSender sender, String[] args) {
-        if (args.length == 0) return false;
-        Player player = sender instanceof Player
-            ? (Player) sender
-            : null;
-        if (player == null) return false;
-        String name = Stream.of(args).collect(Collectors.joining(" "));
-        Warp warp = plugin.getWarps().get(name);
-        if (warp == null) {
-            player.sendMessage(Component.text("Warp not found: " + name, RED));
-            return true;
-        }
-        Location loc = warp.getLocation();
-        if (loc == null) {
-            player.sendMessage(Component.text("Warp not found: " + warp.getName(), RED));
-            return true;
-        }
-        player.teleport(loc);
-        player.sendMessage(Component.text("Warped to " + warp.getName(), YELLOW));
-        return true;
-    }
-
-    private boolean setWarpCommand(CommandSender sender, String[] args) {
-        if (args.length == 0) return false;
-        Player player = sender instanceof Player
-            ? (Player) sender
-            : null;
-        if (player == null) return false;
-        String name = Stream.of(args).collect(Collectors.joining(" "));
-        Location loc = player.getLocation();
-        Warp warp = Warp.of(name, loc);
-        plugin.getWarps().put(name, warp);
-        plugin.saveWarps();
-        player.sendMessage(Component.text("Created warp " + name, YELLOW));
-        return true;
-    }
-
-    private boolean deleteWarpCommand(CommandSender sender, String[] args) {
-        if (args.length == 0) return false;
-        String name = Stream.of(args).collect(Collectors.joining(" "));
-        if (plugin.getWarps().remove(name) != null) {
-            plugin.saveWarps();
-            sender.sendMessage("Deleted warp: " + name);
-        } else {
-            sender.sendMessage("Warp not found: " + name);
-        }
         return true;
     }
 
