@@ -79,7 +79,7 @@ public final class CreativeListener implements Listener {
         unloadEmptyWorldLater(player.getWorld());
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerSpawnLocation(PlayerSpawnLocationEvent event) {
         Location loc = plugin.findSpawnLocation(event.getPlayer());
         if (loc == null) {
