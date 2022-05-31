@@ -551,9 +551,10 @@ public final class CreativeListener implements Listener {
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     private void onPlayerTPA(PlayerTPAEvent event) {
-        BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getTarget().getWorld());
+        Player target = event.getTarget();
+        BuildWorld buildWorld = plugin.getBuildWorldByWorld(target.getWorld());
         if (buildWorld == null) return;
-        if (!buildWorld.getTrust(event.getRequester()).canVisit()) {
+        if (!buildWorld.getTrust(event.getRequester()).canVisit() && !buildWorld.getTrust(target.getUniqueId()).isOwner()) {
             event.setCancelled(true);
         }
     }
