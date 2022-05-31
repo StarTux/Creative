@@ -2,11 +2,13 @@ package com.winthier.creative;
 
 import com.cavetale.core.event.block.PlayerBlockAbilityQuery;
 import com.cavetale.core.event.block.PlayerBreakBlockEvent;
+import com.cavetale.core.event.player.PlayerTPAEvent;
 import com.destroystokyo.paper.event.block.TNTPrimeEvent;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -56,6 +58,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.inventory.ItemStack;
@@ -65,10 +68,10 @@ import static net.kyori.adventure.text.format.NamedTextColor.*;
 
 @RequiredArgsConstructor
 public final class CreativeListener implements Listener {
-    final CreativePlugin plugin;
+    private final CreativePlugin plugin;
 
     @EventHandler
-    public void onPlayerQuit(PlayerQuitEvent event) {
+    private void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
         // Store Logout Location
         plugin.storeLogoutLocation(player);
@@ -80,7 +83,7 @@ public final class CreativeListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
-    public void onPlayerSpawnLocation(PlayerSpawnLocationEvent event) {
+    private void onPlayerSpawnLocation(PlayerSpawnLocationEvent event) {
         Location loc = plugin.findSpawnLocation(event.getPlayer());
         if (loc == null) {
             loc = plugin.getServer().getWorlds().get(0).getSpawnLocation();
@@ -89,7 +92,7 @@ public final class CreativeListener implements Listener {
     }
 
     @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
+    private void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
         ConfigurationSection config = plugin.getLogoutLocations()
@@ -110,12 +113,12 @@ public final class CreativeListener implements Listener {
     }
 
     @EventHandler
-    public void onPlayerChangedWorld(PlayerChangedWorldEvent event) {
+    private void onPlayerChangedWorld(PlayerChangedWorldEvent event) {
         updatePermissions(event.getPlayer());
         unloadEmptyWorldLater(event.getFrom());
     }
 
-    void updatePermissions(Player player) {
+    private void updatePermissions(Player player) {
         Bukkit.getScheduler().runTask(plugin, () -> plugin.getPermission().updatePermissions(player));
     }
 
@@ -138,7 +141,7 @@ public final class CreativeListener implements Listener {
     /**
      * Generic build permission check.
      */
-    protected boolean checkBuildEvent(Player player, Block block, Cancellable event) {
+    private boolean checkBuildEvent(Player player, Block block, Cancellable event) {
         if (plugin.doesIgnore(player)) return true;
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(player.getWorld());
         if (buildWorld == null) {
@@ -160,17 +163,17 @@ public final class CreativeListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.LOW)
-    public void onBlockBreak(BlockBreakEvent event) {
+    private void onBlockBreak(BlockBreakEvent event) {
         checkBuildEvent(event.getPlayer(), event.getBlock(), event);
     }
 
     @EventHandler(priority = EventPriority.LOW)
-    public void onBlockPlace(BlockPlaceEvent event) {
+    private void onBlockPlace(BlockPlaceEvent event) {
         checkBuildEvent(event.getPlayer(), event.getBlock(), event);
     }
 
     @EventHandler(ignoreCancelled = false, priority = EventPriority.LOW)
-    public void onPlayerInteract(PlayerInteractEvent event) {
+    private void onPlayerInteract(PlayerInteractEvent event) {
         final Player player = event.getPlayer();
         checkBuildEvent(player, event.getClickedBlock(), event);
         if (event.useInteractedBlock() == Event.Result.DENY) return;
@@ -197,19 +200,19 @@ public final class CreativeListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.LOW)
-    public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
+    private void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
         Block block = event.getRightClicked().getLocation().getBlock();
         checkBuildEvent(event.getPlayer(), block, event);
     }
 
     @EventHandler(priority = EventPriority.LOW)
-    public void onPlayerInteractEntity(PlayerInteractAtEntityEvent event) {
+    private void onPlayerInteractEntity(PlayerInteractAtEntityEvent event) {
         Block block = event.getRightClicked().getLocation().getBlock();
         checkBuildEvent(event.getPlayer(), block, event);
     }
 
     @EventHandler(priority = EventPriority.LOW)
-    public void onEntityChangeBlock(EntityChangeBlockEvent event) {
+    private void onEntityChangeBlock(EntityChangeBlockEvent event) {
         if (event.getEntity() instanceof Player) {
             checkBuildEvent((Player) event.getEntity(), event.getBlock(), event);
         } else if (event.getEntity() instanceof FallingBlock) {
@@ -229,7 +232,7 @@ public final class CreativeListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.LOW)
-    public void onEntityBlockForm(EntityBlockFormEvent event) {
+    private void onEntityBlockForm(EntityBlockFormEvent event) {
         if (event.getEntity() instanceof Player) {
             checkBuildEvent((Player) event.getEntity(), event.getBlock(), event);
         } else {
@@ -254,7 +257,7 @@ public final class CreativeListener implements Listener {
      * - Concrete forming due to mixing of concrete powder and water.
      */
     @EventHandler(priority = EventPriority.LOWEST)
-    void onBlockForm(BlockFormEvent event) {
+    private void onBlockForm(BlockFormEvent event) {
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getBlock().getWorld());
         if (buildWorld == null) return;
         event.setCancelled(true);
@@ -263,7 +266,7 @@ public final class CreativeListener implements Listener {
     // Explosion
 
     @EventHandler(priority = EventPriority.LOW)
-    public void onEntityExplode(EntityExplodeEvent event) {
+    private void onEntityExplode(EntityExplodeEvent event) {
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getEntity().getWorld());
         if (buildWorld == null) return;
         if (!buildWorld.isSet(BuildWorld.Flag.EXPLOSION)) {
@@ -273,7 +276,7 @@ public final class CreativeListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.LOW)
-    public void onBlockExplode(BlockExplodeEvent event) {
+    private void onBlockExplode(BlockExplodeEvent event) {
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getBlock().getWorld());
         if (buildWorld == null) return;
         if (!buildWorld.isSet(BuildWorld.Flag.EXPLOSION)) {
@@ -283,7 +286,7 @@ public final class CreativeListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.LOW)
-    public void onLeavesDecay(LeavesDecayEvent event) {
+    private void onLeavesDecay(LeavesDecayEvent event) {
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getBlock().getWorld());
         if (buildWorld == null) return;
         if (!buildWorld.isSet(BuildWorld.Flag.LEAF_DECAY)) {
@@ -292,22 +295,22 @@ public final class CreativeListener implements Listener {
     }
 
     @EventHandler
-    public void onPlayerBlockAbility(PlayerBlockAbilityQuery query) {
+    private void onPlayerBlockAbility(PlayerBlockAbilityQuery query) {
         checkBuildEvent(query.getPlayer(), query.getBlock(), query);
     }
 
     @EventHandler
-    public void onPlayerBreakBlock(PlayerBreakBlockEvent event) {
+    private void onPlayerBreakBlock(PlayerBreakBlockEvent event) {
         checkBuildEvent(event.getPlayer(), event.getBlock(), event);
     }
 
     @EventHandler
-    public void onPlayerDropItem(PlayerDropItemEvent event) {
+    private void onPlayerDropItem(PlayerDropItemEvent event) {
         event.setCancelled(true);
     }
 
     @EventHandler
-    public void onProjectileLaunch(ProjectileLaunchEvent event) {
+    private void onProjectileLaunch(ProjectileLaunchEvent event) {
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getEntity().getWorld());
         if (buildWorld == null) return;
         if (!buildWorld.isSet(BuildWorld.Flag.PROJECTILES)) {
@@ -316,7 +319,7 @@ public final class CreativeListener implements Listener {
     }
 
     @EventHandler
-    public void onServerCommand(ServerCommandEvent event) {
+    private void onServerCommand(ServerCommandEvent event) {
         Block block;
         CommandMinecart cart = null;
         if (event.getSender() instanceof BlockCommandSender) {
@@ -348,7 +351,7 @@ public final class CreativeListener implements Listener {
     }
 
     @EventHandler
-    public void onEntityPlace(EntityPlaceEvent event) {
+    private void onEntityPlace(EntityPlaceEvent event) {
         if (event.getPlayer().isOp()) return;
         if (event.getEntity() instanceof CommandMinecart) {
             plugin.getLogger().info(event.getPlayer().getName() + " tried placing Command Minecart");
@@ -358,7 +361,7 @@ public final class CreativeListener implements Listener {
     }
 
     @EventHandler
-    public void onBlockPistonExtend(BlockPistonExtendEvent event) {
+    private void onBlockPistonExtend(BlockPistonExtendEvent event) {
         BuildWorld buildWorld = plugin
             .getBuildWorldByWorld(event.getBlock().getWorld());
         if (buildWorld == null) return;
@@ -369,7 +372,7 @@ public final class CreativeListener implements Listener {
     }
 
     @EventHandler
-    public void onBlockPistonRetract(BlockPistonRetractEvent event) {
+    private void onBlockPistonRetract(BlockPistonRetractEvent event) {
         BuildWorld buildWorld = plugin
             .getBuildWorldByWorld(event.getBlock().getWorld());
         if (buildWorld == null) return;
@@ -380,7 +383,7 @@ public final class CreativeListener implements Listener {
     }
 
     @EventHandler
-    public void onBlockRedstone(BlockRedstoneEvent event) {
+    private void onBlockRedstone(BlockRedstoneEvent event) {
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getBlock().getWorld());
         if (buildWorld == null) return;
         if (!buildWorld.isSet(BuildWorld.Flag.REDSTONE)) {
@@ -390,7 +393,7 @@ public final class CreativeListener implements Listener {
     }
 
     @EventHandler
-    public void onEntitySpawn(EntitySpawnEvent event) {
+    private void onEntitySpawn(EntitySpawnEvent event) {
         World world = event.getEntity().getWorld();
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(world);
         if (buildWorld == null) return;
@@ -419,7 +422,7 @@ public final class CreativeListener implements Listener {
     }
 
     @EventHandler
-    public void onFireworkExplode(FireworkExplodeEvent event) {
+    private void onFireworkExplode(FireworkExplodeEvent event) {
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getEntity().getWorld());
         if (buildWorld == null) return;
         if (!buildWorld.isSet(BuildWorld.Flag.PROJECTILES)) {
@@ -428,23 +431,23 @@ public final class CreativeListener implements Listener {
     }
 
     @EventHandler
-    void onPlayerPortal(PlayerPortalEvent event) {
+    private void onPlayerPortal(PlayerPortalEvent event) {
         event.setCancelled(true);
     }
 
     @EventHandler
-    void onEntityPortal(EntityPortalEvent event) {
+    private void onEntityPortal(EntityPortalEvent event) {
         event.setCancelled(true);
     }
 
     @EventHandler
-    void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
+    private void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
         if (!(event.getDamager() instanceof Player)) return;
         checkBuildEvent((Player) event.getDamager(), event.getEntity().getLocation().getBlock(), event);
     }
 
     @EventHandler
-    void onCreatureSpawn(CreatureSpawnEvent event) {
+    private void onCreatureSpawn(CreatureSpawnEvent event) {
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getLocation().getWorld());
         if (buildWorld == null) return;
         switch (event.getSpawnReason()) {
@@ -461,8 +464,8 @@ public final class CreativeListener implements Listener {
                 event.setCancelled(true);
                 return;
             }
-            String name = event.getEntity().getCustomName();
-            if (name != null && !name.isEmpty()) {
+            Component name = event.getEntity().customName();
+            if (name != null && !Component.empty().equals(name)) {
                 event.setCancelled(true);
                 return;
             }
@@ -478,7 +481,7 @@ public final class CreativeListener implements Listener {
     }
 
     @EventHandler
-    void onBlockFromTo(BlockFromToEvent event) {
+    private void onBlockFromTo(BlockFromToEvent event) {
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getBlock().getWorld());
         if (buildWorld == null) return;
         if (event.getBlock().isLiquid()) {
@@ -489,7 +492,7 @@ public final class CreativeListener implements Listener {
     }
 
     @EventHandler
-    void onHangingBreak(HangingBreakEvent event) {
+    private void onHangingBreak(HangingBreakEvent event) {
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getEntity().getWorld());
         if (buildWorld == null) return;
         switch (event.getCause()) {
@@ -503,7 +506,7 @@ public final class CreativeListener implements Listener {
     }
 
     @EventHandler(ignoreCancelled = true)
-    void onInventoryCreative(InventoryCreativeEvent event) {
+    private void onInventoryCreative(InventoryCreativeEvent event) {
         ItemStack item = event.getCursor();
         if (item == null || item.getType() == Material.AIR) return;
         if (!(event.getWhoClicked() instanceof Player)) return;
@@ -515,7 +518,7 @@ public final class CreativeListener implements Listener {
     }
 
     @EventHandler(ignoreCancelled = true)
-    void onTNTPrime(TNTPrimeEvent event) {
+    private void onTNTPrime(TNTPrimeEvent event) {
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getBlock().getWorld());
         if (buildWorld == null) return;
         event.setCancelled(true);
@@ -525,18 +528,38 @@ public final class CreativeListener implements Listener {
      * Intercept teleports into locked worlds.
      */
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
-    protected void onPlayerTeleportWorlds(PlayerTeleportEvent event) {
+    private void onPlayerTeleportWorlds(PlayerTeleportEvent event) {
         if (Objects.equals(event.getFrom().getWorld(), event.getTo().getWorld())) return;
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getTo().getWorld());
-        if (!buildWorld.isSet(BuildWorld.Flag.LOCKED)) return;
+        if (buildWorld == null) return;
         Player player = event.getPlayer();
-        if (buildWorld.getTrust(player.getUniqueId()).canVisit()) return;
-        event.setCancelled(true);
-        player.sendMessage(text("This world is locked", RED));
+        if (event.getCause() == TeleportCause.SPECTATE) {
+            if (!buildWorld.getTrust(player.getUniqueId()).canVisit()) {
+                event.setCancelled(true);
+                player.sendMessage(text("You cannot enter this world", RED));
+                return;
+            }
+        }
+        if (buildWorld.isSet(BuildWorld.Flag.LOCKED)) {
+            if (!buildWorld.getTrust(player.getUniqueId()).canVisit()) {
+                event.setCancelled(true);
+                player.sendMessage(text("This world is locked", RED));
+                return;
+            }
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    private void onPlayerTPA(PlayerTPAEvent event) {
+        BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getTarget().getWorld());
+        if (buildWorld == null) return;
+        if (!buildWorld.getTrust(event.getRequester()).canVisit()) {
+            event.setCancelled(true);
+        }
     }
 
     @EventHandler
-    void onHangingBreakByEntity(HangingBreakByEntityEvent event) {
+    private void onHangingBreakByEntity(HangingBreakByEntityEvent event) {
         if (event.getRemover() instanceof Player player) {
             checkBuildEvent(player, event.getEntity().getLocation().getBlock(), event);
         } else if (event.getRemover() instanceof Projectile projectile) {
