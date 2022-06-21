@@ -181,6 +181,7 @@ final class BuildWorld {
         result = creator.createWorld();
         result.setSpawnFlags(true, true);
         for (SpawnCategory spawnCategory : SpawnCategory.values()) {
+            if (spawnCategory == SpawnCategory.MISC) continue;
             result.setSpawnLimit(spawnCategory, 0);
             result.setTicksPerSpawns(spawnCategory, 999999999);
         }
