@@ -24,6 +24,7 @@ import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.SpawnCategory;
 
 @Getter @Setter
 final class BuildWorld {
@@ -179,7 +180,10 @@ final class BuildWorld {
         creator.type(worldType);
         result = creator.createWorld();
         result.setSpawnFlags(true, true);
-        result.setTicksPerAnimalSpawns(999999999);
+        for (SpawnCategory spawnCategory : SpawnCategory.values()) {
+            result.setSpawnLimit(spawnCategory, 0);
+            result.setTicksPerSpawns(spawnCategory, 999999999);
+        }
         result.setTicksPerMonsterSpawns(999999999);
         result.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false);
         result.setGameRule(GameRule.COMMAND_BLOCK_OUTPUT, true);
