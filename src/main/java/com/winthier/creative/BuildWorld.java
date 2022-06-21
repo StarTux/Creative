@@ -1,6 +1,6 @@
 package com.winthier.creative;
 
-import com.winthier.perm.Perm;
+import com.cavetale.core.perm.Perm;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -117,7 +117,7 @@ final class BuildWorld {
         if (t != null && t.getTrust().isOwner()) return t.getTrust();
         if (!buildGroups.isEmpty()) {
             for (String buildGroup : buildGroups) {
-                if (Perm.isInGroup(uuid, buildGroup)) return Trust.WORLD_EDIT;
+                if (Perm.get().isInGroup(uuid, buildGroup)) return Trust.WORLD_EDIT;
             }
         }
         if (t == null) return publicTrust;
@@ -184,7 +184,6 @@ final class BuildWorld {
             result.setSpawnLimit(spawnCategory, 0);
             result.setTicksPerSpawns(spawnCategory, 999999999);
         }
-        result.setTicksPerMonsterSpawns(999999999);
         result.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false);
         result.setGameRule(GameRule.COMMAND_BLOCK_OUTPUT, true);
         result.setGameRule(GameRule.DISABLE_ELYTRA_MOVEMENT_CHECK, true);
