@@ -75,22 +75,6 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- Money -->
-    <dependency>
-      <groupId>com.cavetale.money</groupId>
-      <artifactId>money</artifactId>
-      <version>0.1-SNAPSHOT</version>
-      <scope>provided</scope>
-    </dependency>
-
-    <!-- Perm -->
-    <dependency>
-      <groupId>com.winthier.perm</groupId>
-      <artifactId>perm</artifactId>
-      <version>0.1-SNAPSHOT</version>
-      <scope>provided</scope>
-    </dependency>
-
     <!-- Mytems -->
     <dependency>
       <groupId>com.cavetale.mytems</groupId>

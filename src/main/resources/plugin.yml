@@ -8,7 +8,7 @@ description: Manage Creative Worlds
 author: StarTux
 website: https://github.com/StarTux/Creative
 
-depend: [Core, WorldEdit, PlayerCache, Money, VoidGenerator, FlatGenerator, Perm, Mytems]
+depend: [Core, WorldEdit, PlayerCache, VoidGenerator, FlatGenerator, Mytems]
 softdepend: [Shutdown]
 
 commands:
