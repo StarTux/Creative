@@ -2,9 +2,12 @@ package com.winthier.creative;
 
 import com.cavetale.core.event.block.PlayerBlockAbilityQuery;
 import com.cavetale.core.event.block.PlayerBreakBlockEvent;
+import com.cavetale.core.event.hud.PlayerHudEvent;
+import com.cavetale.core.event.hud.PlayerHudPriority;
 import com.cavetale.core.event.player.PlayerTPAEvent;
 import com.destroystokyo.paper.event.block.TNTPrimeEvent;
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -63,7 +66,10 @@ import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.inventory.ItemStack;
 import org.spigotmc.event.player.PlayerSpawnLocationEvent;
+import static com.cavetale.core.font.Unicode.tiny;
+import static net.kyori.adventure.text.Component.join;
 import static net.kyori.adventure.text.Component.text;
+import static net.kyori.adventure.text.JoinConfiguration.noSeparators;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
 
 @RequiredArgsConstructor
@@ -572,5 +578,13 @@ public final class CreativeListener implements Listener {
         } else {
             event.setCancelled(true);
         }
+    }
+
+    @EventHandler
+    private void onPlayerHud(PlayerHudEvent event) {
+        BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getPlayer().getWorld());
+        if (buildWorld == null) return;
+        event.header(PlayerHudPriority.HIGH,
+                     List.of(join(noSeparators(), text(tiny("build world "), GRAY), text(buildWorld.getName(), GREEN))));
     }
 }
