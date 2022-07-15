@@ -202,7 +202,7 @@ final class BuildWorld {
         result.setGameRule(GameRule.DO_TRADER_SPAWNING, false);
         result.setGameRule(GameRule.DO_WEATHER_CYCLE, false);
         result.setGameRule(GameRule.DROWNING_DAMAGE, false);
-        result.setGameRule(GameRule.FALL_DAMAGE, false);
+        //result.setGameRule(GameRule.FALL_DAMAGE, false);
         result.setGameRule(GameRule.FIRE_DAMAGE, false);
         result.setGameRule(GameRule.FORGIVE_DEAD_PLAYERS, true);
         result.setGameRule(GameRule.FREEZE_DAMAGE, false);
