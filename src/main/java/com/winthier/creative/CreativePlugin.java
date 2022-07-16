@@ -36,8 +36,6 @@ public final class CreativePlugin extends JavaPlugin {
     final Random random = ThreadLocalRandom.current();
     protected AdminCommand adminCommand = new AdminCommand(this);
     private final CoreWorlds coreWorlds = new CoreWorlds(this);
-    // config
-    private int maxFallingBlocks;
 
     @Override
     public void onLoad() {
@@ -111,8 +109,6 @@ public final class CreativePlugin extends JavaPlugin {
     void loadConfigurationFile() {
         reloadConfig();
         saveDefaultConfig();
-        maxFallingBlocks = getConfig().getInt("MaxFallingBlocks");
-        getLogger().info("MaxFallingBlocks=" + maxFallingBlocks);
     }
 
     // Build Worlds
