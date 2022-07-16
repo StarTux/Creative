@@ -201,11 +201,11 @@ final class BuildWorld {
         result.setGameRule(GameRule.DO_TILE_DROPS, false);
         result.setGameRule(GameRule.DO_TRADER_SPAWNING, false);
         result.setGameRule(GameRule.DO_WEATHER_CYCLE, false);
-        result.setGameRule(GameRule.DROWNING_DAMAGE, false);
-        //result.setGameRule(GameRule.FALL_DAMAGE, false);
-        result.setGameRule(GameRule.FIRE_DAMAGE, false);
+        result.setGameRule(GameRule.DROWNING_DAMAGE, true);
+        result.setGameRule(GameRule.FALL_DAMAGE, true);
+        result.setGameRule(GameRule.FIRE_DAMAGE, true);
         result.setGameRule(GameRule.FORGIVE_DEAD_PLAYERS, true);
-        result.setGameRule(GameRule.FREEZE_DAMAGE, false);
+        result.setGameRule(GameRule.FREEZE_DAMAGE, true);
         result.setGameRule(GameRule.KEEP_INVENTORY, true);
         result.setGameRule(GameRule.LOG_ADMIN_COMMANDS, true);
         result.setGameRule(GameRule.MAX_COMMAND_CHAIN_LENGTH, 1);
