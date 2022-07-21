@@ -457,6 +457,7 @@ public final class CreativeListener implements Listener {
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getLocation().getWorld());
         if (buildWorld == null) return;
         switch (event.getSpawnReason()) {
+        case COMMAND:
         case CUSTOM:
         case SHOULDER_ENTITY:
             return;
