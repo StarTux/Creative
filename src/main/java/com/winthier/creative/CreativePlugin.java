@@ -13,7 +13,6 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import lombok.Getter;
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
@@ -26,7 +25,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 public final class CreativePlugin extends JavaPlugin {
     private List<BuildWorld> buildWorlds;
     Map<String, PlotWorld> plotWorlds = new LinkedHashMap<>();
-    private YamlConfiguration logoutLocations = null;
     private final WorldCommand worldCommand = new WorldCommand(this);
     private final Permission permission = new Permission(this);
     private final Set<UUID> ignores = new HashSet<>();
@@ -74,9 +72,7 @@ public final class CreativePlugin extends JavaPlugin {
         worldEditListener.disable();
         for (Player player: getServer().getOnlinePlayers()) {
             permission.resetPermissions(player);
-            storeLogoutLocation(player);
         }
-        saveLogoutLocations();
         // Unload all empty worlds!
         for (BuildWorld buildWorld : buildWorlds) {
             World world = buildWorld.getWorld();
@@ -100,7 +96,6 @@ public final class CreativePlugin extends JavaPlugin {
         loadConfigurationFile();
         reloadConfig();
         buildWorlds = null;
-        logoutLocations = null;
         permission.reload();
         worldCommand.load();
         loadPlotWorlds();
@@ -172,55 +167,6 @@ public final class CreativePlugin extends JavaPlugin {
             }
         }
         return result;
-    }
-
-    ConfigurationSection getLogoutLocations() {
-        if (logoutLocations == null) {
-            File file = new File(getDataFolder(), "logouts.yml");
-            logoutLocations = YamlConfiguration.loadConfiguration(file);
-        }
-        return logoutLocations;
-    }
-
-    void saveLogoutLocations() {
-        if (logoutLocations == null) return;
-        File file = new File(getDataFolder(), "logouts.yml");
-        try {
-            logoutLocations.save(file);
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-        }
-    }
-
-    void storeLogoutLocation(Player player) {
-        UUID uuid = player.getUniqueId();
-        Location loc = player.getLocation();
-        ConfigurationSection config = getLogoutLocations().createSection(uuid.toString());
-        config.set("world", loc.getWorld().getName());
-        config.set("x", loc.getX());
-        config.set("y", loc.getY());
-        config.set("z", loc.getZ());
-        config.set("yaw", loc.getYaw());
-        config.set("pitch", loc.getPitch());
-        config.set("gamemode", player.getGameMode().name());
-    }
-
-    Location findSpawnLocation(Player player) {
-        UUID uuid = player.getUniqueId();
-        ConfigurationSection config = getLogoutLocations().getConfigurationSection(uuid.toString());
-        if (config == null) return null;
-        String worldName = config.getString("world");
-        BuildWorld buildWorld = getBuildWorldByPath(worldName);
-        if (buildWorld == null) return null;
-        if (!doesIgnore(uuid) && !buildWorld.getTrust(uuid).canVisit()) return null;
-        World world = buildWorld.getWorld();
-        if (world == null) return null;
-        double x = config.getDouble("x");
-        double y = config.getDouble("y");
-        double z = config.getDouble("z");
-        float yaw = (float) config.getDouble("yaw");
-        float pitch = (float) config.getDouble("pitch");
-        return new Location(world, x, y, z, yaw, pitch);
     }
 
     public boolean toggleIgnore(Player player) {

@@ -9,18 +9,14 @@ import com.destroystokyo.paper.event.block.TNTPrimeEvent;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
-import org.bukkit.GameMode;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.command.BlockCommandSender;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.Player;
@@ -65,7 +61,6 @@ import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.inventory.ItemStack;
-import org.spigotmc.event.player.PlayerSpawnLocationEvent;
 import static com.cavetale.core.font.Unicode.tiny;
 import static net.kyori.adventure.text.Component.join;
 import static net.kyori.adventure.text.Component.text;
@@ -79,43 +74,15 @@ public final class CreativeListener implements Listener {
     @EventHandler
     private void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
-        // Store Logout Location
-        plugin.storeLogoutLocation(player);
-        plugin.saveLogoutLocations();
         // Reset Permissions
         plugin.getPermission().resetPermissions(player);
         // Unload Empty World
         unloadEmptyWorldLater(player.getWorld());
     }
 
-    @EventHandler(priority = EventPriority.LOWEST)
-    private void onPlayerSpawnLocation(PlayerSpawnLocationEvent event) {
-        Location loc = plugin.findSpawnLocation(event.getPlayer());
-        if (loc == null) {
-            loc = plugin.getServer().getWorlds().get(0).getSpawnLocation();
-        }
-        event.setSpawnLocation(loc);
-    }
-
     @EventHandler
     private void onPlayerJoin(PlayerJoinEvent event) {
-        Player player = event.getPlayer();
-        UUID uuid = player.getUniqueId();
-        ConfigurationSection config = plugin.getLogoutLocations()
-            .getConfigurationSection(uuid.toString());
-        GameMode gamemode;
-        if (config == null) {
-            gamemode = GameMode.CREATIVE;
-        } else {
-            try {
-                gamemode = GameMode.valueOf(config.getString("gamemode", "CREATIVE"));
-            } catch (IllegalArgumentException iae) {
-                gamemode = GameMode.CREATIVE;
-            }
-        }
-        player.setGameMode(gamemode);
-        // Update Permission
-        updatePermissions(player);
+        updatePermissions(event.getPlayer());
     }
 
     @EventHandler
