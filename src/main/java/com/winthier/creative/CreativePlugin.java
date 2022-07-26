@@ -64,7 +64,6 @@ public final class CreativePlugin extends JavaPlugin {
         getBuildWorlds();
         worldEditListener.enable();
         loadPlotWorlds();
-        loadConfigurationFile();
     }
 
     @Override
@@ -93,7 +92,6 @@ public final class CreativePlugin extends JavaPlugin {
     }
 
     void reloadAllConfigs() {
-        loadConfigurationFile();
         reloadConfig();
         buildWorlds = null;
         permission.reload();
@@ -101,12 +99,6 @@ public final class CreativePlugin extends JavaPlugin {
         loadPlotWorlds();
     }
 
-    void loadConfigurationFile() {
-        reloadConfig();
-        saveDefaultConfig();
-    }
-
-    // Build Worlds
 
     public List<BuildWorld> getBuildWorlds() {
         if (buildWorlds == null) {
