@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
+import net.kyori.adventure.util.TriState;
 import org.bukkit.Bukkit;
 import org.bukkit.GameRule;
 import org.bukkit.Location;
@@ -178,6 +179,7 @@ final class BuildWorld {
             if (tmp != null) worldType = WorldType.valueOf(tmp);
         } catch (IllegalArgumentException iae) { }
         creator.type(worldType);
+        creator.keepSpawnLoaded(TriState.FALSE);
         result = creator.createWorld();
         result.setSpawnFlags(true, true);
         for (SpawnCategory spawnCategory : SpawnCategory.values()) {
@@ -260,7 +262,7 @@ final class BuildWorld {
     void teleportToSpawn(Player player) {
         Location loc = getSpawnLocation();
         if (loc == null) return;
-        player.teleport(loc);
+        player.teleportAsync(loc);
     }
 
     Location getSpawnLocation() {
