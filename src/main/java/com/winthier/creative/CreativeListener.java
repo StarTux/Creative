@@ -29,6 +29,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
+import org.bukkit.event.block.BlockFadeEvent;
 import org.bukkit.event.block.BlockFormEvent;
 import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.block.BlockPistonExtendEvent;
@@ -234,6 +235,25 @@ public final class CreativeListener implements Listener {
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getBlock().getWorld());
         if (buildWorld == null) return;
         event.setCancelled(true);
+    }
+
+    /**
+     * Called when a block fades, melts or disappears based on world
+     * conditions.
+     *
+     * Examples:
+     *
+     * - Snow melting due to being near a light source.
+     * - Ice melting due to being near a light source.
+     * - Fire burning out after time, without destroying fuel block.
+     * - Coral fading to dead coral due to lack of water
+     * - Turtle Egg bursting when a turtle hatches
+     * - Tadpole hatching from frogspawn
+     */
+    @EventHandler(priority = EventPriority.LOW)
+    private void onBlockFade(BlockFadeEvent event) {
+        BuildWorld buildWorld = plugin.getBuildWorldByWorld(event.getBlock().getWorld());
+        if (buildWorld != null) event.setCancelled(true);
     }
 
     // Explosion
