@@ -82,7 +82,7 @@ commands:
       /plot warp <id> - Warp to plot
 
   kit:
-    aliases: []
+    aliases: [ckit]
     description: Open the Creative kit
     permission: creative.kit
     usage: /kit

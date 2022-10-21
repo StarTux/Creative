@@ -29,7 +29,7 @@
     <!-- WorldEdit Repo -->
     <repository>
       <id>worldedit</id>
-      <url>http://maven.enginehub.org/repo/</url>
+      <url>https://maven.enginehub.org/repo/</url>
     </repository>
 
   </repositories>
