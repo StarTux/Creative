@@ -14,7 +14,7 @@ softdepend: [Shutdown]
 commands:
 
   world:
-    aliases: [ worlds ]
+    aliases: [ worlds, creative ]
     description: User interface
     permission: creative.world
     usage: |-
@@ -41,7 +41,7 @@ commands:
     usage: /wtp <world>
 
   creativeadmin:
-    aliases: [ ca ]
+    aliases: [ ca, cra ]
     description: Admin Interface
     permission: creative.admin
     usage: |-
