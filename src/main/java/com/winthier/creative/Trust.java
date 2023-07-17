@@ -1,17 +1,17 @@
 package com.winthier.creative;
 
-enum Trust {
-    OWNER(4),
-    WORLD_EDIT(3),
-    BUILD(2),
-    VISIT(1),
-    NONE(0);
+import lombok.RequiredArgsConstructor;
 
-    final int priority;
+@RequiredArgsConstructor
+public enum Trust {
+    OWNER(4, "Owner"),
+    WORLD_EDIT(3, "WorldEdit"),
+    BUILD(2, "Builder"),
+    VISIT(1, "Visitor"),
+    NONE(0, "None");
 
-    Trust(final int priority) {
-        this.priority = priority;
-    }
+    public final int priority;
+    private final String nice;
 
     static Trust of(String name) {
         name = name.toUpperCase();
@@ -24,11 +24,11 @@ enum Trust {
         return NONE;
     }
 
-    boolean isOwner() {
+    public boolean isOwner() {
         return this == OWNER;
     }
 
-    boolean canUseWorldEdit() {
+    public boolean canUseWorldEdit() {
         if (isOwner()) return true;
         switch (this) {
         case WORLD_EDIT:
@@ -38,7 +38,7 @@ enum Trust {
         }
     }
 
-    boolean canBuild() {
+    public boolean canBuild() {
         if (isOwner()) return true;
         switch (this) {
         case WORLD_EDIT:
@@ -49,7 +49,7 @@ enum Trust {
         }
     }
 
-    boolean canVisit() {
+    public boolean canVisit() {
         if (canBuild()) return true;
         switch (this) {
         case VISIT:
@@ -59,14 +59,7 @@ enum Trust {
         }
     }
 
-    String nice() {
-        switch (this) {
-        case OWNER: return "Owner";
-        case WORLD_EDIT: return "WorldEdit";
-        case BUILD: return "Builder";
-        case VISIT: return "Visitor";
-        case NONE: return "None";
-        default: return "N/A";
-        }
+    public String nice() {
+        return this.nice;
     }
 }
