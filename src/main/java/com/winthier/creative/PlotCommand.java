@@ -33,7 +33,7 @@ final class PlotCommand implements TabExecutor {
         return onCommand(player, args[0], Arrays.copyOfRange(args, 1, args.length));
     }
 
-    boolean onCommand(Player player, String cmd, String[] args) {
+    private boolean onCommand(Player player, String cmd, String[] args) {
         switch (cmd) {
         case "list": {
             if (args.length != 0) return false;
@@ -102,9 +102,9 @@ final class PlotCommand implements TabExecutor {
         return null;
     }
 
-    List<PlotWorld.Plot> listPlots(Player player) {
+    private List<PlotWorld.Plot> listPlots(Player player) {
         List<PlotWorld.Plot> list = new ArrayList<>();
-        for (PlotWorld plotWorld : plugin.plotWorlds.values()) {
+        for (PlotWorld plotWorld : plugin.getPlotWorlds().values()) {
             for (PlotWorld.Plot plot : plotWorld.plots) {
                 if (plot.isOwner(player)) list.add(plot);
             }

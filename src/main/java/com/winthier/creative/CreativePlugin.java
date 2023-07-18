@@ -24,16 +24,20 @@ import org.bukkit.plugin.java.JavaPlugin;
 @Getter
 public final class CreativePlugin extends JavaPlugin {
     private List<BuildWorld> buildWorlds;
-    Map<String, PlotWorld> plotWorlds = new LinkedHashMap<>();
+    private final Map<String, PlotWorld> plotWorlds = new LinkedHashMap<>();
     private final WorldCommand worldCommand = new WorldCommand(this);
     private final Permission permission = new Permission(this);
     private final Set<UUID> ignores = new HashSet<>();
-    @Getter private static CreativePlugin instance = null;
-    WorldEditListener worldEditListener = new WorldEditListener(this);
-    final Metadata metadata = new Metadata(this);
-    final Random random = ThreadLocalRandom.current();
-    protected AdminCommand adminCommand = new AdminCommand(this);
+    private static CreativePlugin instance = null;
+    private WorldEditListener worldEditListener = new WorldEditListener(this);
+    private final Metadata metadata = new Metadata(this);
+    private final Random random = ThreadLocalRandom.current();
+    private AdminCommand adminCommand = new AdminCommand(this);
     private final CoreWorlds coreWorlds = new CoreWorlds(this);
+
+    public CreativePlugin() {
+        instance = this;
+    }
 
     @Override
     public void onLoad() {
@@ -42,7 +46,6 @@ public final class CreativePlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        instance = this;
         try {
             saveResource("permissions.yml", false);
         } catch (IllegalArgumentException iae) {
@@ -91,14 +94,13 @@ public final class CreativePlugin extends JavaPlugin {
         return true;
     }
 
-    void reloadAllConfigs() {
+    public void reloadAllConfigs() {
         reloadConfig();
         buildWorlds = null;
         permission.reload();
         worldCommand.load();
         loadPlotWorlds();
     }
-
 
     public List<BuildWorld> getBuildWorlds() {
         if (buildWorlds == null) {
@@ -180,11 +182,11 @@ public final class CreativePlugin extends JavaPlugin {
         return ignores.contains(uuid);
     }
 
-    Meta metaOf(Player player) {
+    public Meta metaOf(Player player) {
         return metadata.get(player, "creative:meta", Meta.class, Meta::new);
     }
 
-    void loadPlotWorlds() {
+    public void loadPlotWorlds() {
         plotWorlds.clear();
         File dir = new File(getDataFolder(), "plots");
         if (!dir.exists()) return;
@@ -199,17 +201,17 @@ public final class CreativePlugin extends JavaPlugin {
         }
     }
 
-    boolean isPlotWorld(World world) {
+    public boolean isPlotWorld(World world) {
         return plotWorlds.containsKey(world.getName());
     }
 
-    boolean canBuildInPlot(Player player, Block block) {
+    public boolean canBuildInPlot(Player player, Block block) {
         PlotWorld plotWorld = plotWorlds.get(block.getWorld().getName());
         if (plotWorld == null) return false;
         return plotWorld.canBuild(player, block);
     }
 
-    PlotWorld getPlotWorld(World world) {
+    public PlotWorld getPlotWorld(World world) {
         return plotWorlds.get(world.getName());
     }
 
@@ -225,5 +227,9 @@ public final class CreativePlugin extends JavaPlugin {
             }
         }
         return result;
+    }
+
+    public static CreativePlugin plugin() {
+        return instance;
     }
 }

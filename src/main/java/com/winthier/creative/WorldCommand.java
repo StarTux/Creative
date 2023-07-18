@@ -220,7 +220,7 @@ final class WorldCommand implements TabExecutor {
             + "ABCDEFGHIJKLMNOPQRSTUVWXYZ" + "1234567890";
         int len = chars.length();
         for (int i = 0; i < 5; i += 1) {
-            sb.append(chars.charAt(plugin.random.nextInt(len)));
+            sb.append(chars.charAt(plugin.getRandom().nextInt(len)));
         }
         return sb.toString();
     }

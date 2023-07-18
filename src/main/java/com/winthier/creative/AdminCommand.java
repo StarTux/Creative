@@ -1,6 +1,9 @@
 package com.winthier.creative;
 
+import com.cavetale.core.command.AbstractCommand;
+import com.cavetale.core.command.CommandArgCompleter;
 import com.cavetale.core.command.CommandWarn;
+import com.cavetale.core.perm.Perm;
 import com.winthier.creative.util.Files;
 import com.winthier.playercache.PlayerCache;
 import java.util.ArrayList;
@@ -11,18 +14,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
+import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.WorldCreator;
 import org.bukkit.WorldType;
 import org.bukkit.block.Block;
-import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabExecutor;
+import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
+import static com.cavetale.core.command.CommandArgCompleter.enumLowerList;
+import static com.cavetale.core.command.CommandArgCompleter.supplyList;
+import static com.winthier.creative.CreativePlugin.plugin;
 import static net.kyori.adventure.text.Component.join;
 import static net.kyori.adventure.text.Component.newline;
 import static net.kyori.adventure.text.Component.text;
@@ -31,109 +35,132 @@ import static net.kyori.adventure.text.JoinConfiguration.separator;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
 import static net.kyori.adventure.text.format.TextDecoration.*;
 
-@RequiredArgsConstructor
-final class AdminCommand implements TabExecutor {
-    final CreativePlugin plugin;
+public final class AdminCommand extends AbstractCommand<CreativePlugin> {
     protected AutoConverter autoConverter;
 
-    @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (args.length == 0) return false;
-        String cmd = args[0];
-        String[] argl = Arrays.copyOfRange(args, 1, args.length);
-        switch (cmd) {
-        case "reload": return reloadCommand(sender, argl);
-        case "info": return infoCommand(sender, argl);
-        case "set": return setCommand(sender, argl);
-        case "config": return configCommand(sender, argl);
-        case "listunregistered": return listUnregisteredCommand(sender, argl);
-        case "list": return listCommand(sender, argl);
-        case "who": return whoCommand(sender, argl);
-        case "listloaded": return listLoadedCommand(sender, argl);
-        case "tp": return tpCommand(sender, argl);
-        case "remove": return removeCommand(sender, argl);
-        case "trust": return trustCommand(sender, argl);
-        case "cleartrust": return clearTrustCommand(sender, argl);
-        case "ranktrust": return rankTrustCommand(sender, argl);
-        case "resetowner": return resetOwnerCommand(sender, argl);
-        case "setowner": return setOwnerCommand(sender, argl);
-        case "create": return createCommand(sender, argl);
-        case "createvoid": return createVoidCommand(sender, argl);
-        case "import": return importCommand(sender, argl);
-        case "load": return loadCommand(sender, argl);
-        case "unload": return unloadCommand(sender, argl);
-        case "ignore": return ignoreCommand(sender, argl);
-        case "debugplot": return debugPlotCommand(sender, argl);
-        case "buildgroups": return buildGroupsCommand(sender, argl);
-        case "autoconvert": return autoConvertCommand(sender, argl);
-        case "transferall": return transferAllCommand(sender, argl);
-        default: return false;
-        }
+    AdminCommand(final CreativePlugin plugin) {
+        super(plugin, "creativeadmin");
     }
 
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
-        if (args.length == 0) return Collections.emptyList();
-        String arg = args[args.length - 1];
-        if (args.length == 1) {
-            return Stream.of("info", "remove", "trust", "cleartrust",
-                             "ranktrust", "resetowner", "setowner",
-                             "import", "load", "unload", "tp",
-                             "config", "set", "debugplot",
-                             "ignore", "createvoid", "create",
-                             "listloaded", "who", "list",
-                             "listunregistered", "reload",
-                             "buildgroups", "autoconvert",
-                             "transferall")
-                .filter(s -> s.contains(arg))
-                .collect(Collectors.toList());
-        }
-        switch (args[0]) {
-        case "info":
-        case "remove":
-        case "trust":
-        case "cleartrust":
-        case "resetowner":
-        case "setowner":
-        case "import":
-        case "load":
-        case "unload":
-        case "tp":
-        case "config":
-        case "buildgroups":
-            if (args.length == 2) {
-                return tabCompleteWorldPaths(arg);
-            }
-            return null;
-        case "set":
-            if (args.length == 2) {
-                String argl = arg.toLowerCase();
-                return Stream.of(BuildWorld.Flag.values())
-                    .map(e -> e.key)
-                    .filter(s -> s.toLowerCase().contains(argl))
-                    .collect(Collectors.toList());
-            } else if (args.length == 3) {
-                return Stream.of("true", "false")
-                    .filter(s -> s.contains(arg))
-                    .collect(Collectors.toList());
-            }
-            return Collections.emptyList();
-        case "transferall":
-            if (args.length == 1 || args.length == 2) {
-                return List.of("TODO");
-            } else {
-                return List.of();
-            }
-        default: return null;
-        }
+    protected void onEnable() {
+        rootNode.addChild("reload").denyTabCompletion()
+            .description("Reload configs")
+            .senderCaller(this::reloadCommand);
+        rootNode.addChild("info").arguments("[path]")
+            .description("Get world info")
+            .completers(supplyList(AdminCommand::supplyWorldPaths))
+            .senderCaller(this::infoCommand);
+        rootNode.addChild("set").arguments("[world] <flag> <value>")
+            .description("Change world settings")
+            .completers(supplyList(AdminCommand::supplyWorldPaths),
+                        enumLowerList(BuildWorld.Flag.class),
+                        CommandArgCompleter.BOOLEAN)
+            .senderCaller(this::setCommand);
+        rootNode.addChild("config").arguments("<world>")
+            .description("Print world config")
+            .completers(supplyList(AdminCommand::supplyWorldPaths))
+            .senderCaller(this::configCommand);
+        rootNode.addChild("listunregistered").denyTabCompletion()
+            .description("List unregistered worlds")
+            .senderCaller(this::listUnregisteredCommand);
+        rootNode.addChild("list").arguments("[player]")
+            .description("List (player) worlds")
+            .completers(CommandArgCompleter.PLAYER_CACHE)
+            .senderCaller(this::listCommand);
+        rootNode.addChild("who").denyTabCompletion()
+            .description("List players in worlds")
+            .senderCaller(this::whoCommand);
+        rootNode.addChild("listloaded").denyTabCompletion()
+            .description("List loaded worlds")
+            .senderCaller(this::listLoadedCommand);
+        rootNode.addChild("tp").arguments("<world>")
+            .description("Teleport to world")
+            .completers(supplyList(AdminCommand::supplyWorldPaths))
+            .senderCaller(this::tpCommand);
+        rootNode.addChild("remove").arguments("<world>")
+            .description("Remove a world")
+            .completers(supplyList(AdminCommand::supplyWorldPaths))
+            .senderCaller(this::removeCommand);
+        rootNode.addChild("trust").arguments("<world> <player> <trust>")
+            .description("Edit player world trust")
+            .completers(supplyList(AdminCommand::supplyWorldPaths),
+                        CommandArgCompleter.PLAYER_CACHE,
+                        enumLowerList(Trust.class))
+            .senderCaller(this::trustCommand);
+        rootNode.addChild("cleartrust").arguments("<world>")
+            .description("Clear trusted players")
+            .completers(supplyList(AdminCommand::supplyWorldPaths))
+            .senderCaller(this::clearTrustCommand);
+        rootNode.addChild("ranktrust").arguments("<world>")
+            .description("Rank worlds by trusted players")
+            .completers(supplyList(AdminCommand::supplyWorldPaths))
+            .senderCaller(this::rankTrustCommand);
+        rootNode.addChild("resetowner").arguments("<world>")
+            .description("Reset world ownership")
+            .completers(supplyList(AdminCommand::supplyWorldPaths))
+            .senderCaller(this::resetOwnerCommand);
+        rootNode.addChild("setowner").arguments("<world> <player>")
+            .description("Set world ownership")
+            .completers(supplyList(AdminCommand::supplyWorldPaths),
+                        CommandArgCompleter.PLAYER_CACHE)
+            .senderCaller(this::setOwnerCommand);
+        rootNode.addChild("create").arguments("n:name p:path o:owner g:generator G:generatorSettings e:environment t:worldType s:seed S:generateStructures")
+            .completers()
+            .description("Create a world")
+            .senderCaller(this::createCommand);
+        rootNode.addChild("createvoid").arguments("<name> [environment]")
+            .description("Create empty world")
+            .completers(supplyList(AdminCommand::supplyWorldPaths),
+                        enumLowerList(World.Environment.class))
+            .senderCaller(this::createVoidCommand);
+        rootNode.addChild("import").arguments("<world> [generator]")
+            .description("Import loaded world")
+            .completers(supplyList(AdminCommand::loadedWorldNames),
+                        CommandArgCompleter.NULL)
+            .senderCaller(this::importCommand);
+        rootNode.addChild("load").arguments("<world>")
+            .description("Load build world")
+            .completers(supplyList(AdminCommand::supplyWorldPaths))
+            .senderCaller(this::loadCommand);
+        rootNode.addChild("unload").arguments("<world>")
+            .description("Unload build world")
+            .completers(supplyList(AdminCommand::supplyWorldPaths))
+            .senderCaller(this::unloadCommand);
+        rootNode.addChild("ignore").denyTabCompletion()
+            .description("Ignore build restrictions")
+            .senderCaller(this::ignoreCommand);
+        rootNode.addChild("debugplot").denyTabCompletion()
+            .description("Plot world debug")
+            .senderCaller(this::debugPlotCommand);
+        rootNode.addChild("buildgroups").arguments("<world> [group...]")
+            .description("Set build groups")
+            .completers(supplyList(() -> Perm.get().getGroupNames()))
+            .senderCaller(this::buildGroupsCommand);
+        rootNode.addChild("autoconvert").denyTabCompletion()
+            .description("Load and save all worlds")
+            .senderCaller(this::autoConvertCommand);
+        rootNode.addChild("transferall").arguments("<from> <to>")
+            .description("Account transfer")
+            .completers(CommandArgCompleter.PLAYER_CACHE,
+                        CommandArgCompleter.PLAYER_CACHE)
+            .senderCaller(this::transferAllCommand);
     }
 
-    private List<String> tabCompleteWorldPaths(String arg) {
-        String lower = arg.toLowerCase();
-        return plugin.getBuildWorlds().stream()
-            .map(BuildWorld::getPath)
-            .filter(path -> path.toLowerCase().contains(lower))
-            .collect(Collectors.toList());
+    private static List<String> supplyWorldPaths() {
+        List<String> result = new ArrayList<>();
+        for (BuildWorld buildWorld : plugin().getBuildWorlds()) {
+            result.add(buildWorld.getPath());
+        }
+        return result;
+    }
+
+    private static List<String> loadedWorldNames() {
+        List<String> result = new ArrayList<>();
+        for (World world : Bukkit.getWorlds()) {
+            result.add(world.getName());
+        }
+        return result;
     }
 
     private boolean reloadCommand(CommandSender sender, String[] args) {
@@ -191,8 +218,7 @@ final class AdminCommand implements TabExecutor {
         if (args.length == 3) {
             buildWorld = plugin.getBuildWorldByPath(args[0]);
             if (buildWorld == null) {
-                sender.sendMessage("World not found: " + args[0]);
-                return true;
+                throw new CommandWarn("World not found: " + args[0]);
             }
             key = args[1];
             value = args[2];
@@ -214,15 +240,14 @@ final class AdminCommand implements TabExecutor {
         case "true": case "on": case "yes":
             newValue = true; break;
         default:
-            sender.sendMessage("Unknown value: " + value);
-            return true;
+            throw new CommandWarn("Unknown value: " + value);
         }
         BuildWorld.Flag flag = BuildWorld.Flag.of(key);
         if (flag == null) {
             throw new CommandWarn("Invalid flag: " + key);
         }
         buildWorld.set(flag, newValue);
-        sender.sendMessage(flag.key + " set to " + newValue);
+        sender.sendMessage(text(flag.key + " set to " + newValue, YELLOW));
         plugin.saveBuildWorlds();
         World bukkitWorld = buildWorld.getWorld();
         if (bukkitWorld != null) {
@@ -236,28 +261,29 @@ final class AdminCommand implements TabExecutor {
         String name = args[0];
         BuildWorld buildWorld = plugin.getBuildWorldByPath(name);
         if (buildWorld == null) {
-            sender.sendMessage("World not found: " + name);
-            return true;
+            throw new CommandWarn("World not found: " + name);
         }
         for (String key: buildWorld.getWorldConfig().getKeys(true)) {
             Object o = buildWorld.getWorldConfig().get(key);
             if (o instanceof ConfigurationSection) continue;
-            sender.sendMessage(key + "='" + o + "'");
+            sender.sendMessage(textOfChildren(text(key + "='", GRAY),
+                                              text(o.toString(), YELLOW),
+                                              text("'", GRAY)));
         }
         return true;
     }
 
     private boolean listUnregisteredCommand(CommandSender sender, String[] args) {
         if (args.length != 0) return false;
-        sender.sendMessage("Unregistered worlds:");
+        sender.sendMessage(text("Unregistered worlds:", AQUA));
         int count = 0;
         for (String dir: plugin.getServer().getWorldContainer().list()) {
             if (plugin.getBuildWorldByPath(dir) == null) {
-                sender.sendMessage(" " + dir);
+                sender.sendMessage(text(" " + dir, YELLOW));
                 count += 1;
             }
         }
-        sender.sendMessage("" + count + " worlds listed.");
+        sender.sendMessage(text("" + count + " worlds listed", AQUA));
         return true;
     }
 
@@ -266,18 +292,17 @@ final class AdminCommand implements TabExecutor {
         if (args.length == 0) {
             int count = 0;
             for (BuildWorld buildWorld : plugin.getBuildWorlds()) {
-                sender.sendMessage(buildWorld.getName() + " /"
-                                   + buildWorld.getPath() + " " + buildWorld.getOwnerName());
+                sender.sendMessage(text(buildWorld.getName() + " /"
+                                        + buildWorld.getPath() + " " + buildWorld.getOwnerName(), AQUA));
                 count += 1;
             }
-            sender.sendMessage("" + count + " build worlds listed");
+            sender.sendMessage(text("" + count + " build worlds listed", AQUA));
             return true;
         }
         String name = args[0];
         Builder builder = Builder.find(name);
         if (builder == null) {
-            sender.sendMessage("Builder not found: " + name);
-            return true;
+            throw new CommandWarn("Builder not found: " + name);
         }
         PlayerWorldList list = plugin.getPlayerWorldList(builder.getUuid());
         List<Component> lines = new ArrayList<>();
@@ -339,7 +364,7 @@ final class AdminCommand implements TabExecutor {
             }
             count += 1;
         }
-        sender.sendMessage("" + count + " worlds are currently loaded.");
+        sender.sendMessage(text("" + count + " worlds are currently loaded.", AQUA));
         return true;
     }
 
@@ -357,8 +382,7 @@ final class AdminCommand implements TabExecutor {
             String targetName = args[0];
             target = plugin.getServer().getPlayerExact(targetName);
             if (target == null) {
-                sender.sendMessage("Player not found: " + targetName);
-                return true;
+                throw new CommandWarn("Player not found: " + targetName);
             }
             worldName = args[1];
         } else {
@@ -366,8 +390,7 @@ final class AdminCommand implements TabExecutor {
         }
         BuildWorld buildWorld = plugin.getBuildWorldByPath(worldName);
         if (buildWorld == null) {
-            sender.sendMessage("World not found: " + worldName);
-            return true;
+            throw new CommandWarn("World not found: " + worldName);
         }
         buildWorld.loadWorld();
         buildWorld.teleportToSpawn(target);
@@ -402,8 +425,7 @@ final class AdminCommand implements TabExecutor {
             String worldKey = args[0];
             buildWorld = plugin.getBuildWorldByPath(worldKey);
             if (buildWorld == null) {
-                sender.sendMessage("World not found: " + worldKey);
-                return true;
+                throw new CommandWarn("World not found: " + worldKey);
             }
         } else if (sender instanceof Player) {
             Player player = (Player) sender;
@@ -416,7 +438,7 @@ final class AdminCommand implements TabExecutor {
         }
         buildWorld.setOwner(null);
         plugin.saveBuildWorlds();
-        sender.sendMessage("Removed owner of world " + buildWorld.getPath());
+        sender.sendMessage(text("Removed owner of world " + buildWorld.getPath(), YELLOW));
         return true;
     }
 
@@ -426,33 +448,30 @@ final class AdminCommand implements TabExecutor {
         String ownerName = args[1];
         BuildWorld buildWorld = plugin.getBuildWorldByPath(worldKey);
         if (buildWorld == null) {
-            sender.sendMessage("World not found: " + worldKey);
-            return true;
+            throw new CommandWarn("World not found: " + worldKey);
         }
         Builder owner = Builder.find(ownerName);
         if (owner == null) {
-            sender.sendMessage("Builder not found: " + ownerName);
-            return true;
+            throw new CommandWarn("Builder not found: " + ownerName);
         }
         buildWorld.setOwner(owner);
         plugin.saveBuildWorlds();
-        sender.sendMessage("Made " + owner.getName()
-                           + " the owner of world " + buildWorld.getPath());
+        sender.sendMessage(text("Made " + owner.getName() + " the owner of world " + buildWorld.getPath(), YELLOW));
         return true;
     }
 
     private boolean createCommand(CommandSender sender, String[] args) {
         if (args.length == 0) {
-            sender.sendMessage("/ca create"
-                               + " n:name"
-                               + " p:path"
-                               + " o:owner"
-                               + " g:generator"
-                               + " G:generatorSettings"
-                               + " e:environment"
-                               + " t:worldType"
-                               + " s:seed"
-                               + " S:generateStructures");
+            sender.sendMessage(text("/ca create"
+                                    + " n:name"
+                                    + " p:path"
+                                    + " o:owner"
+                                    + " g:generator"
+                                    + " G:generatorSettings"
+                                    + " e:environment"
+                                    + " t:worldType"
+                                    + " s:seed"
+                                    + " S:generateStructures", YELLOW));
             return true;
         }
         Builder owner = null;
@@ -468,8 +487,7 @@ final class AdminCommand implements TabExecutor {
             String arg = args[i];
             String[] tok = arg.split(":", 2);
             if (tok.length != 2 || tok[0].length() != 1) {
-                sender.sendMessage("Bad arg: '" + arg + "'");
-                return true;
+                throw new CommandWarn("Bad arg: '" + arg + "'");
             }
             char param = tok[0].charAt(0);
             String value = tok[1];
@@ -477,8 +495,7 @@ final class AdminCommand implements TabExecutor {
             case 'o':
                 owner = Builder.find(value);
                 if (owner == null) {
-                    sender.sendMessage("Builder not found: " + value);
-                    return true;
+                    throw new CommandWarn("Builder not found: " + value);
                 }
                 break;
             case 'g':
@@ -490,8 +507,7 @@ final class AdminCommand implements TabExecutor {
                 } else if (value.equals("false")) {
                     generateStructures = false;
                 } else {
-                    sender.sendMessage("Bad value for structures: " + value);
-                    return true;
+                    throw new CommandWarn("Bad value for structures: " + value);
                 }
                 break;
             case 'G':
@@ -514,16 +530,14 @@ final class AdminCommand implements TabExecutor {
                 try {
                     worldType = WorldType.valueOf(value.toUpperCase());
                 } catch (IllegalArgumentException iae) {
-                    sender.sendMessage("Unknown world type: '" + value + "'");
-                    return true;
+                    throw new CommandWarn("Unknown world type: '" + value + "'");
                 }
                 break;
             case 'e':
                 try {
                     environment = World.Environment.valueOf(value.toUpperCase());
                 } catch (IllegalArgumentException iae) {
-                    sender.sendMessage("Unknown environment: '" + value + "'");
-                    return true;
+                    throw new CommandWarn("Unknown environment: '" + value + "'");
                 }
             default: break;
             }
@@ -531,16 +545,13 @@ final class AdminCommand implements TabExecutor {
         if (path == null && name != null) path = name.toLowerCase();
         if (name == null) name = path;
         if (path == null) {
-            sender.sendMessage("Path missing!");
-            return true;
+            throw new CommandWarn("Path missing!");
         }
         if (!path.matches("[a-z0-9_-]+")) {
-            sender.sendMessage("Invalid path name (must be lowercase): " + path);
-            return true;
+            throw new CommandWarn("Invalid path name (must be lowercase): " + path);
         }
         if (plugin.getBuildWorldByPath(path) != null) {
-            sender.sendMessage("World already exists: '" + path + "'");
-            return true;
+            throw new CommandWarn("World already exists: '" + path + "'");
         }
         BuildWorld buildWorld = new BuildWorld(name, path, owner);
         plugin.getBuildWorlds().add(buildWorld);
@@ -553,14 +564,13 @@ final class AdminCommand implements TabExecutor {
         buildWorld.getWorldConfig().set("world.WorldType", worldType.name());
         buildWorld.getWorldConfig().set("world.Environment", environment.name());
         buildWorld.saveWorldConfig();
-        sender.sendMessage("World '" + path + "' created.");
+        sender.sendMessage(text("World '" + path + "' created", YELLOW));
         return true;
     }
 
     private boolean createVoidCommand(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage("Player expected");
-            return true;
+            throw new CommandWarn("Player expected");
         }
         Player player = (Player) sender;
         if (args.length != 1 && args.length != 2) return false;
@@ -571,14 +581,12 @@ final class AdminCommand implements TabExecutor {
             try {
                 environment = World.Environment.valueOf(value.toUpperCase());
             } catch (IllegalArgumentException iae) {
-                sender.sendMessage("Unknown environment: '" + value + "'");
-                return true;
+                throw new CommandWarn("Unknown environment: '" + value + "'");
             }
         }
         String path = name.toLowerCase();
         if (plugin.getBuildWorldByPath(path) != null) {
-            sender.sendMessage("World already exists: '" + path + "'");
-            return true;
+            throw new CommandWarn("World already exists: '" + path + "'");
         }
         BuildWorld buildWorld = new BuildWorld(name, path, Builder.of(player));
         plugin.getBuildWorlds().add(buildWorld);
@@ -593,7 +601,7 @@ final class AdminCommand implements TabExecutor {
         buildWorld.saveWorldConfig();
         buildWorld.loadWorld();
         buildWorld.teleportToSpawn(player);
-        sender.sendMessage("World '" + path + "' created.");
+        sender.sendMessage(text("World '" + path + "' created", YELLOW));
         return true;
     }
 
@@ -603,13 +611,11 @@ final class AdminCommand implements TabExecutor {
         String generator = args[1];
         World world = plugin.getServer().getWorld(name);
         if (world == null) {
-            sender.sendMessage("World not found: " + name);
-            return true;
+            throw new CommandWarn("World not found: " + name);
         }
         name = world.getName();
         if (plugin.getBuildWorldByPath(name) != null) {
-            sender.sendMessage("Build world already exists: " + name);
-            return true;
+            throw new CommandWarn("Build world already exists: " + name);
         }
         WorldCreator creator = WorldCreator.name(name);
         creator.copy(world);
@@ -621,7 +627,7 @@ final class AdminCommand implements TabExecutor {
         buildWorld.getWorldConfig().set("world.WorldType", creator.type().name());
         buildWorld.getWorldConfig().set("world.Environment", creator.environment().name());
         buildWorld.saveWorldConfig();
-        sender.sendMessage("World '" + name + "' imported.");
+        sender.sendMessage(text("World '" + name + "' imported", YELLOW));
         return true;
     }
 
@@ -630,16 +636,14 @@ final class AdminCommand implements TabExecutor {
         String name = args[0];
         BuildWorld buildWorld = plugin.getBuildWorldByPath(name);
         if (buildWorld == null) {
-            sender.sendMessage("World not found: " + name);
-            return true;
+            throw new CommandWarn("World not found: " + name);
         }
         buildWorld.reloadWorldConfig();
         World world = buildWorld.loadWorld();
         if (world == null) {
-            sender.sendMessage("Could not load world: " + buildWorld.getPath());
-        } else {
-            sender.sendMessage("World loaded: " + world.getName());
+            throw new CommandWarn("Could not load world: " + buildWorld.getPath());
         }
+        sender.sendMessage(text("World loaded: " + world.getName(), YELLOW));
         return true;
     }
 
@@ -648,13 +652,11 @@ final class AdminCommand implements TabExecutor {
         String name = args[0];
         BuildWorld buildWorld = plugin.getBuildWorldByPath(name);
         if (buildWorld == null) {
-            sender.sendMessage("World not found: " + name);
-            return true;
+            throw new CommandWarn("World not found: " + name);
         }
         World world = buildWorld.getWorld();
         if (world == null) {
-            sender.sendMessage("Could not unload world: " + buildWorld.getPath());
-            return true;
+            throw new CommandWarn("Could not unload world: " + buildWorld.getPath());
         }
         boolean shouldSave = true;
         if (args.length >= 2) {
@@ -667,11 +669,10 @@ final class AdminCommand implements TabExecutor {
                 return false;
             }
         }
-        if (plugin.getServer().unloadWorld(world, shouldSave)) {
-            sender.sendMessage("World unloaded: " + buildWorld.getPath());
-        } else {
-            sender.sendMessage("Could not unload world: " + buildWorld.getPath());
+        if (!plugin.getServer().unloadWorld(world, shouldSave)) {
+            throw new CommandWarn("Could not unload world: " + buildWorld.getPath());
         }
+        sender.sendMessage(text("World unloaded: " + buildWorld.getPath(), YELLOW));
         return true;
     }
 
@@ -698,8 +699,7 @@ final class AdminCommand implements TabExecutor {
         Block block = player.getLocation().getBlock();
         PlotWorld plotWorld = plugin.getPlotWorld(block.getWorld());
         if (plotWorld == null) {
-            player.sendMessage("No plot world!");
-            return true;
+            throw new CommandWarn("No plot world!");
         }
         player.sendMessage(text(block.getX() + "," + block.getY() + "," + block.getZ()
                                 + ": " + plotWorld.debug(block), YELLOW));
@@ -804,8 +804,7 @@ final class AdminCommand implements TabExecutor {
         if (args.length == 0) return false;
         BuildWorld buildWorld = plugin.getBuildWorldByPath(args[0]);
         if (buildWorld == null) {
-            sender.sendMessage("World not found: " + args[0]);
-            return true;
+            throw new CommandWarn("World not found: " + args[0]);
         }
         List<String> buildGroups = List.of(Arrays.copyOfRange(args, 1, args.length));
         buildWorld.setBuildGroups(buildGroups);
@@ -821,18 +820,23 @@ final class AdminCommand implements TabExecutor {
     }
 
     private boolean autoConvertCommand(CommandSender sender, String[] args) {
+        if (!(sender instanceof ConsoleCommandSender)) {
+            throw new CommandWarn("Console expected");
+        }
         if (args.length != 0) return false;
         if (autoConverter != null) {
-            sender.sendMessage(text("An auto convesion task is already running", RED));
-            return true;
+            throw new CommandWarn("An auto convesion task is already running");
         }
-        sender.sendMessage("Starging auto conversion. See console...");
+        sender.sendMessage(text("Starting auto conversion. See console...", YELLOW));
         autoConverter = new AutoConverter(plugin);
         autoConverter.start();
         return true;
     }
 
     private boolean transferAllCommand(CommandSender sender, String[] args) {
+        if (!(sender instanceof ConsoleCommandSender)) {
+            throw new CommandWarn("Console expected");
+        }
         if (args.length != 2) return false;
         PlayerCache from = PlayerCache.forArg(args[0]);
         if (from == null) {

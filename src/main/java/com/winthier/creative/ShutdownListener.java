@@ -11,7 +11,7 @@ public final class ShutdownListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     private void onShutdownTrigger(ShutdownTriggerEvent event) {
-        if (plugin.adminCommand.autoConverter != null) {
+        if (plugin.getAdminCommand().autoConverter != null) {
             event.setCancelled(true);
         }
     }

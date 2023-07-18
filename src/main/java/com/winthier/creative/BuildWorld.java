@@ -26,6 +26,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.SpawnCategory;
+import static com.winthier.creative.CreativePlugin.plugin;
 
 @Getter @Setter
 final class BuildWorld {
@@ -97,10 +98,6 @@ final class BuildWorld {
         }
     }
 
-    CreativePlugin getPlugin() {
-        return CreativePlugin.getInstance();
-    }
-
     List<Builder> listTrusted(Trust trust) {
         List<Builder> result = new ArrayList<>();
         for (Map.Entry<UUID, Trusted> e: this.trusted.entrySet()) {
@@ -112,7 +109,7 @@ final class BuildWorld {
     }
 
     Trust getTrust(UUID uuid) {
-        if (getPlugin().doesIgnore(uuid)) return Trust.OWNER;
+        if (plugin().doesIgnore(uuid)) return Trust.OWNER;
         if (owner != null && owner.getUuid().equals(uuid)) return Trust.OWNER;
         Trusted t = trusted.get(uuid);
         if (t != null && t.getTrust().isOwner()) return t.getTrust();
@@ -150,7 +147,7 @@ final class BuildWorld {
     }
 
     File getWorldFolder() {
-        return new File(getPlugin().getServer().getWorldContainer(), path);
+        return new File(plugin().getServer().getWorldContainer(), path);
     }
 
     World loadWorld() {
@@ -158,7 +155,7 @@ final class BuildWorld {
         if (result != null) return result;
         File dir = getWorldFolder();
         if (!dir.isDirectory()) {
-            getPlugin().getLogger().warning("World folder does not exist: " + path);
+            plugin().getLogger().warning("World folder does not exist: " + path);
             return null;
         }
         WorldCreator creator = WorldCreator.name(path);

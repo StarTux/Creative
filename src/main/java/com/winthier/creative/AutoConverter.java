@@ -61,8 +61,8 @@ public final class AutoConverter {
 
     private void popWorld() {
         if (worldNames.isEmpty()) {
-            if (plugin.adminCommand.autoConverter == this) {
-                plugin.adminCommand.autoConverter = null;
+            if (plugin.getAdminCommand().autoConverter == this) {
+                plugin.getAdminCommand().autoConverter = null;
             }
             log("Done!");
             return;
