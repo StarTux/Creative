@@ -2,10 +2,12 @@ package com.winthier.creative;
 
 import com.cavetale.core.command.AbstractCommand;
 import com.cavetale.core.command.CommandArgCompleter;
+import com.cavetale.core.command.CommandContext;
+import com.cavetale.core.command.CommandNode;
 import com.cavetale.core.command.CommandWarn;
 import com.cavetale.core.perm.Perm;
+import com.cavetale.core.playercache.PlayerCache;
 import com.winthier.creative.util.Files;
-import com.winthier.playercache.PlayerCache;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -25,6 +27,7 @@ import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import static com.cavetale.core.command.CommandArgCompleter.enumLowerList;
+import static com.cavetale.core.command.CommandArgCompleter.list;
 import static com.cavetale.core.command.CommandArgCompleter.supplyList;
 import static com.winthier.creative.CreativePlugin.plugin;
 import static net.kyori.adventure.text.Component.join;
@@ -74,7 +77,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         rootNode.addChild("listloaded").denyTabCompletion()
             .description("List loaded worlds")
             .senderCaller(this::listLoadedCommand);
-        rootNode.addChild("tp").arguments("<world>")
+        rootNode.addChild("tp").arguments("[player] <world>")
             .description("Teleport to world")
             .completers(supplyList(AdminCommand::supplyWorldPaths))
             .senderCaller(this::tpCommand);
@@ -106,7 +109,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
                         CommandArgCompleter.PLAYER_CACHE)
             .senderCaller(this::setOwnerCommand);
         rootNode.addChild("create").arguments("n:name p:path o:owner g:generator G:generatorSettings e:environment t:worldType s:seed S:generateStructures")
-            .completers()
+            .completers(AdminCommand::completeCreateArgs)
             .description("Create a world")
             .senderCaller(this::createCommand);
         rootNode.addChild("createvoid").arguments("<name> [environment]")
@@ -117,7 +120,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         rootNode.addChild("import").arguments("<world> [generator]")
             .description("Import loaded world")
             .completers(supplyList(AdminCommand::loadedWorldNames),
-                        CommandArgCompleter.NULL)
+                        list(List.of("VoidGenerator")))
             .senderCaller(this::importCommand);
         rootNode.addChild("load").arguments("<world>")
             .description("Load build world")
@@ -129,10 +132,10 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             .senderCaller(this::unloadCommand);
         rootNode.addChild("ignore").denyTabCompletion()
             .description("Ignore build restrictions")
-            .senderCaller(this::ignoreCommand);
+            .playerCaller(this::ignoreCommand);
         rootNode.addChild("debugplot").denyTabCompletion()
             .description("Plot world debug")
-            .senderCaller(this::debugPlotCommand);
+            .playerCaller(this::debugPlotCommand);
         rootNode.addChild("buildgroups").arguments("<world> [group...]")
             .description("Set build groups")
             .completers(supplyList(() -> Perm.get().getGroupNames()))
@@ -163,11 +166,80 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         return result;
     }
 
-    private boolean reloadCommand(CommandSender sender, String[] args) {
-        if (args.length != 0) return false;
+    private static List<String> completeCreateArgs(CommandContext context, CommandNode node, String arg) {
+        List<String> result = new ArrayList<>();
+        if (arg.length() < 2) {
+            for (String c : List.of("n", "p", "o", "g", "G", "e", "t", "s", "S")) {
+                String prefix = c + ":";
+                if (prefix.startsWith(arg)) {
+                    result.add(prefix);
+                }
+            }
+        } else {
+            String prefix = arg.substring(0, 2);
+            String param = arg.substring(2);
+            String lower = param.toLowerCase();
+            if (!prefix.endsWith(":")) return result;
+            switch (prefix.charAt(0)) {
+            case 'n': // name
+                for (BuildWorld buildWorld : plugin().getBuildWorlds()) {
+                    String name = buildWorld.getName().replace(" ", "");
+                    if (name.toLowerCase().contains(lower)) {
+                        result.add(prefix + name);
+                    }
+                }
+                break;
+            case 'p': // path
+                for (String path : supplyWorldPaths()) {
+                    if (path.toLowerCase().contains(lower)) {
+                        result.add(prefix + path);
+                    }
+                }
+                break;
+            case 'o': // owner
+                for (String name : PlayerCache.completeNames(param)) {
+                    result.add(prefix + name);
+                }
+                break;
+            case 'g': // generator
+                for (String gen : List.of("VoidGenerator")) {
+                    if (gen.toLowerCase().contains(lower)) {
+                        result.add(prefix + gen);
+                    }
+                }
+                break;
+            case 'G': // generator settings
+                break;
+            case 'e':
+                for (World.Environment env : World.Environment.values()) {
+                    if (env.name().toLowerCase().contains(lower)) {
+                        result.add(prefix + env.name().toLowerCase());
+                    }
+                }
+                break;
+            case 't': // world type
+                for (WorldType type : WorldType.values()) {
+                    if (type.name().toLowerCase().contains(lower)) {
+                        result.add(prefix + type.name().toLowerCase());
+                    }
+                }
+                break;
+            case 's': // seed
+                break;
+            case 'S':
+                if ("false".contains(lower)) {
+                    result.add(prefix + "false");
+                }
+                break;
+            default: return result;
+            }
+        }
+        return result;
+    }
+
+    private void reloadCommand(CommandSender sender) {
         plugin.reloadAllConfigs();
         sender.sendMessage(text("Configs reloaded", AQUA));
-        return true;
     }
 
     private boolean infoCommand(CommandSender sender, String[] args) {
@@ -273,8 +345,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         return true;
     }
 
-    private boolean listUnregisteredCommand(CommandSender sender, String[] args) {
-        if (args.length != 0) return false;
+    private void listUnregisteredCommand(CommandSender sender) {
         sender.sendMessage(text("Unregistered worlds:", AQUA));
         int count = 0;
         for (String dir: plugin.getServer().getWorldContainer().list()) {
@@ -284,7 +355,6 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             }
         }
         sender.sendMessage(text("" + count + " worlds listed", AQUA));
-        return true;
     }
 
     private boolean listCommand(CommandSender sender, String[] args) {
@@ -333,8 +403,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         return true;
     }
 
-    private boolean whoCommand(CommandSender sender, String[] args) {
-        if (args.length != 0) return false;
+    private void whoCommand(CommandSender sender) {
         List<Component> lines = new ArrayList<>();
         lines.add(text("World Player List", YELLOW));
         for (World world: plugin.getServer().getWorlds()) {
@@ -348,11 +417,9 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
                       .append(text(sb.toString(), GREEN)));
         }
         sender.sendMessage(join(separator(newline()), lines));
-        return true;
     }
 
-    private boolean listLoadedCommand(CommandSender sender, String[] args) {
-        if (args.length != 0) return false;
+    private void listLoadedCommand(CommandSender sender) {
         int count = 0;
         for (World world: plugin.getServer().getWorlds()) {
             if (plugin.getBuildWorldByWorld(world) == null) {
@@ -365,7 +432,6 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             count += 1;
         }
         sender.sendMessage(text("" + count + " worlds are currently loaded.", AQUA));
-        return true;
     }
 
     private boolean tpCommand(CommandSender sender, String[] args) {
@@ -461,19 +527,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
     }
 
     private boolean createCommand(CommandSender sender, String[] args) {
-        if (args.length == 0) {
-            sender.sendMessage(text("/ca create"
-                                    + " n:name"
-                                    + " p:path"
-                                    + " o:owner"
-                                    + " g:generator"
-                                    + " G:generatorSettings"
-                                    + " e:environment"
-                                    + " t:worldType"
-                                    + " s:seed"
-                                    + " S:generateStructures", YELLOW));
-            return true;
-        }
+        if (args.length == 0) return false;
         Builder owner = null;
         String name = null;
         String generator = null;
@@ -676,26 +730,16 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         return true;
     }
 
-    private boolean ignoreCommand(CommandSender sender, String[] args) {
-        if (args.length != 0) return false;
-        Player player = sender instanceof Player
-            ? (Player) sender
-            : null;
-        if (player == null) return false;
+    private void ignoreCommand(Player player) {
         if (plugin.toggleIgnore(player)) {
             player.sendMessage(text("Ignoring world perms", YELLOW));
         } else {
             player.sendMessage(text("No longer ignoring world perms", YELLOW));
         }
         plugin.getPermission().updatePermissions(player);
-        return true;
     }
 
-    private boolean debugPlotCommand(CommandSender sender, String[] args) {
-        Player player = sender instanceof Player
-            ? (Player) sender
-            : null;
-        if (player == null) return false;
+    private void debugPlotCommand(Player player) {
         Block block = player.getLocation().getBlock();
         PlotWorld plotWorld = plugin.getPlotWorld(block.getWorld());
         if (plotWorld == null) {
@@ -703,7 +747,6 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         }
         player.sendMessage(text(block.getX() + "," + block.getY() + "," + block.getZ()
                                 + ": " + plotWorld.debug(block), YELLOW));
-        return true;
     }
 
     private boolean trustCommand(CommandSender sender, String[] args) {
@@ -819,18 +862,16 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         return true;
     }
 
-    private boolean autoConvertCommand(CommandSender sender, String[] args) {
+    private void autoConvertCommand(CommandSender sender) {
         if (!(sender instanceof ConsoleCommandSender)) {
             throw new CommandWarn("Console expected");
         }
-        if (args.length != 0) return false;
         if (autoConverter != null) {
             throw new CommandWarn("An auto convesion task is already running");
         }
         sender.sendMessage(text("Starting auto conversion. See console...", YELLOW));
         autoConverter = new AutoConverter(plugin);
         autoConverter.start();
-        return true;
     }
 
     private boolean transferAllCommand(CommandSender sender, String[] args) {

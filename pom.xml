@@ -59,14 +59,6 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- PlayerCache -->
-    <dependency>
-      <groupId>com.winthier.playercache</groupId>
-      <artifactId>playercache</artifactId>
-      <version>0.1-SNAPSHOT</version>
-      <scope>provided</scope>
-    </dependency>
-
     <!-- WorldEdit -->
     <dependency>
       <groupId>com.sk89q.worldedit</groupId>

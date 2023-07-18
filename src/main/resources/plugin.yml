@@ -8,7 +8,7 @@ description: Manage Creative Worlds
 author: StarTux
 website: https://github.com/StarTux/Creative
 
-depend: [Core, WorldEdit, PlayerCache, VoidGenerator, FlatGenerator, Mytems]
+depend: [Core, WorldEdit, VoidGenerator, FlatGenerator, Mytems]
 softdepend: [Shutdown]
 
 commands:
@@ -41,23 +41,23 @@ commands:
     usage: /wtp <world>
 
   creativeadmin:
-    aliases: [ ca, cra ]
+    aliases: [ cra ]
     description: Admin Interface
     permission: creative.admin
     usage: |-
-      /ca ignore - Toggle permission ignore
-      /ca info [world] - World info
-      /ca set [world] <key> <value> - World settings
-      /ca list <player>
-      /ca listloaded
-      /ca tp [player] <world>
-      /ca debug
-      /ca remove <world>
-      /ca trust <world> <player> <trust>
-      /ca resetowner [world]
-      /ca setowner <world> <player>
-      /ca createvoid <name> [environment] - Create empty world
-      /ca create
+      /cra ignore - Toggle permission ignore
+      /cra info [world] - World info
+      /cra set [world] <key> <value> - World settings
+      /cra list <player>
+      /cra listloaded
+      /cra tp [player] <world>
+      /cra debug
+      /cra remove <world>
+      /cra trust <world> <player> <trust>
+      /cra resetowner [world]
+      /cra setowner <world> <player>
+      /cra createvoid <name> [environment] - Create empty world
+      /cra create
         n:name
         p:path
         o:owner
@@ -67,11 +67,11 @@ commands:
         t:worldType
         s:seed
         S:generateStructures
-      /ca import <world>
-      /ca load <world>
-      /ca unload <world>
-      /ca autoconvert - Auto convert worlds
-      /ca transferall <from> <to> - Transfer all worlds
+      /cra import <world>
+      /cra load <world>
+      /cra unload <world>
+      /cra autoconvert - Auto convert worlds
+      /cra transferall <from> <to> - Transfer all worlds
 
   plot:
     aliases: [plots]
