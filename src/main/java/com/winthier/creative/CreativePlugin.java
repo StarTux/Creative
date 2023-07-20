@@ -1,5 +1,6 @@
 package com.winthier.creative;
 
+import com.cavetale.core.connect.NetworkServer;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,66 +24,67 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 @Getter
 public final class CreativePlugin extends JavaPlugin {
-    private List<BuildWorld> buildWorlds;
+    private final List<BuildWorld> buildWorlds = new ArrayList<>();
     private final Map<String, PlotWorld> plotWorlds = new LinkedHashMap<>();
-    private final WorldCommand worldCommand = new WorldCommand(this);
     private final Permission permission = new Permission(this);
     private final Set<UUID> ignores = new HashSet<>();
     private static CreativePlugin instance = null;
     private WorldEditListener worldEditListener = new WorldEditListener(this);
-    private final Metadata metadata = new Metadata(this);
     private final Random random = ThreadLocalRandom.current();
-    private AdminCommand adminCommand = new AdminCommand(this);
     private final CoreWorlds coreWorlds = new CoreWorlds(this);
+    // Commands
+    private final AdminCommand adminCommand = new AdminCommand(this);
+    private final CreativeCommand creativeCommand = new CreativeCommand(this);
+    private final CTPCommand ctpCommand = new CTPCommand(this);
+    private final KitCommand kitCommand = new KitCommand(this);
+    private boolean isCreativeServer;
 
     public CreativePlugin() {
         instance = this;
     }
 
     @Override
-    public void onLoad() {
-        coreWorlds.register();
-    }
-
-    @Override
     public void onEnable() {
-        try {
-            saveResource("permissions.yml", false);
-        } catch (IllegalArgumentException iae) {
-            iae.printStackTrace();
-        }
-        getCommand("world").setExecutor(worldCommand);
-        worldCommand.load();
-        getCommand("wtp").setExecutor(new WTPCommand(this));
+        this.isCreativeServer = NetworkServer.CREATIVE.isThisServer();
         adminCommand.enable();
-        getCommand("kit").setExecutor(new KitCommand(this));
-        getCommand("plot").setExecutor(new PlotCommand(this));
-        getServer().getPluginManager().registerEvents(new CreativeListener(this), this);
-        if (Bukkit.getPluginManager().isPluginEnabled("Shutdown")) {
-            Bukkit.getPluginManager().registerEvents(new ShutdownListener(this), this);
+        creativeCommand.enable();
+        ctpCommand.enable();
+        kitCommand.enable();
+        if (isCreativeServer()) {
+            coreWorlds.register();
+            saveResource("permissions.yml", false);
+            for (Player player: getServer().getOnlinePlayers()) {
+                permission.updatePermissions(player);
+            }
+            getServer().getPluginManager().registerEvents(new CreativeListener(this), this);
+            if (Bukkit.getPluginManager().isPluginEnabled("Shutdown")) {
+                Bukkit.getPluginManager().registerEvents(new ShutdownListener(this), this);
+            }
+            loadPlotWorlds();
+            loadBuildWorlds();
+            worldEditListener.enable();
         }
-        for (Player player: getServer().getOnlinePlayers()) {
-            permission.updatePermissions(player);
-        }
-        getBuildWorlds();
-        worldEditListener.enable();
-        loadPlotWorlds();
+        getLogger().info(isCreativeServer
+                         ? "This is the Creative server"
+                         : "This is NOT the Creative server");
     }
 
     @Override
     public void onDisable() {
-        worldEditListener.disable();
-        for (Player player: getServer().getOnlinePlayers()) {
-            permission.resetPermissions(player);
-        }
-        // Unload all empty worlds!
-        for (BuildWorld buildWorld : buildWorlds) {
-            World world = buildWorld.getWorld();
-            if (world != null) {
-                unloadEmptyWorld(world);
+        if (isCreativeServer()) {
+            worldEditListener.disable();
+            for (Player player: getServer().getOnlinePlayers()) {
+                permission.resetPermissions(player);
             }
+            // Unload all empty worlds!
+            for (BuildWorld buildWorld : buildWorlds) {
+                World world = buildWorld.getWorld();
+                if (world != null) {
+                    unloadEmptyWorld(world);
+                }
+            }
+            coreWorlds.unregister();
         }
-        coreWorlds.unregister();
     }
 
     protected boolean unloadEmptyWorld(final World world) {
@@ -96,32 +98,28 @@ public final class CreativePlugin extends JavaPlugin {
 
     public void reloadAllConfigs() {
         reloadConfig();
-        buildWorlds = null;
+        loadBuildWorlds();
         permission.reload();
-        worldCommand.load();
         loadPlotWorlds();
     }
 
-    public List<BuildWorld> getBuildWorlds() {
-        if (buildWorlds == null) {
-            buildWorlds = new ArrayList<>();
-            File file = new File(getDataFolder(), "worlds.yml");
-            YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
-            for (Map<?, ?> map: config.getMapList("worlds")) {
-                MemoryConfiguration mem = new MemoryConfiguration();
-                ConfigurationSection section = mem.createSection("tmp", map);
-                BuildWorld buildWorld = BuildWorld.deserialize(section);
-                buildWorlds.add(buildWorld);
-                if (buildWorld.isSet(BuildWorld.Flag.KEEP_IN_MEMORY)) buildWorld.loadWorld();
-            }
+    public void loadBuildWorlds() {
+        buildWorlds.clear();
+        File file = new File(getDataFolder(), "worlds.yml");
+        YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+        for (Map<?, ?> map: config.getMapList("worlds")) {
+            MemoryConfiguration mem = new MemoryConfiguration();
+            ConfigurationSection section = mem.createSection("tmp", map);
+            BuildWorld buildWorld = BuildWorld.deserialize(section);
+            buildWorlds.add(buildWorld);
+            if (buildWorld.isSet(BuildWorld.Flag.KEEP_IN_MEMORY)) buildWorld.loadWorld();
         }
-        return buildWorlds;
     }
 
     public void saveBuildWorlds() {
         if (buildWorlds == null) return;
         List<Object> list = new ArrayList<>();
-        for (BuildWorld buildWorld: getBuildWorlds()) {
+        for (BuildWorld buildWorld : buildWorlds) {
             list.add(buildWorld.serialize());
         }
         YamlConfiguration config = new YamlConfiguration();
@@ -135,7 +133,7 @@ public final class CreativePlugin extends JavaPlugin {
     }
 
     public BuildWorld getBuildWorldByPath(String path) {
-        for (BuildWorld buildWorld: getBuildWorlds()) {
+        for (BuildWorld buildWorld : buildWorlds) {
             if (path.equals(buildWorld.getPath())) {
                 return buildWorld;
             }
@@ -150,7 +148,7 @@ public final class CreativePlugin extends JavaPlugin {
 
     public PlayerWorldList getPlayerWorldList(UUID uuid) {
         PlayerWorldList result = new PlayerWorldList();
-        for (BuildWorld buildWorld: getBuildWorlds()) {
+        for (BuildWorld buildWorld : buildWorlds) {
             Trust trust = buildWorld.getTrust(uuid);
             if (trust.isOwner()) {
                 result.owner.add(buildWorld);
@@ -180,10 +178,6 @@ public final class CreativePlugin extends JavaPlugin {
 
     public boolean doesIgnore(UUID uuid) {
         return ignores.contains(uuid);
-    }
-
-    public Meta metaOf(Player player) {
-        return metadata.get(player, "creative:meta", Meta.class, Meta::new);
     }
 
     public void loadPlotWorlds() {
@@ -219,7 +213,7 @@ public final class CreativePlugin extends JavaPlugin {
         List<String> result = new ArrayList<>();
         String argl = arg.toLowerCase();
         UUID uuid = player.getUniqueId();
-        for (BuildWorld buildWorld: getBuildWorlds()) {
+        for (BuildWorld buildWorld : buildWorlds) {
             String name = buildWorld.getName();
             if (name == null) name = buildWorld.getPath();
             if (buildWorld.getTrust(uuid).canVisit() && name.toLowerCase().contains(argl)) {
@@ -231,5 +225,9 @@ public final class CreativePlugin extends JavaPlugin {
 
     public static CreativePlugin plugin() {
         return instance;
+    }
+
+    public boolean isCreativeServer() {
+        return isCreativeServer;
     }
 }

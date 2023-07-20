@@ -20,11 +20,11 @@ import org.bukkit.entity.Player;
 final class WorldEditListener {
     private final CreativePlugin plugin;
 
-    void enable() {
+    protected void enable() {
         WorldEdit.getInstance().getEventBus().register(this);
     }
 
-    void disable() {
+    protected void disable() {
         WorldEdit.getInstance().getEventBus().unregister(this);
     }
 

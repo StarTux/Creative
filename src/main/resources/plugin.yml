@@ -13,35 +13,30 @@ softdepend: [Shutdown]
 
 commands:
 
-  world:
-    aliases: [ worlds, creative ]
+  creative:
+    aliases: [cr]
     description: User interface
     permission: creative.world
     usage: |-
-      /world list - List your worlds
-      /world visit - List worlds you can join
-      /world info - Get world info
-      /world buy [type] [dimension] - Buy a world
-      /world unlock - Unlock world features
-      /world grow - Grow your world
-      /world spawn - Teleport to spawn
-      /world setspawn - Set world spawn
-      /world rename <name> - Rename world
-      /world time [time] - Get or set the world time
-      /world difficulty [difficulty] - Difficulty setting
-      /world gamemode <gamemode> - Change your GameMode
-      /world trust <player> [trust] - Trust someone
-      /world untrust <player> - Revoke trust
-      /world confirm - Confirm action
-      /world cancel - Cancel action
-
-  wtp:
-    description: World Teleport
-    permission: creative.world
-    usage: /wtp <world>
+      /cr list - List your worlds
+      /cr visit - List worlds you can join
+      /cr info - Get world info
+      /cr buy [type] [dimension] - Buy a world
+      /cr unlock - Unlock world features
+      /cr grow - Grow your world
+      /cr spawn - Teleport to spawn
+      /cr setspawn - Set world spawn
+      /cr rename <name> - Rename world
+      /cr time [time] - Get or set the world time
+      /cr difficulty [difficulty] - Difficulty setting
+      /cr gamemode <gamemode> - Change your GameMode
+      /cr trust <player> [trust] - Trust someone
+      /cr untrust <player> - Revoke trust
+      /cr confirm - Confirm action
+      /cr cancel - Cancel action
 
   creativeadmin:
-    aliases: [ cra ]
+    aliases: [cra]
     description: Admin Interface
     permission: creative.admin
     usage: |-
@@ -73,38 +68,35 @@ commands:
       /cra autoconvert - Auto convert worlds
       /cra transferall <from> <to> - Transfer all worlds
 
-  plot:
-    aliases: [plots]
-    description: Plot interface
+  ctp:
+    description: World Teleport
     permission: creative.world
-    usage: |-
-      /plot list - List your plots
-      /plot warp <id> - Warp to plot
+    usage: /ctp <world>
 
-  kit:
-    aliases: [ckit]
+  ckit:
+    aliases: []
     description: Open the Creative kit
     permission: creative.kit
     usage: /kit
 
 permissions:
 
-  creative.world:
-    descrption: Use /world and /wtp
+  creative.creative:
+    descrption: Use /creative and /ctp
     default: op
 
   creative.admin:
-    description: Use /CreativeAdmin
+    description: Use /cra
     default: op
 
   creative.worldedit:
     description: Use WorldEdit in the appropriate worlds
     default: op
 
-  creative.world.buy:
+  creative.creative.buy:
     description: Buy a creative world
     default: op
 
   creative.kit:
-    description: Open the kit
+    description: Use /ckit
     default: op
