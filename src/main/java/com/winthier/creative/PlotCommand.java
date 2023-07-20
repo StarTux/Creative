@@ -23,6 +23,9 @@ public final class PlotCommand {
         rootNode.addChild("list")
             .description("List your plots")
             .playerCaller(this::list);
+        rootNode.addChild("warp")
+            .description("Warp to plot")
+            .playerCaller(this::warp);
     }
 
     private void list(Player player) {
@@ -36,7 +39,7 @@ public final class PlotCommand {
         lines.add(Component.text("You have " + (size == 1 ? " one plot" : size + " plots") + ":", NamedTextColor.GRAY));
         for (PlotWorld.Plot plot : list) {
             int index = i++;
-            String scmd = "/plot warp " + index;
+            String scmd = "/creative plot warp " + index;
             lines.add(Component.text("" + index + ") ", NamedTextColor.AQUA)
                       .append(Component.text(plot.plotWorld.name, NamedTextColor.WHITE))
                       .append(Component.text(" " + plot.x + "," + plot.z, NamedTextColor.GRAY))

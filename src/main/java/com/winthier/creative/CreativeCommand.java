@@ -205,7 +205,7 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
             .map(buildWorld -> text("[" + buildWorld.getName() + "]", GREEN)
                  .hoverEvent(HoverEvent.showText(text("Teleport to " + buildWorld.getName(),
                                                       GREEN)))
-                 .clickEvent(ClickEvent.runCommand("/wtp " + buildWorld.getName())))
+                 .clickEvent(ClickEvent.runCommand("/ctp " + buildWorld.getName())))
             .collect(Collectors.toList());
         player.sendMessage(join(JoinConfiguration.builder()
                                 .prefix(text(prefix + " "))
