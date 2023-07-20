@@ -16,7 +16,7 @@ commands:
   creative:
     aliases: [cr]
     description: User interface
-    permission: creative.world
+    permission: creative.creative
     usage: |-
       /cr list - List your worlds
       /cr visit - List worlds you can join
@@ -70,7 +70,7 @@ commands:
 
   ctp:
     description: World Teleport
-    permission: creative.world
+    permission: creative.creative
     usage: /ctp <world>
 
   ckit:
