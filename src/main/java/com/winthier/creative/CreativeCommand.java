@@ -47,6 +47,8 @@ import static net.kyori.adventure.text.format.NamedTextColor.*;
 import static net.kyori.adventure.text.format.TextDecoration.*;
 
 final class CreativeCommand extends AbstractCommand<CreativePlugin> {
+    public static final String BUY_PERMISSION = "creative.buy";
+
     protected CreativeCommand(final CreativePlugin plugin) {
         super(plugin, "creative");
     }
@@ -214,7 +216,7 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
     }
 
     private boolean buyCommand(RemotePlayer player, String[] args) {
-        if (!player.hasPermission("creative.world.buy")) {
+        if (!player.hasPermission(BUY_PERMISSION)) {
             throw new CommandWarn("You don't have permission to buy a world!");
         }
         if (args.length > 2) return false;
@@ -678,7 +680,7 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
     }
 
     private boolean unlockCommand(Player player, String[] args) {
-        if (!player.hasPermission("creative.world.buy")) {
+        if (!player.hasPermission(BUY_PERMISSION)) {
             throw new CommandWarn("You don't have permission to buy a world!");
         }
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(player.getWorld());
@@ -777,7 +779,7 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
 
     private boolean growCommand(Player player, String[] args) {
         if (args.length != 0) return false;
-        if (!player.hasPermission("creative.world.buy")) {
+        if (!player.hasPermission(BUY_PERMISSION)) {
             throw new CommandWarn("You don't have permission to buy a world!");
         }
         int growBy = 256;
