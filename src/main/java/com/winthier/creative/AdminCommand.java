@@ -293,8 +293,8 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             final String name = PlayerCache.nameForUuid(row.getPlayer());
             trusted.add(textOfChildren(text(name, YELLOW),
                                        text(":", GRAY),
-                                       text(row.getTrust().nice(), YELLOW))
-                        .insertion("/cra trust " + buildWorld.getPath() + " " + name + " " + row.getTrust().nice()));
+                                       text(row.getTrustValue().nice(), YELLOW))
+                        .insertion("/cra trust " + buildWorld.getPath() + " " + name + " " + row.getTrustValue().name().toLowerCase()));
         }
         sender.sendMessage(textOfChildren(text("Trusted ", GRAY), join(separator(space()), trusted)));
         sender.sendMessage(textOfChildren(text("Public Trust ", GRAY), text(buildWorld.getPublicTrust().nice(), YELLOW)));
@@ -649,18 +649,24 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         }
         final BuildWorld buildWorld = new BuildWorld(name, path, (owner != null ? owner.uuid : null));
         final String finalPath = path;
+        final String finalGenerator = generator;
+        final boolean finalGenerateStructures = generateStructures;
+        final String finalGeneratorSettings = generatorSettings;
+        final long finalSeed = seed;
+        final WorldType finalWorldType = worldType;
+        final World.Environment finalEnvironment = environment;
         buildWorld.insertAsync(() -> {
                 plugin.getBuildWorlds().add(buildWorld);
                 // getWorldConfig() calls mkdirs()
+                buildWorld.getWorldConfig().set("world.Generator", finalGenerator);
+                buildWorld.getWorldConfig().set("world.GenerateStructures", finalGenerateStructures);
+                buildWorld.getWorldConfig().set("world.GeneratorSettings", finalGeneratorSettings);
+                buildWorld.getWorldConfig().set("world.Seed", finalSeed);
+                buildWorld.getWorldConfig().set("world.WorldType", finalWorldType.name().toLowerCase());
+                buildWorld.getWorldConfig().set("world.Environment", finalEnvironment.name().toLowerCase());
+                buildWorld.saveWorldConfig();
                 sender.sendMessage(text("World '" + finalPath + "' created", YELLOW));
             });
-        buildWorld.getWorldConfig().set("world.Generator", generator);
-        buildWorld.getWorldConfig().set("world.GenerateStructures", generateStructures);
-        buildWorld.getWorldConfig().set("world.GeneratorSettings", generatorSettings);
-        buildWorld.getWorldConfig().set("world.Seed", seed);
-        buildWorld.getWorldConfig().set("world.WorldType", worldType.name());
-        buildWorld.getWorldConfig().set("world.Environment", environment.name());
-        buildWorld.saveWorldConfig();
         return true;
     }
 
@@ -685,20 +691,30 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             throw new CommandWarn("World already exists: '" + path + "'");
         }
         BuildWorld buildWorld = new BuildWorld(name, path, player.getUniqueId());
+        buildWorld.getRow().setGenerator("VoidGenerator");
+        buildWorld.getRow().setSeed(0L);
+        buildWorld.getRow().setWorldType(WorldType.FLAT.name().toLowerCase());
+        buildWorld.getRow().setEnvironment(environment.name().toLowerCase());
+        buildWorld.getRow().setGenerateStructures(false);
+        buildWorld.getRow().setGeneratorSettings("");
+        buildWorld.getRow().setSpawnX(255.5);
+        buildWorld.getRow().setSpawnY(65.0);
+        buildWorld.getRow().setSpawnZ(255.5);
+        final World.Environment finalEnvironment = environment;
         buildWorld.insertAsync(() -> {
                 plugin.getBuildWorlds().add(buildWorld);
                 // getWorldConfig() calls mkdirs()
+                buildWorld.getWorldConfig().set("world.Generator", "VoidGenerator");
+                buildWorld.getWorldConfig().set("world.GenerateStructures", "false");
+                buildWorld.getWorldConfig().set("world.GeneratorSettings", "");
+                buildWorld.getWorldConfig().set("world.Seed", 0L);
+                buildWorld.getWorldConfig().set("world.WorldType", WorldType.FLAT.name());
+                buildWorld.getWorldConfig().set("world.Environment", finalEnvironment.name());
+                buildWorld.saveWorldConfig();
                 buildWorld.loadWorld();
                 buildWorld.teleportToSpawn(player);
                 sender.sendMessage(text("World '" + path + "' created", YELLOW));
             });
-        buildWorld.getWorldConfig().set("world.Generator", "VoidGenerator");
-        buildWorld.getWorldConfig().set("world.GenerateStructures", "false");
-        buildWorld.getWorldConfig().set("world.GeneratorSettings", "");
-        buildWorld.getWorldConfig().set("world.Seed", 0L);
-        buildWorld.getWorldConfig().set("world.WorldType", WorldType.FLAT.name());
-        buildWorld.getWorldConfig().set("world.Environment", environment.name());
-        buildWorld.saveWorldConfig();
         return true;
     }
 
@@ -826,7 +842,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         if (trust == buildWorld.getPublicTrust()) {
             throw new CommandWarn("Public trust already is " + trust.nice() + " in " + buildWorld.getPath());
         }
-        buildWorld.getRow().setPublicTrust(trust);
+        buildWorld.getRow().setPublicTrust(trust.name().toLowerCase());
         buildWorld.saveAsync("publicTrust", () -> {
                 sender.sendMessage(text("Set public trust " + buildWorld.getPath() + " to " + trust.nice(), YELLOW));
             });

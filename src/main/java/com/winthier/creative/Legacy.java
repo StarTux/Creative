@@ -68,7 +68,7 @@ public final class Legacy {
                 result.getTrusted().put(uuid, new SQLWorldTrust(path, uuid, trust));
             }
         }
-        result.getRow().setPublicTrust(Trust.of(config.getString("publicTrust", "NONE")));
+        result.getRow().setPublicTrust(Trust.of(config.getString("publicTrust", "NONE")).name().toLowerCase());
         for (BuildWorld.Flag flag : BuildWorld.Flag.values()) {
             final boolean value = config.getBoolean(flag.key, flag.defaultValue);
             if (value == flag.defaultValue) continue;

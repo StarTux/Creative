@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,6 +61,7 @@ public final class BuildWorld {
         row.setPath(path);
         row.setOwner(owner);
         row.setCachedTag(new SQLWorld.Tag());
+        row.setCreated(new Date());
     }
 
     private void severe(String msg) {
@@ -107,7 +109,7 @@ public final class BuildWorld {
     public List<UUID> listTrusted(Trust trust) {
         List<UUID> result = new ArrayList<>();
         for (SQLWorldTrust it : trusted.values()) {
-            if (it.getTrust() == trust) {
+            if (it.getTrustValue() == trust) {
                 result.add(it.getPlayer());
             }
         }
@@ -119,8 +121,8 @@ public final class BuildWorld {
         final UUID owner = row.getOwner();
         if (owner != null && owner.equals(uuid)) return Trust.OWNER;
         SQLWorldTrust worldTrust = trusted.get(uuid);
-        if (worldTrust != null && worldTrust.getTrust().isOwner()) {
-            return worldTrust.getTrust();
+        if (worldTrust != null && worldTrust.getTrustValue().isOwner()) {
+            return worldTrust.getTrustValue();
         }
         final List<String> buildGroups = row.getCachedTag().getBuildGroups();
         if (!buildGroups.isEmpty()) {
@@ -132,7 +134,7 @@ public final class BuildWorld {
         }
         final Trust publicTrust = getPublicTrust();
         if (worldTrust == null) return publicTrust;
-        Trust personalTrust = worldTrust.getTrust();
+        Trust personalTrust = worldTrust.getTrustValue();
         return publicTrust.priority > personalTrust.priority
             ? publicTrust
             : personalTrust;
@@ -174,10 +176,10 @@ public final class BuildWorld {
                         }
                     });
                 return true;
-            } else if (worldTrust.getTrust() == trust) {
+            } else if (worldTrust.getTrustValue() == trust) {
                 return false;
             } else {
-                worldTrust.setTrust(trust);
+                worldTrust.setTrust(trust.name().toLowerCase());
                 sql().updateAsync(worldTrust, Set.of("trust"), returnValue -> {
                         if (returnValue == 0) {
                             severe("Could not update trust: " + returnValue + ", " + worldTrust);
@@ -341,7 +343,7 @@ public final class BuildWorld {
      * Used by AdminCommand::rankTrustCommand.
      */
     protected int trustedScore() {
-        return row.getPublicTrust().canBuild()
+        return row.getPublicTrustValue().canBuild()
             ? Integer.MAX_VALUE
             : trusted.size();
     }
@@ -363,7 +365,7 @@ public final class BuildWorld {
     }
 
     public Trust getPublicTrust() {
-        return row.getPublicTrust();
+        return row.getPublicTrustValue();
     }
 
     public void saveAsync(String rowName, Runnable callback) {

@@ -9,6 +9,7 @@ import java.util.Date;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
+import static com.winthier.creative.CreativePlugin.plugin;
 
 @Name("trusted")
 @Getter @Setter @NotNull
@@ -17,7 +18,7 @@ public final class SQLWorldTrust implements SQLRow {
     @Id private Integer id;
     private String world; // path
     private UUID player;
-    private Trust trust;
+    @VarChar(15) private String trust;
     private Date created;
 
     public SQLWorldTrust() { }
@@ -25,7 +26,17 @@ public final class SQLWorldTrust implements SQLRow {
     public SQLWorldTrust(final String world, final UUID player, final Trust trust) {
         this.world = world;
         this.player = player;
-        this.trust = trust;
+        this.trust = trust.name().toLowerCase();
         this.created = new Date();
+    }
+
+    public Trust getTrustValue() {
+        if (trust == null) return Trust.NONE;
+        try {
+            return Trust.valueOf(trust.toUpperCase());
+        } catch (IllegalArgumentException iae) {
+            plugin().getLogger().severe("[SQLWorldTrust] " + id + ": Invalid trust: " + trust);
+            return Trust.NONE;
+        }
     }
 }

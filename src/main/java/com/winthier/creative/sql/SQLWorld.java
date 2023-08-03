@@ -7,6 +7,7 @@ import com.winthier.sql.SQLRow.Name;
 import com.winthier.sql.SQLRow.NotNull;
 import com.winthier.sql.SQLRow;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -26,9 +27,12 @@ public final class SQLWorld implements SQLRow {
     private String name;
     @Nullable private String description;
     @Nullable private UUID owner = null;
-    @Nullable @VarChar(15) private Trust publicTrust;
+    @Nullable @VarChar(15) private String publicTrust;
+    private Date created;
     @Text private String tag = "{}";
     private transient Tag cachedTag;
+
+    public SQLWorld() { }
 
     @Data
     public static final class Tag {
@@ -69,12 +73,28 @@ public final class SQLWorld implements SQLRow {
     private boolean generateStructures = false;
     @Nullable @Text private String generatorSettings = null;
 
+    // Purpose
+    @Nullable private String purpose;
+    @Nullable private String purposeType;
+    private int purposeIndex;
+    private int voteScore;
+
     public boolean isSpawnSet() {
         return spawnX != 0.0
             || spawnY != 0.0
             || spawnZ != 0.0
             || spawnYaw != 0.0
             || spawnPitch != 0.0;
+    }
+
+    public Trust getPublicTrustValue() {
+        if (publicTrust == null) return Trust.NONE;
+        try {
+            return Trust.valueOf(publicTrust.toUpperCase());
+        } catch (IllegalArgumentException iae) {
+            plugin().getLogger().severe("[SQLWorld] " + id + ": Invalid public trust: " + publicTrust);
+            return Trust.NONE;
+        }
     }
 
     public WorldType getWorldTypeValue() {

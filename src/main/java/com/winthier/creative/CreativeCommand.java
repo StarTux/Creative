@@ -312,6 +312,19 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
         buildWorld.getRow().setBorderSize(size);
         buildWorld.getRow().setBorderCenterX(256);
         buildWorld.getRow().setBorderCenterZ(256);
+        switch (type) {
+        case FLAT: buildWorld.getRow().setGenerator("FlatGenerator"); break;
+        case VOID: buildWorld.getRow().setGenerator("VoidGenerator"); break;
+        default: break;
+        }
+        buildWorld.getRow().setSeed(0L);
+        buildWorld.getRow().setWorldType(WorldType.FLAT.name().toLowerCase());
+        buildWorld.getRow().setEnvironment(World.Environment.NORMAL.name().toLowerCase());
+        buildWorld.getRow().setGenerateStructures(false);
+        buildWorld.getRow().setGeneratorSettings("");
+        buildWorld.getRow().setSpawnX(255.5);
+        buildWorld.getRow().setSpawnY(65.0);
+        buildWorld.getRow().setSpawnZ(255.5);
         buildWorld.insertAsync(() -> {
                 buildWorld.getWorldConfig().set("world.Seed", 0);
                 buildWorld.getWorldConfig().set("world.WorldType", WorldType.FLAT.name());
@@ -510,7 +523,7 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
             throw new CommandWarn("You don't have permission");
         }
         if (target.equals("*")) {
-            buildWorld.getRow().setPublicTrust(trust);
+            buildWorld.getRow().setPublicTrust(trust.name().toLowerCase());
             buildWorld.saveAsync("publicTrust", () -> {
                     if (trust == Trust.NONE) {
                         player.sendMessage(text("Revoked public trust.", GREEN));
