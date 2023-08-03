@@ -8,6 +8,7 @@ import com.cavetale.core.command.CommandWarn;
 import com.cavetale.core.command.RemotePlayer;
 import com.cavetale.core.connect.NetworkServer;
 import com.cavetale.core.money.Money;
+import com.cavetale.core.playercache.PlayerCache;
 import com.cavetale.mytems.item.coin.Coin;
 import com.winthier.creative.util.Text;
 import java.util.ArrayList;
@@ -103,18 +104,23 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
                 .playerCaller(this::setWorldSpawn);
             rootNode.addChild("trust").arguments("<player>")
                 .description("Give build trust")
+                .completers(PlayerCache.NAME_COMPLETER)
                 .playerCaller(this::trust);
             rootNode.addChild("wetrust").arguments("<player>")
                 .description("Give WorldEdit trust")
+                .completers(PlayerCache.NAME_COMPLETER)
                 .playerCaller(this::weTrust);
             rootNode.addChild("visittrust").arguments("<player>")
                 .description("Give visit trust")
+                .completers(PlayerCache.NAME_COMPLETER)
                 .playerCaller(this::visitTrust);
             rootNode.addChild("ownertrust").arguments("<player>")
                 .description("Give owner trust")
+                .completers(PlayerCache.NAME_COMPLETER)
                 .playerCaller(this::ownerTrust);
             rootNode.addChild("untrust").arguments("<player>")
                 .description("Remove player trust")
+                .completers(PlayerCache.NAME_COMPLETER)
                 .playerCaller(this::untrust);
             rootNode.addChild("save").denyTabCompletion()
                 .description("Save world")
@@ -242,7 +248,7 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
             dimension = DimensionType.OVERWORLD;
         }
         double price = 10000.0;
-        long size = 256;
+        int size = 256;
         String sizeFmt = "" + size;
         player.sendMessage(textOfChildren(text("Buy a "),
                                           text(sizeFmt + "x" + sizeFmt + " " + Text.enumToCamelCase(type.name()),
@@ -290,8 +296,8 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
     /**
      * Callback for /creative buy, then /creative confirm.
      */
-    private void confirmBuy(RemotePlayer player, double price, long size, BuyType type, DimensionType dimension) {
-        String base = player.getName().toLowerCase();
+    private void confirmBuy(RemotePlayer player, double price, int size, BuyType type, DimensionType dimension) {
+        final String base = player.getName().toLowerCase();
         String path;
         int suffix = 1;
         do {
@@ -302,39 +308,40 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
             player.sendMessage("You don't have enough money");
             return;
         }
-        BuildWorld buildWorld = new BuildWorld(base, path, Builder.of(player.getUniqueId()));
-        buildWorld.setSize(size);
-        buildWorld.setCenterX(256);
-        buildWorld.setCenterZ(256);
-        plugin.getBuildWorlds().add(buildWorld);
-        plugin.saveBuildWorlds();
-        buildWorld.getWorldConfig().set("world.Seed", 0);
-        buildWorld.getWorldConfig().set("world.WorldType", WorldType.FLAT.name());
-        buildWorld.getWorldConfig().set("world.Environment", dimension.environment.name());
-        buildWorld.getWorldConfig().set("world.GenerateStructures", false);
-        buildWorld.getWorldConfig().set("world.GeneratorSettings", "");
-        buildWorld.getWorldConfig().set("world.SpawnLocation.x", 256);
-        buildWorld.getWorldConfig().set("world.SpawnLocation.y", 64);
-        buildWorld.getWorldConfig().set("world.SpawnLocation.z", 256);
-        buildWorld.getWorldConfig().set("world.SpawnLocation.pitch", 0);
-        buildWorld.getWorldConfig().set("world.SpawnLocation.yaw", 0);
-        switch (type) {
-        case FLAT:
-            buildWorld.getWorldConfig().set("world.Generator", "FlatGenerator");
-            break;
-        case VOID:
-        default:
-            buildWorld.getWorldConfig().set("world.Generator", "VoidGenerator");
-            break;
-        }
-        buildWorld.saveWorldConfig();
-        player.sendMessage(text("Bought a world for ")
-                           .append(Coin.format(price))
-                           .append(text(". Please wait...")));
-        buildWorld.loadWorld();
-        final Location loc = buildWorld.getSpawnLocation();
-        player.bring(plugin, loc, player2 -> {
-                player2.sendMessage(text("Teleported to " + buildWorld.getName(), GREEN));
+        final BuildWorld buildWorld = new BuildWorld(base, path, player.getUniqueId());
+        buildWorld.getRow().setBorderSize(size);
+        buildWorld.getRow().setBorderCenterX(256);
+        buildWorld.getRow().setBorderCenterZ(256);
+        buildWorld.insertAsync(() -> {
+                buildWorld.getWorldConfig().set("world.Seed", 0);
+                buildWorld.getWorldConfig().set("world.WorldType", WorldType.FLAT.name());
+                buildWorld.getWorldConfig().set("world.Environment", dimension.environment.name());
+                buildWorld.getWorldConfig().set("world.GenerateStructures", false);
+                buildWorld.getWorldConfig().set("world.GeneratorSettings", "");
+                buildWorld.getWorldConfig().set("world.SpawnLocation.x", 256);
+                buildWorld.getWorldConfig().set("world.SpawnLocation.y", 64);
+                buildWorld.getWorldConfig().set("world.SpawnLocation.z", 256);
+                buildWorld.getWorldConfig().set("world.SpawnLocation.pitch", 0);
+                buildWorld.getWorldConfig().set("world.SpawnLocation.yaw", 0);
+                switch (type) {
+                case FLAT:
+                    buildWorld.getWorldConfig().set("world.Generator", "FlatGenerator");
+                    break;
+                case VOID:
+                default:
+                    buildWorld.getWorldConfig().set("world.Generator", "VoidGenerator");
+                    break;
+                }
+                buildWorld.saveWorldConfig();
+                plugin.getBuildWorlds().add(buildWorld);
+                player.sendMessage(text("Bought a world for ")
+                                   .append(Coin.format(price))
+                                   .append(text(". Please wait...")));
+                buildWorld.loadWorld();
+                final Location loc = buildWorld.getSpawnLocation();
+                player.bring(plugin, loc, player2 -> {
+                        player2.sendMessage(text("Teleported to " + buildWorld.getName(), GREEN));
+                    });
             });
     }
 
@@ -346,10 +353,11 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
             return;
         }
         buildWorld.set(flag, true);
-        plugin.saveBuildWorlds();
-        plugin.getPermission().updatePermissions(buildWorld.getWorld());
-        player.sendMessage(text("Unlocked " + flag.key + " for ")
-                           .append(Coin.format(flag.price)));
+        buildWorld.saveAsync("tag", () -> {
+                plugin.getPermission().updatePermissions(buildWorld.getWorld());
+                player.sendMessage(text("Unlocked " + flag.key + " for ")
+                                   .append(Coin.format(flag.price)));
+            });
     }
 
     private boolean worldTime(Player player, String[] args) {
@@ -466,8 +474,9 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
             throw new CommandWarn("You don't have permission");
         }
         buildWorld.setSpawnLocation(player.getLocation());
-        buildWorld.saveWorldConfig();
-        player.sendMessage(text("World spawn was set to your current location.", GREEN));
+        buildWorld.saveSpawnAsync(() -> {
+                player.sendMessage(text("World spawn was set to your current location.", GREEN));
+            });
     }
 
     private boolean trust(Player player, String[] args) {
@@ -501,29 +510,28 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
             throw new CommandWarn("You don't have permission");
         }
         if (target.equals("*")) {
-            buildWorld.setPublicTrust(trust);
-            plugin.saveBuildWorlds();
-            if (trust == Trust.NONE) {
-                player.sendMessage(text("Revoked public trust.", GREEN));
-            } else {
-                player.sendMessage(text("Changed public trust to " + trust.nice(), GREEN));
-            }
+            buildWorld.getRow().setPublicTrust(trust);
+            buildWorld.saveAsync("publicTrust", () -> {
+                    if (trust == Trust.NONE) {
+                        player.sendMessage(text("Revoked public trust.", GREEN));
+                    } else {
+                        player.sendMessage(text("Changed public trust to " + trust.nice(), GREEN));
+                    }
+                });
         } else {
-            Builder builder = Builder.find(target);
-            if (builder == null) {
-                throw new CommandWarn("Player not found: " + target);
-            }
-            if (!buildWorld.trustBuilder(builder, trust)) {
+            PlayerCache builder = PlayerCache.require(target);
+            final boolean returnValue = buildWorld.setTrust(builder.uuid, trust, () -> {
+                    if (trust == Trust.NONE) {
+                        player.sendMessage(text("Revoked trust of " + builder.getName(), GREEN));
+                    } else {
+                        player.sendMessage(text("Gave " + trust.nice() + " trust to " + builder.getName(), GREEN));
+                    }
+                    plugin.getPermission().updatePermissions(player.getWorld());
+                });
+            if (!returnValue) {
                 throw new CommandWarn("Could not change trust level of " + builder.getName());
             }
-            plugin.saveBuildWorlds();
-            if (trust == Trust.NONE) {
-                player.sendMessage(text("Revoked trust of " + builder.getName(), GREEN));
-            } else {
-                player.sendMessage(text("Gave " + trust.nice() + " trust to " + builder.getName(), GREEN));
-            }
         }
-        plugin.getPermission().updatePermissions(player.getWorld());
         return true;
     }
 
@@ -539,7 +547,9 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
 
     private Component listTrusted(Player player, BuildWorld buildWorld, Trust trust) {
         List<String> names = new ArrayList<>();
-        for (Builder builder: buildWorld.listTrusted(trust)) names.add(builder.getName());
+        for (UUID uuid : buildWorld.listTrusted(trust)) {
+            names.add(PlayerCache.nameForUuid(uuid));
+        }
         if (trust == Trust.OWNER && buildWorld.getOwner() != null) {
             names.add(buildWorld.getOwnerName());
         }
@@ -641,9 +651,10 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
             sb.append(" ").append(args[i]);
         }
         String name = sb.toString();
-        buildWorld.setName(name);
-        plugin.saveBuildWorlds();
-        player.sendMessage(text("Renamed your current world to " + name, GREEN));
+        buildWorld.getRow().setName(name);
+        buildWorld.saveAsync("name", () -> {
+                player.sendMessage(text("Renamed your current world to " + name, GREEN));
+            });
         return true;
     }
 
@@ -716,10 +727,11 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
                 throw new CommandWarn("Already " + (newValue ? "enabled" : "disabled"));
             }
             buildWorld.set(flag, newValue);
-            plugin.saveBuildWorlds();
-            sendWorldFeatures(player, buildWorld);
-            player.sendMessage(text(flag.key + " " + (newValue ? "enabled" : "disabled"), GREEN));
-            plugin.getPermission().updatePermissions(buildWorld.getWorld());
+            buildWorld.saveAsync("tag", () -> {
+                    sendWorldFeatures(player, buildWorld);
+                    player.sendMessage(text(flag.key + " " + (newValue ? "enabled" : "disabled"), GREEN));
+                    plugin.getPermission().updatePermissions(buildWorld.getWorld());
+                });
         } else {
             return false;
         }
@@ -760,10 +772,10 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
                 }
             }
         }
-        if (buildWorld.getSize() >= 0) {
-            int growBy = 256;
-            double price = 10000;
-            Component tooltip = join(separator(newline()), new Component[] {
+        if (buildWorld.getRow().getBorderSize() >= 0) {
+            final int growBy = 256;
+            final double price = 10000;
+            final Component tooltip = join(separator(newline()), new Component[] {
                     text("Grow world by " + growBy + " blocks"),
                     text("in all directions"),
                     textOfChildren(text("Price: ", GRAY), Coin.format(price))
@@ -771,7 +783,7 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
             lines.add(textOfChildren(text("[GROW]", GREEN)
                                      .clickEvent(ClickEvent.runCommand("/creative grow"))
                                      .hoverEvent(HoverEvent.showText(tooltip)),
-                                     text(" Size " + buildWorld.getSize())));
+                                     text(" Size " + buildWorld.getRow().getBorderSize())));
         }
         lines.add(empty());
         player.sendMessage(join(separator(newline()), lines));
@@ -782,11 +794,11 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
         if (!player.hasPermission(BUY_PERMISSION)) {
             throw new CommandWarn("You don't have permission to buy a world!");
         }
-        int growBy = 256;
-        double price = 10000;
-        BuildWorld buildWorld = plugin.getBuildWorldByWorld(player.getWorld());
-        UUID uuid = player.getUniqueId();
-        if (buildWorld == null || !buildWorld.getTrust(uuid).isOwner() || buildWorld.getSize() < 0) {
+        final int growBy = 256;
+        final double price = 10000;
+        final BuildWorld buildWorld = plugin.getBuildWorldByWorld(player.getWorld());
+        final UUID uuid = player.getUniqueId();
+        if (buildWorld == null || !buildWorld.getTrust(uuid).isOwner() || buildWorld.getRow().getBorderSize() < 0) {
             throw new CommandWarn("You cannot grow this world.");
         }
         player.sendMessage(textOfChildren(text("Grow this world by "),
@@ -799,16 +811,17 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
                     remote.sendMessage(text("You don't have enough money", RED));
                     return;
                 }
-                buildWorld.setSize(buildWorld.getSize() + growBy);
-                plugin.saveBuildWorlds();
-                World world = buildWorld.getWorld();
-                if (world != null) {
-                    world.getWorldBorder().setSize(buildWorld.getSize());
-                }
-                remote.sendMessage(textOfChildren(text("World border grown by "),
-                                                  text(growBy, GREEN),
-                                                  text(" blocks for "),
-                                                  Coin.format(price)));
+                buildWorld.getRow().setBorderSize(buildWorld.getRow().getBorderSize() + growBy);
+                buildWorld.saveAsync("size", () -> {
+                        World world = buildWorld.getWorld();
+                        if (world != null) {
+                            world.getWorldBorder().setSize(buildWorld.getRow().getBorderSize());
+                        }
+                        remote.sendMessage(textOfChildren(text("World border grown by "),
+                                                          text(growBy, GREEN),
+                                                          text(" blocks for "),
+                                                          Coin.format(price)));
+                    });
             });
         return true;
     }
@@ -845,20 +858,26 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
 
     private void changeWorldSetting(Player player, BuildWorld buildWorld, String key, List<String> args) {
         if (key.equals("name")) {
-            String name = String.join(" ", args);
+            final String name = String.join(" ", args);
+            // File
             buildWorld.getWorldConfig().set("user.Name", name);
-            buildWorld.setName(name);
             buildWorld.saveWorldConfig();
-            plugin.saveBuildWorlds();
-            player.sendMessage(text("Set world name to " + String.join(" ", args), GREEN));
+            // SQL
+            buildWorld.getRow().setName(name);
+            buildWorld.saveAsync("name", () -> {
+                    player.sendMessage(text("Set world name to " + String.join(" ", args), GREEN));
+                });
         } else if (key.equals("description")) {
-            buildWorld.getWorldConfig().set("user.Description", String.join(" ", args));
+            final String desc = String.join(" ", args);
+            // File
+            buildWorld.getWorldConfig().set("user.Description", desc);
             buildWorld.saveWorldConfig();
-            player.sendMessage(text("Set world description to " + String.join(" ", args), GREEN));
-        } else if (key.equals("authors")) {
-            buildWorld.getWorldConfig().set("user.Authors", args);
-            buildWorld.saveWorldConfig();
-            player.sendMessage(text("Set world authors to " + String.join(", ", args), GREEN));
+            // SQL
+            buildWorld.getRow().setDescription(desc);
+            buildWorld.saveAsync("description", () -> {
+                    player.sendMessage(textOfChildren(text("Set world description to ", GREEN),
+                                                      text(desc, GRAY)));
+                });
         }
     }
 

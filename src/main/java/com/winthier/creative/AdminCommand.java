@@ -7,14 +7,12 @@ import com.cavetale.core.command.CommandNode;
 import com.cavetale.core.command.CommandWarn;
 import com.cavetale.core.perm.Perm;
 import com.cavetale.core.playercache.PlayerCache;
+import com.winthier.creative.sql.SQLWorldTrust;
 import com.winthier.creative.util.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -32,9 +30,12 @@ import static com.cavetale.core.command.CommandArgCompleter.supplyList;
 import static com.winthier.creative.CreativePlugin.plugin;
 import static net.kyori.adventure.text.Component.join;
 import static net.kyori.adventure.text.Component.newline;
+import static net.kyori.adventure.text.Component.space;
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.Component.textOfChildren;
 import static net.kyori.adventure.text.JoinConfiguration.separator;
+import static net.kyori.adventure.text.event.ClickEvent.suggestCommand;
+import static net.kyori.adventure.text.event.HoverEvent.showText;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
 import static net.kyori.adventure.text.format.TextDecoration.*;
 
@@ -91,6 +92,11 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
                         CommandArgCompleter.PLAYER_CACHE,
                         enumLowerList(Trust.class))
             .senderCaller(this::trustCommand);
+        rootNode.addChild("publictrust").arguments("<world> <trust>")
+            .description("Set public trust")
+            .completers(supplyList(AdminCommand::supplyWorldPaths),
+                        enumLowerList(Trust.class))
+            .senderCaller(this::publicTrustCommand);
         rootNode.addChild("cleartrust").arguments("<world>")
             .description("Clear trusted players")
             .completers(supplyList(AdminCommand::supplyWorldPaths))
@@ -148,6 +154,9 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             .completers(CommandArgCompleter.PLAYER_CACHE,
                         CommandArgCompleter.PLAYER_CACHE)
             .senderCaller(this::transferAllCommand);
+        rootNode.addChild("legacyworldconvert").denyTabCompletion()
+            .description("Transfer legacy worlds")
+            .senderCaller(this::legacyWorldConvert);
     }
 
     private static List<String> supplyWorldPaths() {
@@ -261,22 +270,57 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
                 throw new CommandWarn("World not found: " + name);
             }
         }
+        sender.sendMessage(textOfChildren(text("Id ", GRAY), text(buildWorld.getRow().getId(), YELLOW)).insertion("" + buildWorld.getRow().getId()));
+        sender.sendMessage(textOfChildren(text("Path ", GRAY), text(buildWorld.getPath(), YELLOW)).insertion(buildWorld.getPath()));
         sender.sendMessage(textOfChildren(text("Name ", GRAY), text(buildWorld.getName(), YELLOW)));
-        sender.sendMessage(textOfChildren(text("Path ", GRAY), text(buildWorld.getPath(), YELLOW)));
+        final String desc = buildWorld.getRow().getDescription() != null ? buildWorld.getRow().getDescription() : "";
+        sender.sendMessage(textOfChildren(text("Description ", GRAY), text(desc, YELLOW)));
         sender.sendMessage(textOfChildren(text("Owner ", GRAY), text(buildWorld.getOwnerName(), YELLOW)));
+        if (!buildWorld.getRow().isSpawnSet()) {
+            sender.sendMessage(textOfChildren(text("Spawn ", GRAY), text("N/A", DARK_GRAY, ITALIC)));
+        } else {
+            sender.sendMessage(textOfChildren(text("Spawn ", GRAY),
+                                              text((int) Math.round(buildWorld.getRow().getSpawnX()), YELLOW),
+                                              text(",", GRAY),
+                                              text((int) Math.round(buildWorld.getRow().getSpawnY()), YELLOW),
+                                              text(",", GRAY),
+                                              text((int) Math.round(buildWorld.getRow().getSpawnZ()), YELLOW)));
+        }
         String groups = "[" + String.join(" ", buildWorld.getBuildGroups()) + "]";
         sender.sendMessage(textOfChildren(text("BuildGroups ", GRAY), text(groups, YELLOW)));
-        String names = buildWorld.getTrusted().values().stream()
-            .map(trusted -> trusted.getBuilder().getName() + "=" + trusted.getTrust().nice())
-            .collect(Collectors.joining(" "));
-        sender.sendMessage(textOfChildren(text("Trusted ", GRAY), text(names, YELLOW)));
-        sender.sendMessage(textOfChildren(text("Public Trust ", GRAY), text(buildWorld.getPublicTrust().nice(), YELLOW)));
-        for (BuildWorld.Flag flag : BuildWorld.Flag.values()) {
-            boolean value = buildWorld.isSet(flag);
-            sender.sendMessage(textOfChildren(text(flag.key + " ", GRAY), text(value, value ? GREEN : RED)));
+        List<Component> trusted = new ArrayList<>();
+        for (SQLWorldTrust row : buildWorld.getTrusted().values()) {
+            final String name = PlayerCache.nameForUuid(row.getPlayer());
+            trusted.add(textOfChildren(text(name, YELLOW),
+                                       text(":", GRAY),
+                                       text(row.getTrust().nice(), YELLOW))
+                        .insertion("/cra trust " + buildWorld.getPath() + " " + name + " " + row.getTrust().nice()));
         }
-        sender.sendMessage(textOfChildren(text("Size ", GRAY), text(buildWorld.getSize(), YELLOW)));
-        sender.sendMessage(textOfChildren(text("Center ", GRAY), text(buildWorld.getCenterX() + "," + buildWorld.getCenterZ(), YELLOW)));
+        sender.sendMessage(textOfChildren(text("Trusted ", GRAY), join(separator(space()), trusted)));
+        sender.sendMessage(textOfChildren(text("Public Trust ", GRAY), text(buildWorld.getPublicTrust().nice(), YELLOW)));
+        List<Component> flags = new ArrayList<>();
+        for (BuildWorld.Flag flag : BuildWorld.Flag.values()) {
+            final boolean value = buildWorld.isSet(flag);
+            flags.add(textOfChildren(text(flag.key + ":", GRAY), text(value, value ? GREEN : RED))
+                      .insertion("/cra set " + buildWorld.getPath() + " " + flag.key + " " + value));
+        }
+        sender.sendMessage(textOfChildren(text("Flags ", GRAY), join(separator(space()), flags)));
+        sender.sendMessage(textOfChildren(text("Border ", GRAY),
+                                          text("center:", GRAY),
+                                          text(buildWorld.getRow().getBorderCenterX() + ","
+                                               + buildWorld.getRow().getBorderCenterZ(), YELLOW),
+                                          text(" size:", GRAY),
+                                          text(buildWorld.getRow().getBorderSize(), YELLOW)));
+        sender.sendMessage(textOfChildren(text("Generator ", GRAY), text("" + buildWorld.getRow().getGenerator(), YELLOW))
+                           .insertion("" + buildWorld.getRow().getGenerator()));
+        sender.sendMessage(textOfChildren(text("Seed ", GRAY), text(buildWorld.getRow().getSeed(), YELLOW))
+                           .insertion("" + buildWorld.getRow().getSeed()));
+        sender.sendMessage(textOfChildren(text("Environment ", GRAY), text("" + buildWorld.getRow().getEnvironment(), YELLOW)));
+        sender.sendMessage(textOfChildren(text("WorldType ", GRAY), text("" + buildWorld.getRow().getWorldType(), YELLOW)));
+        sender.sendMessage(textOfChildren(text("GeneratorSettings ", GRAY),
+                                          text(buildWorld.getRow().isGenerateStructures(), YELLOW),
+                                          text(", ", GRAY),
+                                          text("" + buildWorld.getRow().getGeneratorSettings(), YELLOW)));
         return true;
     }
 
@@ -319,8 +363,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             throw new CommandWarn("Invalid flag: " + key);
         }
         buildWorld.set(flag, newValue);
-        sender.sendMessage(text(flag.key + " set to " + newValue, YELLOW));
-        plugin.saveBuildWorlds();
+        buildWorld.saveAsync("tag", () -> sender.sendMessage(text(flag.key + " set to " + newValue, YELLOW)));
         World bukkitWorld = buildWorld.getWorld();
         if (bukkitWorld != null) {
             plugin.getPermission().updatePermissions(bukkitWorld);
@@ -369,11 +412,8 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             sender.sendMessage(text("" + count + " build worlds listed", AQUA));
             return true;
         }
-        String name = args[0];
-        Builder builder = Builder.find(name);
-        if (builder == null) {
-            throw new CommandWarn("Builder not found: " + name);
-        }
+        final String name = args[0];
+        final PlayerCache builder = PlayerCache.require(name);
         PlayerWorldList list = plugin.getPlayerWorldList(builder.getUuid());
         List<Component> lines = new ArrayList<>();
         lines.add(text(builder.getName() + " World List", YELLOW));
@@ -414,7 +454,10 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
                 sb.append(" ").append(p.getName());
             }
             lines.add(text(world.getName() + "(" + players.size() + ")", GRAY)
-                      .append(text(sb.toString(), GREEN)));
+                      .append(text(sb.toString(), GREEN))
+                      .clickEvent(suggestCommand("/cra tp " + world.getName()))
+                      .hoverEvent(showText(text("/cra tp " + world.getName(), YELLOW)))
+                      .insertion(world.getName()));
         }
         sender.sendMessage(join(separator(newline()), lines));
     }
@@ -476,11 +519,12 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         if (buildWorld.getWorld() != null) {
             throw new CommandWarn("World still loaded: " + buildWorld.getName());
         }
-        plugin.getBuildWorlds().remove(buildWorld);
-        plugin.saveBuildWorlds();
-        Files.deleteRecursively(buildWorld.getWorldFolder());
-        sender.sendMessage(text("World removed: " + buildWorld.getPath(),
-                                YELLOW));
+        buildWorld.deleteAsync(() -> {
+                plugin.getBuildWorlds().remove(buildWorld);
+                Files.deleteRecursively(buildWorld.getWorldFolder());
+                sender.sendMessage(text("World removed: " + buildWorld.getPath(),
+                                        YELLOW));
+            });
         return true;
     }
 
@@ -502,9 +546,10 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         } else {
             throw new CommandWarn("Player expected");
         }
-        buildWorld.setOwner(null);
-        plugin.saveBuildWorlds();
-        sender.sendMessage(text("Removed owner of world " + buildWorld.getPath(), YELLOW));
+        buildWorld.getRow().setOwner(null);
+        buildWorld.saveAsync("owner", () -> {
+                sender.sendMessage(text("Removed owner of world " + buildWorld.getPath(), YELLOW));
+            });
         return true;
     }
 
@@ -516,19 +561,17 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         if (buildWorld == null) {
             throw new CommandWarn("World not found: " + worldKey);
         }
-        Builder owner = Builder.find(ownerName);
-        if (owner == null) {
-            throw new CommandWarn("Builder not found: " + ownerName);
-        }
-        buildWorld.setOwner(owner);
-        plugin.saveBuildWorlds();
-        sender.sendMessage(text("Made " + owner.getName() + " the owner of world " + buildWorld.getPath(), YELLOW));
+        PlayerCache owner = PlayerCache.require(ownerName);
+        buildWorld.getRow().setOwner(owner.getUuid());
+        buildWorld.saveAsync("owner", () -> {
+                sender.sendMessage(text("Made " + owner.getName() + " the owner of world " + buildWorld.getPath(), YELLOW));
+            });
         return true;
     }
 
     private boolean createCommand(CommandSender sender, String[] args) {
         if (args.length == 0) return false;
-        Builder owner = null;
+        PlayerCache owner = null;
         String name = null;
         String generator = null;
         String generatorSettings = null;
@@ -547,10 +590,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             String value = tok[1];
             switch (param) {
             case 'o':
-                owner = Builder.find(value);
-                if (owner == null) {
-                    throw new CommandWarn("Builder not found: " + value);
-                }
+                owner = PlayerCache.require(value);
                 break;
             case 'g':
                 generator = value;
@@ -607,10 +647,13 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         if (plugin.getBuildWorldByPath(path) != null) {
             throw new CommandWarn("World already exists: '" + path + "'");
         }
-        BuildWorld buildWorld = new BuildWorld(name, path, owner);
-        plugin.getBuildWorlds().add(buildWorld);
-        plugin.saveBuildWorlds();
-        // getWorldConfig() calls mkdirs()
+        final BuildWorld buildWorld = new BuildWorld(name, path, (owner != null ? owner.uuid : null));
+        final String finalPath = path;
+        buildWorld.insertAsync(() -> {
+                plugin.getBuildWorlds().add(buildWorld);
+                // getWorldConfig() calls mkdirs()
+                sender.sendMessage(text("World '" + finalPath + "' created", YELLOW));
+            });
         buildWorld.getWorldConfig().set("world.Generator", generator);
         buildWorld.getWorldConfig().set("world.GenerateStructures", generateStructures);
         buildWorld.getWorldConfig().set("world.GeneratorSettings", generatorSettings);
@@ -618,7 +661,6 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         buildWorld.getWorldConfig().set("world.WorldType", worldType.name());
         buildWorld.getWorldConfig().set("world.Environment", environment.name());
         buildWorld.saveWorldConfig();
-        sender.sendMessage(text("World '" + path + "' created", YELLOW));
         return true;
     }
 
@@ -642,10 +684,14 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         if (plugin.getBuildWorldByPath(path) != null) {
             throw new CommandWarn("World already exists: '" + path + "'");
         }
-        BuildWorld buildWorld = new BuildWorld(name, path, Builder.of(player));
-        plugin.getBuildWorlds().add(buildWorld);
-        plugin.saveBuildWorlds();
-        // getWorldConfig() calls mkdirs()
+        BuildWorld buildWorld = new BuildWorld(name, path, player.getUniqueId());
+        buildWorld.insertAsync(() -> {
+                plugin.getBuildWorlds().add(buildWorld);
+                // getWorldConfig() calls mkdirs()
+                buildWorld.loadWorld();
+                buildWorld.teleportToSpawn(player);
+                sender.sendMessage(text("World '" + path + "' created", YELLOW));
+            });
         buildWorld.getWorldConfig().set("world.Generator", "VoidGenerator");
         buildWorld.getWorldConfig().set("world.GenerateStructures", "false");
         buildWorld.getWorldConfig().set("world.GeneratorSettings", "");
@@ -653,9 +699,6 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         buildWorld.getWorldConfig().set("world.WorldType", WorldType.FLAT.name());
         buildWorld.getWorldConfig().set("world.Environment", environment.name());
         buildWorld.saveWorldConfig();
-        buildWorld.loadWorld();
-        buildWorld.teleportToSpawn(player);
-        sender.sendMessage(text("World '" + path + "' created", YELLOW));
         return true;
     }
 
@@ -663,7 +706,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         if (args.length != 2) return false;
         String name = args[0];
         String generator = args[1];
-        World world = plugin.getServer().getWorld(name);
+        final World world = plugin.getServer().getWorld(name);
         if (world == null) {
             throw new CommandWarn("World not found: " + name);
         }
@@ -674,14 +717,15 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         WorldCreator creator = WorldCreator.name(name);
         creator.copy(world);
         BuildWorld buildWorld = new BuildWorld(name, name, null);
-        plugin.getBuildWorlds().add(buildWorld);
-        plugin.saveBuildWorlds();
-        buildWorld.getWorldConfig().set("world.Generator", generator);
-        buildWorld.getWorldConfig().set("world.Seed", creator.seed());
-        buildWorld.getWorldConfig().set("world.WorldType", creator.type().name());
-        buildWorld.getWorldConfig().set("world.Environment", creator.environment().name());
-        buildWorld.saveWorldConfig();
-        sender.sendMessage(text("World '" + name + "' imported", YELLOW));
+        buildWorld.insertAsync(() -> {
+                plugin.getBuildWorlds().add(buildWorld);
+                buildWorld.getWorldConfig().set("world.Generator", generator);
+                buildWorld.getWorldConfig().set("world.Seed", creator.seed());
+                buildWorld.getWorldConfig().set("world.WorldType", creator.type().name());
+                buildWorld.getWorldConfig().set("world.Environment", creator.environment().name());
+                buildWorld.saveWorldConfig();
+                sender.sendMessage(text("World '" + world.getName() + "' imported", YELLOW));
+            });
         return true;
     }
 
@@ -758,26 +802,34 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         if (buildWorld == null) {
             throw new CommandWarn("World not found: " + worldName);
         }
-        Builder builder = Builder.find(playerName);
-        if (builder == null) {
-            throw new CommandWarn("Builder not found: " + playerName);
+        PlayerCache target = PlayerCache.require(playerName);
+        final Trust trust = CommandArgCompleter.requireEnum(Trust.class, trustName);
+        buildWorld.setTrust(target.getUuid(), trust, () -> {
+                Player targetPlayer = Bukkit.getPlayer(target.uuid);
+                if (targetPlayer != null) {
+                    plugin.getPermission().updatePermissions(targetPlayer);
+                }
+                sender.sendMessage(text(playerName + " now has " + trust.nice() + " trust in world " + buildWorld.getName(), AQUA));
+            });
+        return true;
+    }
+
+    private boolean publicTrustCommand(CommandSender sender, String[] args) {
+        if (args.length != 2) return false;
+        final String worldName = args[0];
+        final String trustName = args[1];
+        final BuildWorld buildWorld = plugin.getBuildWorldByPath(worldName);
+        if (buildWorld == null) {
+            throw new CommandWarn("World not found: " + worldName);
         }
-        Trust trust;
-        if (trustName.equalsIgnoreCase("none")) {
-            trust = Trust.NONE;
-        } else {
-            trust = Trust.of(trustName);
-            if (trust == null || trust == Trust.NONE) {
-                throw new CommandWarn("Unknown trust type: " + trustName);
-            }
+        final Trust trust = CommandArgCompleter.requireEnum(Trust.class, trustName);
+        if (trust == buildWorld.getPublicTrust()) {
+            throw new CommandWarn("Public trust already is " + trust.nice() + " in " + buildWorld.getPath());
         }
-        buildWorld.trustBuilder(builder, trust);
-        plugin.saveBuildWorlds();
-        Player target = builder.toPlayer();
-        if (target != null) {
-            plugin.getPermission().updatePermissions(target);
-        }
-        sender.sendMessage(text(playerName + " now has " + trust.nice() + " trust in world " + buildWorld.getName(), AQUA));
+        buildWorld.getRow().setPublicTrust(trust);
+        buildWorld.saveAsync("publicTrust", () -> {
+                sender.sendMessage(text("Set public trust " + buildWorld.getPath() + " to " + trust.nice(), YELLOW));
+            });
         return true;
     }
 
@@ -788,26 +840,10 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         if (buildWorld == null) {
             throw new CommandWarn("World not found: " + worldName);
         }
-        boolean publicTrust = false;
-        if (buildWorld.getPublicTrust().canBuild()) {
-            buildWorld.setPublicTrust(Trust.VISIT);
-            publicTrust = true;
-        }
-        int count = 0;
-        for (Iterator<Map.Entry<UUID, Trusted>> iter = buildWorld.getTrusted().entrySet().iterator(); iter.hasNext();) {
-            if (!iter.next().getValue().getTrust().isOwner()) {
-                iter.remove();
-                count += 1;
-            }
-        }
-        if (!publicTrust && count == 0) {
-            throw new CommandWarn("Nobody is trusted in " + buildWorld.getPath() + "!");
-        }
-        plugin.saveBuildWorlds();
-        if (publicTrust) {
-            sender.sendMessage(text("Reset public trust to visit in " + buildWorld.getPath(), YELLOW));
-        }
-        sender.sendMessage(text("Removed " + count + " players who were trusted in " + buildWorld.getPath(), YELLOW));
+        final int count = buildWorld.getTrusted().size();
+        buildWorld.clearTrustAsync(() -> {
+                sender.sendMessage(text("Removed " + count + " players who were trusted in " + buildWorld.getPath(), YELLOW));
+            });
         return true;
     }
 
@@ -850,15 +886,16 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             throw new CommandWarn("World not found: " + args[0]);
         }
         List<String> buildGroups = List.of(Arrays.copyOfRange(args, 1, args.length));
-        buildWorld.setBuildGroups(buildGroups);
-        plugin.saveBuildWorlds();
-        if (!buildGroups.isEmpty()) {
-            sender.sendMessage(text("Build groups of " + buildWorld.getName() + " set to " + buildGroups,
-                                    YELLOW));
-        } else {
-            sender.sendMessage(text("Build groups of " + buildWorld.getName() + " reset",
-                                    YELLOW));
-        }
+        buildWorld.getRow().getCachedTag().setBuildGroups(buildGroups);
+        buildWorld.saveAsync("tag", () -> {
+                if (!buildGroups.isEmpty()) {
+                    sender.sendMessage(text("Build groups of " + buildWorld.getName() + " set to " + buildGroups,
+                                            YELLOW));
+                } else {
+                    sender.sendMessage(text("Build groups of " + buildWorld.getName() + " reset",
+                                            YELLOW));
+                }
+            });
         return true;
     }
 
@@ -896,16 +933,17 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         int total = 0;
         int worldCount = 0;
         int trustCount = 0;
-        Builder toBuilder = Builder.of(to.uuid);
         for (BuildWorld buildWorld : plugin.getBuildWorlds()) {
-            if (buildWorld.getOwner() != null && from.uuid.equals(buildWorld.getOwner().getUuid())) {
-                buildWorld.setOwner(toBuilder);
+            if (buildWorld.getOwner() != null && from.uuid.equals(buildWorld.getOwner())) {
+                buildWorld.getRow().setOwner(to.getUuid());
+                buildWorld.saveAsync("owner", () -> { });
                 total += 1;
                 worldCount += 1;
             }
-            Trusted trusted = buildWorld.getTrusted().remove(from.uuid);
-            if (trusted != null) {
-                buildWorld.getTrusted().put(to.uuid, new Trusted(toBuilder, trusted.getTrust()));
+            Trust trust = buildWorld.getTrust(from.uuid);
+            if (trust != null) {
+                buildWorld.setTrust(from.uuid, Trust.NONE, () -> { });
+                buildWorld.setTrust(to.uuid, trust, () -> { });
                 total += 1;
                 trustCount += 1;
             }
@@ -914,11 +952,15 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             sender.sendMessage(text(from.name + " does not have any creative worlds", RED));
             return true;
         }
-        plugin.saveBuildWorlds();
         sender.sendMessage(text("Transferred worlds from " + from.name + " to " + to.name + ":"
                                 + " worlds=" + worldCount
                                 + " trust=" + trustCount,
                                 YELLOW));
         return true;
+    }
+
+    private void legacyWorldConvert(CommandSender sender) {
+        sender.sendMessage(text("Starting conversion. See console", YELLOW));
+        Legacy.transferAllBuildWorlds();
     }
 }

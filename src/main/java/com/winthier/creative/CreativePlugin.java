@@ -1,9 +1,12 @@
 package com.winthier.creative;
 
 import com.cavetale.core.connect.NetworkServer;
+import com.winthier.creative.sql.Database;
+import com.winthier.creative.sql.SQLWorld;
+import com.winthier.creative.sql.SQLWorldTrust;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -12,23 +15,25 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Consumer;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.MemoryConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import static com.winthier.creative.sql.Database.sql;
 
 @Getter
 public final class CreativePlugin extends JavaPlugin {
+    private static CreativePlugin instance = null;
+    private final Database database = new Database();
     private final List<BuildWorld> buildWorlds = new ArrayList<>();
     private final Map<String, PlotWorld> plotWorlds = new LinkedHashMap<>();
     private final Permission permission = new Permission(this);
     private final Set<UUID> ignores = new HashSet<>();
-    private static CreativePlugin instance = null;
     private WorldEditListener worldEditListener = new WorldEditListener(this);
     private final Random random = ThreadLocalRandom.current();
     private final CoreWorlds coreWorlds = new CoreWorlds(this);
@@ -46,10 +51,12 @@ public final class CreativePlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         this.isCreativeServer = NetworkServer.CREATIVE.isThisServer();
+        database.enable();
         adminCommand.enable();
         creativeCommand.enable();
         ctpCommand.enable();
         kitCommand.enable();
+        loadBuildWorlds();
         if (isCreativeServer()) {
             coreWorlds.register();
             saveResource("permissions.yml", false);
@@ -61,7 +68,6 @@ public final class CreativePlugin extends JavaPlugin {
                 Bukkit.getPluginManager().registerEvents(new ShutdownListener(this), this);
             }
             loadPlotWorlds();
-            loadBuildWorlds();
             worldEditListener.enable();
         }
         getLogger().info(isCreativeServer
@@ -97,39 +103,45 @@ public final class CreativePlugin extends JavaPlugin {
     }
 
     public void reloadAllConfigs() {
-        reloadConfig();
         loadBuildWorlds();
-        permission.reload();
-        loadPlotWorlds();
+        reloadConfig();
+        if (isCreativeServer) {
+            permission.reload();
+            loadPlotWorlds();
+        }
     }
 
     public void loadBuildWorlds() {
-        buildWorlds.clear();
-        File file = new File(getDataFolder(), "worlds.yml");
-        YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
-        for (Map<?, ?> map: config.getMapList("worlds")) {
-            MemoryConfiguration mem = new MemoryConfiguration();
-            ConfigurationSection section = mem.createSection("tmp", map);
-            BuildWorld buildWorld = BuildWorld.deserialize(section);
-            buildWorlds.add(buildWorld);
-            if (buildWorld.isSet(BuildWorld.Flag.KEEP_IN_MEMORY)) buildWorld.loadWorld();
+        Map<String, BuildWorld> worlds = new HashMap<>();
+        for (SQLWorld row : sql().find(SQLWorld.class).findList()) {
+            worlds.put(row.getPath(), new BuildWorld(row, List.of()));
         }
+        for (SQLWorldTrust row : sql().find(SQLWorldTrust.class).findList()) {
+            BuildWorld world = worlds.get(row.getWorld());
+            if (world == null) {
+                getLogger().warning("loadBuildWorlds: WorldTrust without world: " + row);
+                continue;
+            }
+            world.getTrusted().put(row.getPlayer(), row);
+        }
+        buildWorlds.clear();
+        buildWorlds.addAll(worlds.values());
     }
 
-    public void saveBuildWorlds() {
-        if (buildWorlds == null) return;
-        List<Object> list = new ArrayList<>();
-        for (BuildWorld buildWorld : buildWorlds) {
-            list.add(buildWorld.serialize());
-        }
-        YamlConfiguration config = new YamlConfiguration();
-        config.set("worlds", list);
-        File file = new File(getDataFolder(), "worlds.yml");
-        try {
-            config.save(file);
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-        }
+    public void reloadBuildWorldAsync(final String path, Consumer<BuildWorld> callback) {
+        sql().find(SQLWorld.class).eq("path", path).findUniqueAsync(worldRow -> {
+                if (worldRow == null) {
+                    getLogger().warning("reloadBuildWorldAsync: World not found: " + path);
+                    return;
+                }
+                sql().find(SQLWorldTrust.class).eq("world", path).findListAsync(trustedList -> {
+                        BuildWorld old = getBuildWorldByPath(path);
+                        if (old != null) buildWorlds.remove(old);
+                        final BuildWorld buildWorld = new BuildWorld(worldRow, trustedList);
+                        buildWorlds.add(buildWorld);
+                        callback.accept(buildWorld);
+                    });
+            });
     }
 
     public BuildWorld getBuildWorldByPath(String path) {

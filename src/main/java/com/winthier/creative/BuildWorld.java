@@ -1,15 +1,17 @@
 package com.winthier.creative;
 
 import com.cavetale.core.perm.Perm;
+import com.cavetale.core.playercache.PlayerCache;
+import com.winthier.creative.sql.SQLWorld;
+import com.winthier.creative.sql.SQLWorldTrust;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.EnumMap;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,47 +22,51 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.WorldBorder;
 import org.bukkit.WorldCreator;
-import org.bukkit.WorldType;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.SpawnCategory;
+import static com.winthier.creative.ConnectListener.broadcastWorldUpdate;
 import static com.winthier.creative.CreativePlugin.plugin;
+import static com.winthier.creative.sql.Database.sql;
 
 @Getter @Setter
-final class BuildWorld {
-    private String name;
-    private String path; // Key
-    private Builder owner;
-    private final Map<UUID, Trusted> trusted = new HashMap<>();
-    private Trust publicTrust = Trust.NONE;
+public final class BuildWorld {
+    private SQLWorld row;
+    private final Map<UUID, SQLWorldTrust> trusted = new HashMap<>();
+    // World Config
     private YamlConfiguration worldConfig = null;
-    Map<Flag, Boolean> flags = new EnumMap<>(Flag.class);
-    private List<String> buildGroups = new ArrayList<>();
     // World Border
-    private int centerX = 0;
-    private int centerZ = 0;
-    private long size = -1;
     private transient long mobCooldown = 0;
     private transient boolean keepInMemory;
 
     public static final Comparator<BuildWorld> NAME_SORT = new Comparator<BuildWorld>() {
-        @Override public int compare(BuildWorld a, BuildWorld b) {
-            return a.name.compareTo(b.name);
-        }
-    };
+            @Override public int compare(BuildWorld a, BuildWorld b) {
+                return String.CASE_INSENSITIVE_ORDER.compare(a.getName(), b.getName());
+            }
+        };
 
-    BuildWorld(final String name, final String path, final Builder owner) {
-        this.name = name;
-        this.path = path;
-        this.owner = owner;
-        for (Flag flag : Flag.values()) {
-            flags.put(flag, flag.defaultValue);
+    public BuildWorld(final SQLWorld row, final List<SQLWorldTrust> trustedList) {
+        this.row = row;
+        for (SQLWorldTrust it : trustedList) {
+            trusted.put(it.getPlayer(), it);
         }
     }
 
-    enum Flag {
+    public BuildWorld(final String name, final String path, final UUID owner) {
+        this.row = new SQLWorld();
+        row.setName(name);
+        row.setPath(path);
+        row.setOwner(owner);
+        row.setCachedTag(new SQLWorld.Tag());
+    }
+
+    private void severe(String msg) {
+        plugin().getLogger().severe("[" + row.getPath() + "] " + msg);
+    }
+
+    public enum Flag {
         VOXEL_SNIPER("VoxelSniper", false, -1),
         WORLD_EDIT("WorldEdit", false, 1000),
         EXPLOSION("Explosion", false, 0),
@@ -85,11 +91,11 @@ final class BuildWorld {
             this.price = price;
         }
 
-        boolean userCanEdit() {
+        public boolean userCanEdit() {
             return price >= 0;
         }
 
-        static Flag of(String in) {
+        public static Flag of(String in) {
             for (Flag flag : Flag.values()) {
                 if (in.equalsIgnoreCase(flag.key)) return flag;
                 if (in.equalsIgnoreCase(flag.name())) return flag;
@@ -98,84 +104,129 @@ final class BuildWorld {
         }
     }
 
-    List<Builder> listTrusted(Trust trust) {
-        List<Builder> result = new ArrayList<>();
-        for (Map.Entry<UUID, Trusted> e: this.trusted.entrySet()) {
-            if (e.getValue().getTrust() == trust) {
-                result.add(e.getValue().getBuilder());
+    public List<UUID> listTrusted(Trust trust) {
+        List<UUID> result = new ArrayList<>();
+        for (SQLWorldTrust it : trusted.values()) {
+            if (it.getTrust() == trust) {
+                result.add(it.getPlayer());
             }
         }
         return result;
     }
 
-    Trust getTrust(UUID uuid) {
+    public Trust getTrust(UUID uuid) {
         if (plugin().doesIgnore(uuid)) return Trust.OWNER;
-        if (owner != null && owner.getUuid().equals(uuid)) return Trust.OWNER;
-        Trusted t = trusted.get(uuid);
-        if (t != null && t.getTrust().isOwner()) return t.getTrust();
+        final UUID owner = row.getOwner();
+        if (owner != null && owner.equals(uuid)) return Trust.OWNER;
+        SQLWorldTrust worldTrust = trusted.get(uuid);
+        if (worldTrust != null && worldTrust.getTrust().isOwner()) {
+            return worldTrust.getTrust();
+        }
+        final List<String> buildGroups = row.getCachedTag().getBuildGroups();
         if (!buildGroups.isEmpty()) {
             for (String buildGroup : buildGroups) {
-                if (Perm.get().isInGroup(uuid, buildGroup)) return Trust.WORLD_EDIT;
+                if (Perm.get().isInGroup(uuid, buildGroup)) {
+                    return Trust.WORLD_EDIT;
+                }
             }
         }
-        if (t == null) return publicTrust;
-        Trust result = t.getTrust();
-        if (publicTrust.priority > result.priority) return publicTrust;
-        return result;
+        final Trust publicTrust = getPublicTrust();
+        if (worldTrust == null) return publicTrust;
+        Trust personalTrust = worldTrust.getTrust();
+        return publicTrust.priority > personalTrust.priority
+            ? publicTrust
+            : personalTrust;
     }
 
-    boolean trustBuilder(Builder builder, Trust trust) {
-        if (owner != null && owner.getUuid().equals(builder.getUuid())) return false;
+    /**
+     * Create or change a player's trust level.
+     * @param uuid the palyer uuid
+     * @param trust the trust type
+     * @param callback the callback on success
+     * @return true if something changed, false otherwise
+     */
+    public boolean setTrust(UUID uuid, Trust trust, Runnable callback) {
+        final UUID owner = getOwner();
+        if (owner != null && owner.equals(uuid)) return false;
         if (trust == Trust.NONE) {
-            trusted.remove(builder.getUuid());
+            SQLWorldTrust worldTrust = trusted.remove(uuid);
+            if (worldTrust == null) return false;
+            sql().deleteAsync(worldTrust, returnValue -> {
+                    if (returnValue == 0) {
+                        severe("Could not delete trust: " + returnValue + ", " + worldTrust);
+                    } else {
+                        broadcastWorldUpdate(this);
+                        callback.run();
+                    }
+                });
+            return true;
         } else {
-            trusted.put(builder.getUuid(), new Trusted(builder, trust));
+            SQLWorldTrust worldTrust = trusted.get(uuid);
+            if (worldTrust == null) {
+                final SQLWorldTrust newWorldTrust = new SQLWorldTrust(getPath(), uuid, trust);
+                sql().insertAsync(newWorldTrust, returnValue -> {
+                        if (returnValue == 0) {
+                            severe("Could not insert trust: " + returnValue + ", " + newWorldTrust);
+                        } else {
+                            trusted.put(uuid, newWorldTrust);
+                            broadcastWorldUpdate(this);
+                            callback.run();
+                        }
+                    });
+                return true;
+            } else if (worldTrust.getTrust() == trust) {
+                return false;
+            } else {
+                worldTrust.setTrust(trust);
+                sql().updateAsync(worldTrust, Set.of("trust"), returnValue -> {
+                        if (returnValue == 0) {
+                            severe("Could not update trust: " + returnValue + ", " + worldTrust);
+                        } else {
+                            broadcastWorldUpdate(this);
+                            callback.run();
+                        }
+                    });
+                return true;
+            }
         }
-        return true;
     }
 
-    String getOwnerName() {
-        if (owner == null) {
+    public String getOwnerName() {
+        if (row.getOwner() == null) {
             return "N/A";
         } else {
-            return owner.getName();
+            return PlayerCache.nameForUuid(row.getOwner());
         }
     }
 
-    World getWorld() {
-        return Bukkit.getServer().getWorld(path);
+    public File getWorldFolder() {
+        if (!plugin().isCreativeServer()) return null;
+        return new File(plugin().getServer().getWorldContainer(), row.getPath());
     }
 
-    File getWorldFolder() {
-        return new File(plugin().getServer().getWorldContainer(), path);
+    public World getWorld() {
+        if (!plugin().isCreativeServer()) return null;
+        return Bukkit.getServer().getWorld(row.getPath());
     }
 
-    World loadWorld() {
+    public World loadWorld() {
+        if (!plugin().isCreativeServer()) return null;
         World result = getWorld();
         if (result != null) return result;
         File dir = getWorldFolder();
         if (!dir.isDirectory()) {
-            plugin().getLogger().warning("World folder does not exist: " + path);
+            severe("World folder does not exist: " + dir);
             return null;
         }
-        WorldCreator creator = WorldCreator.name(path);
-        World.Environment environment = World.Environment.NORMAL;
-        try {
-            String tmp = getWorldConfig().getString("world.Environment");
-            if (tmp != null) environment = World.Environment.valueOf(tmp);
-        } catch (IllegalArgumentException iae) { }
-        creator.environment(environment);
-        creator.generateStructures(getWorldConfig().getBoolean("world.GenerateStructures", true));
-        creator.generator(getWorldConfig().getString("world.Generator"));
-        String generatorSettings = getWorldConfig().getString("world.GeneratorSettings");
-        if (generatorSettings != null) creator.generatorSettings(generatorSettings);
-        creator.seed(getWorldConfig().getLong("world.Seed", 0));
-        WorldType worldType = WorldType.NORMAL;
-        try {
-            String tmp = getWorldConfig().getString("world.WorldType");
-            if (tmp != null) worldType = WorldType.valueOf(tmp);
-        } catch (IllegalArgumentException iae) { }
-        creator.type(worldType);
+        WorldCreator creator = WorldCreator.name(row.getPath());
+        creator.generator(row.getGenerator());
+        creator.environment(row.getEnvironmentValue());
+        creator.generateStructures(row.isGenerateStructures());
+        if (row.getGeneratorSettings() != null) {
+            creator.generatorSettings(row.getGeneratorSettings());
+        }
+        creator.seed(row.getSeed());
+        creator.type(row.getWorldTypeValue());
         creator.keepSpawnLoaded(TriState.FALSE);
         result = creator.createWorld();
         result.setSpawnFlags(true, true);
@@ -220,20 +271,17 @@ final class BuildWorld {
         result.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, false);
         result.setGameRule(GameRule.UNIVERSAL_ANGER, false);
         WorldBorder border = result.getWorldBorder();
-        if (size > 0) {
-            border.setCenter(centerX, centerZ);
-            border.setSize((double) size);
+        if (row.getBorderSize() > 0) {
+            border.setCenter(row.getBorderCenterX(), row.getBorderCenterZ());
+            border.setSize((double) row.getBorderSize());
         }
-        if (getWorldConfig().isConfigurationSection("world.SpawnLocation")) {
-            int x = getWorldConfig().getInt("world.SpawnLocation.x");
-            int y = getWorldConfig().getInt("world.SpawnLocation.y");
-            int z = getWorldConfig().getInt("world.SpawnLocation.z");
-            result.setSpawnLocation(x, y, z);
+        if (row.isSpawnSet()) {
+            result.setSpawnLocation(getSpawnLocation());
         }
         return result;
     }
 
-    ConfigurationSection getWorldConfig() {
+    public ConfigurationSection getWorldConfig() {
         if (worldConfig == null) {
             File dir = getWorldFolder();
             dir.mkdirs();
@@ -243,11 +291,11 @@ final class BuildWorld {
         return worldConfig;
     }
 
-    void reloadWorldConfig() {
+    public void reloadWorldConfig() {
         worldConfig = null;
     }
 
-    void saveWorldConfig() {
+    public void saveWorldConfig() {
         if (worldConfig == null) return;
         try {
             worldConfig.save(new File(getWorldFolder(), "config.yml"));
@@ -256,103 +304,124 @@ final class BuildWorld {
         }
     }
 
-    void teleportToSpawn(Player player) {
+    public void teleportToSpawn(Player player) {
         Location loc = getSpawnLocation();
         if (loc == null) return;
         player.teleportAsync(loc);
     }
 
-    Location getSpawnLocation() {
-        if (getWorld() == null) return null;
-        ConfigurationSection section = getWorldConfig()
-            .getConfigurationSection("world.SpawnLocation");
-        if (section == null) {
-            return getWorld().getSpawnLocation();
-        } else {
-            double x = section.getDouble("x");
-            double y = section.getDouble("y");
-            double z = section.getDouble("z");
-            float yaw = (float) section.getDouble("yaw");
-            float pitch = (float) section.getDouble("pitch");
-            return new Location(getWorld(), x, y, z, yaw, pitch);
-        }
+    public Location getSpawnLocation() {
+        World w = getWorld();
+        if (w == null) return null;
+        return new Location(w, row.getSpawnX(), row.getSpawnY(), row.getSpawnZ(),
+                            (float) row.getSpawnYaw(), (float) row.getSpawnPitch());
     }
 
-    void setSpawnLocation(Location loc) {
+    public void setSpawnLocation(Location loc) {
         Block block = loc.getBlock();
         if (getWorld() != null) {
-            getWorld().setSpawnLocation(block.getX(), block.getY(), block.getZ());
+            getWorld().setSpawnLocation(loc);
         }
-        getWorldConfig().set("world.SpawnLocation.x", loc.getX());
-        getWorldConfig().set("world.SpawnLocation.y", loc.getY());
-        getWorldConfig().set("world.SpawnLocation.z", loc.getZ());
-        getWorldConfig().set("world.SpawnLocation.pitch", loc.getPitch());
-        getWorldConfig().set("world.SpawnLocation.yaw", loc.getYaw());
-    }
-
-    // Serialization
-
-    Map<String, Object> serialize() {
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("name", name);
-        result.put("path", path);
-        if (owner != null) {
-            result.put("owner", owner.serialize());
-        }
-        Map<String, Object> trustedMap = new LinkedHashMap<>();
-        result.put("buildGroups", new ArrayList<String>(buildGroups));
-        result.put("trusted", trustedMap);
-        result.put("publicTrust", publicTrust.name());
-        for (Map.Entry<UUID, Trusted> e: this.trusted.entrySet()) {
-            trustedMap.put(e.getKey().toString(), e.getValue().serialize());
-        }
-        for (Flag flag : Flag.values()) {
-            result.put(flag.key, flags.get(flag));
-        }
-        result.put("Size", size);
-        result.put("CenterX", centerX);
-        result.put("CenterZ", centerZ);
-        return result;
-    }
-
-    public static BuildWorld deserialize(ConfigurationSection config) {
-        String name = config.getString("name");
-        String path = config.getString("path");
-        Builder owner = Builder.deserialize(config.getConfigurationSection("owner"));
-        BuildWorld result = new BuildWorld(name, path, owner);
-        result.buildGroups = config.getStringList("buildGroups");
-        ConfigurationSection trustedSection = config.getConfigurationSection("trusted");
-        if (trustedSection != null) {
-            for (String key: trustedSection.getKeys(false)) {
-                UUID uuid = UUID.fromString(key);
-                Trusted trusted = Trusted.deserialize(trustedSection.getConfigurationSection(key));
-                result.trusted.put(uuid, trusted);
-            }
-        }
-        result.publicTrust = Trust.of(config.getString("publicTrust", "NONE"));
-        for (Flag flag : Flag.values()) {
-            result.flags.put(flag, config.getBoolean(flag.key, flag.defaultValue));
-        }
-        result.size = config.getLong("Size", result.size);
-        result.centerX = config.getInt("CenterX", result.centerX);
-        result.centerZ = config.getInt("CenterZ", result.centerZ);
-        return result;
+        row.setSpawnX(loc.getX());
+        row.setSpawnY(loc.getY());
+        row.setSpawnZ(loc.getZ());
+        row.setSpawnYaw(loc.getYaw());
+        row.setSpawnPitch(loc.getPitch());
     }
 
     public boolean isSet(Flag flag) {
-        return flags.get(flag);
+        return row.getCachedTag().getFlags().getOrDefault(flag, flag.defaultValue);
     }
 
     public void set(Flag flag, boolean value) {
-        flags.put(flag, value);
+        row.getCachedTag().getFlags().put(flag, value);
     }
 
     /**
      * Used by AdminCommand::rankTrustCommand.
      */
     protected int trustedScore() {
-        return publicTrust.canBuild()
+        return row.getPublicTrust().canBuild()
             ? Integer.MAX_VALUE
             : trusted.size();
+    }
+
+    public String getPath() {
+        return row.getPath();
+    }
+
+    public String getName() {
+        return row.getName();
+    }
+
+    public UUID getOwner() {
+        return row.getOwner();
+    }
+
+    public List<String> getBuildGroups() {
+        return row.getCachedTag().getBuildGroups();
+    }
+
+    public Trust getPublicTrust() {
+        return row.getPublicTrust();
+    }
+
+    public void saveAsync(String rowName, Runnable callback) {
+        saveAsync(Set.of(rowName), callback);
+    }
+
+    public void saveSpawnAsync(Runnable callback) {
+        saveAsync(Set.of("spawnX", "spawnY", "spawnZ", "spawnYaw", "spawnPitch"), callback);
+    }
+
+    public void saveAsync(Set<String> rowNames, Runnable callback) {
+        if (rowNames.contains("tag")) {
+            row.pack();
+        }
+        sql().updateAsync(row, rowNames, returnValue -> {
+                if (returnValue == 0) {
+                    severe("Could not update `" + rowNames + "`: " + returnValue + ", " + row);
+                } else {
+                    broadcastWorldUpdate(this);
+                    callback.run();
+                }
+            });
+    }
+
+    public void insertAsync(Runnable callback) {
+        row.pack();
+        sql().insertAsync(row, returnValue -> {
+                if (returnValue == 0) {
+                    severe("Could not insert: " + returnValue + ", " + row);
+                } else {
+                    broadcastWorldUpdate(this);
+                    callback.run();
+                }
+            });
+    }
+
+    public void deleteAsync(Runnable callback) {
+        sql().deleteAsync(row, returnValue -> {
+                if (returnValue == 0) {
+                    severe("Could not delete: " + returnValue + ", " + row);
+                } else {
+                    broadcastWorldUpdate(this);
+                    callback.run();
+                }
+            });
+    }
+
+    public int clearTrustAsync(Runnable callback) {
+        List<SQLWorldTrust> list = List.copyOf(trusted.values());
+        sql().deleteAsync(list, returnValue -> {
+                if (returnValue == 0) {
+                    severe("Could not clear trust: " + returnValue + ", " + list);
+                } else {
+                    broadcastWorldUpdate(this);
+                    trusted.clear();
+                    callback.run();
+                }
+            });
+        return list.size();
     }
 }

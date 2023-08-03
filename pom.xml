@@ -59,6 +59,14 @@
       <scope>provided</scope>
     </dependency>
 
+    <!-- SQL -->
+    <dependency>
+      <groupId>com.winthier.sql</groupId>
+      <artifactId>sql</artifactId>
+      <version>0.1-SNAPSHOT</version>
+      <scope>provided</scope>
+    </dependency>
+
     <!-- WorldEdit -->
     <dependency>
       <groupId>com.sk89q.worldedit</groupId>
@@ -81,6 +89,14 @@
       <artifactId>shutdown</artifactId>
       <version>0.1-SNAPSHOT</version>
       <scope>provided</scope>
+    </dependency>
+
+    <!-- JUnit Testing -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.13.2</version>
+      <scope>test</scope>
     </dependency>
 
   </dependencies>

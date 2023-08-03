@@ -14,6 +14,7 @@ public enum Trust {
     private final String nice;
 
     static Trust of(String name) {
+        if (name == null) return null;
         name = name.toUpperCase();
         try {
             return valueOf(name);

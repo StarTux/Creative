@@ -15,7 +15,7 @@ final class Permission {
     private final CreativePlugin plugin;
     private YamlConfiguration permissionsFile = null;
 
-    void updatePermissions(Player player) {
+    public void updatePermissions(Player player) {
         resetPermissions(player);
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(player.getWorld());
         if (buildWorld == null) return;
@@ -45,17 +45,17 @@ final class Permission {
         player.updateCommands();
     }
 
-    void updatePermissions(World world) {
+    public void updatePermissions(World world) {
         for (Player player: world.getPlayers()) {
             updatePermissions(player);
         }
     }
 
-    void givePermission(Player player, String perm) {
+    public void givePermission(Player player, String perm) {
         player.addAttachment(plugin, perm, true);
     }
 
-    void resetPermissions(Player player) {
+    public void resetPermissions(Player player) {
         boolean found;
         do {
             found = false;
@@ -73,7 +73,7 @@ final class Permission {
         } while (found);
     }
 
-    YamlConfiguration getPermissionsFile() {
+    public YamlConfiguration getPermissionsFile() {
         if (permissionsFile == null) {
             File file = new File(plugin.getDataFolder(), "permissions.yml");
             permissionsFile = YamlConfiguration.loadConfiguration(file);
@@ -81,7 +81,7 @@ final class Permission {
         return permissionsFile;
     }
 
-    void reload() {
+    public void reload() {
         permissionsFile = null;
         for (Player player: plugin.getServer().getOnlinePlayers()) {
             updatePermissions(player);
