@@ -24,8 +24,6 @@ import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.ComponentLike;
 import net.kyori.adventure.text.JoinConfiguration;
-import net.kyori.adventure.text.event.ClickEvent;
-import net.kyori.adventure.text.event.HoverEvent;
 import org.bukkit.Difficulty;
 import org.bukkit.GameMode;
 import org.bukkit.GameRule;
@@ -36,6 +34,7 @@ import org.bukkit.entity.Player;
 import static com.cavetale.core.command.CommandArgCompleter.enumLowerList;
 import static com.cavetale.core.command.CommandArgCompleter.list;
 import static com.cavetale.core.command.CommandArgCompleter.supplyList;
+import static com.cavetale.core.font.Unicode.tiny;
 import static com.winthier.creative.CreativePlugin.plugin;
 import static net.kyori.adventure.text.Component.empty;
 import static net.kyori.adventure.text.Component.join;
@@ -44,6 +43,9 @@ import static net.kyori.adventure.text.Component.space;
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.Component.textOfChildren;
 import static net.kyori.adventure.text.JoinConfiguration.separator;
+import static net.kyori.adventure.text.event.ClickEvent.runCommand;
+import static net.kyori.adventure.text.event.ClickEvent.suggestCommand;
+import static net.kyori.adventure.text.event.HoverEvent.showText;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
 import static net.kyori.adventure.text.format.TextDecoration.*;
 
@@ -211,9 +213,9 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
         List<Component> components = list.stream()
             .sorted(BuildWorld.NAME_SORT)
             .map(buildWorld -> text("[" + buildWorld.getName() + "]", GREEN)
-                 .hoverEvent(HoverEvent.showText(text("Teleport to " + buildWorld.getName(),
-                                                      GREEN)))
-                 .clickEvent(ClickEvent.runCommand("/ctp " + buildWorld.getName())))
+                 .hoverEvent(showText(text("Teleport to " + buildWorld.getName(),
+                                           GREEN)))
+                 .clickEvent(runCommand("/ctp " + buildWorld.getName())))
             .collect(Collectors.toList());
         player.sendMessage(join(JoinConfiguration.builder()
                                 .prefix(text(prefix + " "))
@@ -271,12 +273,12 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
         meta.confirmCode = code;
         meta.confirmCallback = callback;
         player.sendMessage(textOfChildren(text("[Confirm]", GREEN)
-                                          .clickEvent(ClickEvent.runCommand("/creative confirm " + code))
-                                          .hoverEvent(HoverEvent.showText(text("Confirm", GREEN))),
+                                          .clickEvent(runCommand("/creative confirm " + code))
+                                          .hoverEvent(showText(text("Confirm", GREEN))),
                                           text(" "),
                                           text("[Cancel]", RED)
-                                          .clickEvent(ClickEvent.runCommand("/creative cancel " + code))
-                                          .hoverEvent(HoverEvent.showText(text("Cancel", RED)))));
+                                          .clickEvent(runCommand("/creative cancel " + code))
+                                          .hoverEvent(showText(text("Cancel", RED)))));
     }
 
     /**
@@ -569,22 +571,21 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
         Collections.sort(names);
         Component prefix;
         if (trust == Trust.OWNER) {
-            prefix = text("Owner ", GRAY);
+            prefix = text(tiny("Owner "), GRAY);
         } else {
-            prefix = text(trust.nice() + " Trust ", GRAY);
+            prefix = text(tiny((trust.nice() + " Trust ").toLowerCase()), GRAY);
         }
+        final String addCmd = "/creative " + trust.command + " ";
+        prefix = prefix.hoverEvent(showText(text(addCmd, GREEN)))
+            .clickEvent(suggestCommand(addCmd));
         if (names.isEmpty()) return prefix;
         Trust playerTrust = buildWorld.getTrust(player.getUniqueId());
         List<Component> components = new ArrayList<>();
         for (String name : names) {
-            if (playerTrust.isOwner()) {
-                components.add(text(name, WHITE)
-                               .clickEvent(ClickEvent.runCommand("/creative untrust " + name))
-                               .hoverEvent(HoverEvent.showText(text("Untrust " + name,
-                                                                    RED))));
-            } else {
-                components.add(text(name, WHITE));
-            }
+            String cmd = "/creative untrust " + name;
+            components.add(text(name, GREEN)
+                           .clickEvent(suggestCommand(cmd))
+                           .hoverEvent(showText(text(cmd, RED))));
         }
         return join(JoinConfiguration.builder()
                     .prefix(prefix)
@@ -599,12 +600,28 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
             throw new CommandWarn("You don't have permission");
         }
         Trust playerTrust = buildWorld.getTrust(player.getUniqueId());
-        if (!playerTrust.canVisit()) {
-            throw new CommandWarn("You don't have permission");
-        }
         List<ComponentLike> lines = new ArrayList<>();
         lines.add(text("World Info " + buildWorld.getName(), GREEN, BOLD));
+        if (buildWorld.getRow().getBorderSize() > 0) {
+            final String growCmd = "/creative grow";
+            lines.add(textOfChildren(text(tiny("size "), GRAY),
+                                     text(buildWorld.getRow().getBorderSize(), GREEN),
+                                     text(tiny("blocks"), GRAY))
+                      .hoverEvent(showText(text(growCmd, GREEN)))
+                      .clickEvent(suggestCommand(growCmd)));
+        }
         lines.add(listTrusted(player, buildWorld, Trust.OWNER));
+        List<Component> flags = new ArrayList<>();
+        for (BuildWorld.Flag flag : BuildWorld.Flag.values()) {
+            boolean value = buildWorld.isSet(flag);
+            if (flag.defaultValue == value) continue;
+            flags.add(text(flag.key, (value ? GREEN : RED)));
+        }
+        final String unlockCmd = "/creative unlock";
+        lines.add(textOfChildren(text(tiny("unlocks "), GRAY),
+                                 join(separator(space()), flags))
+                  .hoverEvent(showText(text(unlockCmd, GREEN)))
+                  .clickEvent(suggestCommand(unlockCmd)));
         lines.add(listTrusted(player, buildWorld, Trust.WORLD_EDIT));
         lines.add(listTrusted(player, buildWorld, Trust.BUILD));
         lines.add(listTrusted(player, buildWorld, Trust.VISIT));
@@ -617,13 +634,9 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
         if (buildWorld.getPublicTrust() != null && buildWorld.getPublicTrust() != Trust.NONE) {
             lines.add(text(" Public Trust " + buildWorld.getPublicTrust().nice(), GREEN));
         }
-        String description = buildWorld.getWorldConfig().getString("user.Description");
+        String description = buildWorld.getRow().getDescription();
         if (description != null && !description.isEmpty()) {
             lines.add(text(" Description " + description, GREEN));
-        }
-        List<String> authors = buildWorld.getWorldConfig().getStringList("user.Authors");
-        if (!authors.isEmpty()) {
-            lines.add(text(" Authors " + String.join(", ", authors), GREEN));
         }
         player.sendMessage(join(separator(newline()), lines));
     }
@@ -762,12 +775,12 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
                 String cmd = "/creative unlock " + flag.key + " on";
                 String cmd2 = "/creative unlock " + flag.key + " off";
                 lines.add(textOfChildren(text("[ON]", (enabled ? GREEN : DARK_GRAY))
-                                         .clickEvent(ClickEvent.runCommand(cmd))
-                                         .hoverEvent(HoverEvent.showText(text(cmd, GREEN))),
+                                         .clickEvent(runCommand(cmd))
+                                         .hoverEvent(showText(text(cmd, GREEN))),
                                          space(),
                                          text("[OFF]", (!enabled ? RED : DARK_GRAY))
-                                         .clickEvent(ClickEvent.runCommand(cmd2))
-                                         .hoverEvent(HoverEvent.showText(text(cmd2, GREEN))),
+                                         .clickEvent(runCommand(cmd2))
+                                         .hoverEvent(showText(text(cmd2, GREEN))),
                                          space(),
                                          text(flag.key, (enabled ? YELLOW : WHITE))));
             } else {
@@ -778,8 +791,8 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
                 } else {
                     String cmd = "/creative unlock " + flag.key;
                     lines.add(textOfChildren(text("[UNLOCK]", GREEN)
-                                             .clickEvent(ClickEvent.runCommand(cmd))
-                                             .hoverEvent(HoverEvent.showText(text(cmd, GREEN))),
+                                             .clickEvent(runCommand(cmd))
+                                             .hoverEvent(showText(text(cmd, GREEN))),
                                              space(),
                                              text(flag.key, (enabled ? YELLOW : WHITE))));
                 }
@@ -794,8 +807,8 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
                     textOfChildren(text("Price: ", GRAY), Coin.format(price))
                 }).color(GREEN);
             lines.add(textOfChildren(text("[GROW]", GREEN)
-                                     .clickEvent(ClickEvent.runCommand("/creative grow"))
-                                     .hoverEvent(HoverEvent.showText(tooltip)),
+                                     .clickEvent(runCommand("/creative grow"))
+                                     .hoverEvent(showText(tooltip)),
                                      text(" Size " + buildWorld.getRow().getBorderSize())));
         }
         lines.add(empty());
@@ -825,7 +838,7 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
                     return;
                 }
                 buildWorld.getRow().setBorderSize(buildWorld.getRow().getBorderSize() + growBy);
-                buildWorld.saveAsync("size", () -> {
+                buildWorld.saveAsync("borderSize", () -> {
                         World world = buildWorld.getWorld();
                         if (world != null) {
                             world.getWorldBorder().setSize(buildWorld.getRow().getBorderSize());

@@ -4,14 +4,15 @@ import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public enum Trust {
-    OWNER(4, "Owner"),
-    WORLD_EDIT(3, "WorldEdit"),
-    BUILD(2, "Builder"),
-    VISIT(1, "Visitor"),
-    NONE(0, "None");
+    OWNER(4, "Owner", "ownertrust"),
+    WORLD_EDIT(3, "WorldEdit", "wetrust"),
+    BUILD(2, "Builder", "trust"),
+    VISIT(1, "Visitor", "visittrust"),
+    NONE(0, "None", "untrust");
 
     public final int priority;
     private final String nice;
+    public final String command;
 
     static Trust of(String name) {
         if (name == null) return null;
