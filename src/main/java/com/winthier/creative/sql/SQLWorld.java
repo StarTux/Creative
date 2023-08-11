@@ -67,7 +67,7 @@ public final class SQLWorld implements SQLRow {
 
     // Generator
     @Nullable private String generator = null;
-    private long seed = 0L;
+    @Nullable private Long seed = 0L;
     @Nullable private String worldType = null;
     @Nullable private String environment;
     private boolean generateStructures = false;

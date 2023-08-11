@@ -648,11 +648,20 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             throw new CommandWarn("World already exists: '" + path + "'");
         }
         final BuildWorld buildWorld = new BuildWorld(name, path, (owner != null ? owner.uuid : null));
+        buildWorld.getRow().setGenerator(generator);
+        buildWorld.getRow().setGenerateStructures(generateStructures);
+        buildWorld.getRow().setGeneratorSettings(generatorSettings);
+        buildWorld.getRow().setSeed(seed);
+        buildWorld.getRow().setWorldType(worldType.name().toLowerCase());
+        buildWorld.getRow().setEnvironment(environment.name().toLowerCase());
+        buildWorld.getRow().setSpawnX(255.5);
+        buildWorld.getRow().setSpawnY(65.0);
+        buildWorld.getRow().setSpawnZ(255.5);
         final String finalPath = path;
         final String finalGenerator = generator;
         final boolean finalGenerateStructures = generateStructures;
         final String finalGeneratorSettings = generatorSettings;
-        final long finalSeed = seed;
+        final Long finalSeed = seed;
         final WorldType finalWorldType = worldType;
         final World.Environment finalEnvironment = environment;
         buildWorld.insertAsync(() -> {
@@ -661,7 +670,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
                 buildWorld.getWorldConfig().set("world.Generator", finalGenerator);
                 buildWorld.getWorldConfig().set("world.GenerateStructures", finalGenerateStructures);
                 buildWorld.getWorldConfig().set("world.GeneratorSettings", finalGeneratorSettings);
-                buildWorld.getWorldConfig().set("world.Seed", finalSeed);
+                if (finalSeed != null) buildWorld.getWorldConfig().set("world.Seed", finalSeed);
                 buildWorld.getWorldConfig().set("world.WorldType", finalWorldType.name().toLowerCase());
                 buildWorld.getWorldConfig().set("world.Environment", finalEnvironment.name().toLowerCase());
                 buildWorld.saveWorldConfig();

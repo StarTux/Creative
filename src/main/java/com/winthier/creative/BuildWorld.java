@@ -227,7 +227,7 @@ public final class BuildWorld {
         if (row.getGeneratorSettings() != null) {
             creator.generatorSettings(row.getGeneratorSettings());
         }
-        creator.seed(row.getSeed());
+        if (row.getSeed() != null) creator.seed(row.getSeed());
         creator.type(row.getWorldTypeValue());
         creator.keepSpawnLoaded(TriState.FALSE);
         result = creator.createWorld();
