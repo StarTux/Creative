@@ -115,7 +115,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
                         CommandArgCompleter.PLAYER_CACHE)
             .senderCaller(this::setOwnerCommand);
         rootNode.addChild("create").arguments("n:name p:path o:owner g:generator G:generatorSettings e:environment t:worldType s:seed S:generateStructures")
-            .completers(AdminCommand::completeCreateArgs)
+            .completers(AdminCommand::completeCreateArgs, CommandArgCompleter.REPEAT)
             .description("Create a world")
             .senderCaller(this::createCommand);
         rootNode.addChild("createvoid").arguments("<name> [environment]")
