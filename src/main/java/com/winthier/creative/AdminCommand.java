@@ -152,6 +152,11 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             .description("Set build groups")
             .completers(supplyList(() -> Perm.get().getGroupNames()))
             .senderCaller(this::buildGroupsCommand);
+        rootNode.addChild("copy").arguments("<from> <to>")
+            .description("Create a world copy")
+            .completers(supplyList(AdminCommand::supplyWorldPaths),
+                        supplyList(AdminCommand::supplyWorldPaths))
+            .senderCaller(this::copy);
         rootNode.addChild("autoconvert").denyTabCompletion()
             .description("Load and save all worlds")
             .senderCaller(this::autoConvertCommand);
@@ -297,6 +302,12 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         final BuildWorld buildWorld = plugin.getBuildWorldByPath(arg);
         if (buildWorld == null) throw new CommandWarn("World path not found: " + arg);
         return buildWorld;
+    }
+
+    private void requireCreativeServer() {
+        if (!plugin.isCreativeServer()) {
+            throw new CommandWarn("Must be on creative");
+        }
     }
 
     private void reloadCommand(CommandSender sender) {
@@ -710,7 +721,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         if (!path.matches("[a-z0-9_-]+")) {
             throw new CommandWarn("Invalid path name (must be lowercase): " + path);
         }
-        if (plugin.getBuildWorldByPath(path) != null) {
+        if (plugin.getBuildWorldByPathIgnoreCase(path) != null) {
             throw new CommandWarn("World already exists: '" + path + "'");
         }
         final BuildWorld buildWorld = new BuildWorld(name, path, (owner != null ? owner.uuid : null));
@@ -762,7 +773,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             }
         }
         String path = name.toLowerCase();
-        if (plugin.getBuildWorldByPath(path) != null) {
+        if (plugin.getBuildWorldByPathIgnoreCase(path) != null) {
             throw new CommandWarn("World already exists: '" + path + "'");
         }
         BuildWorld buildWorld = new BuildWorld(name, path, player.getUniqueId());
@@ -802,7 +813,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             throw new CommandWarn("World not found: " + name);
         }
         name = world.getName();
-        if (plugin.getBuildWorldByPath(name) != null) {
+        if (plugin.getBuildWorldByPathIgnoreCase(name) != null) {
             throw new CommandWarn("Build world already exists: " + name);
         }
         WorldCreator creator = WorldCreator.name(name);
@@ -986,6 +997,26 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
                     sender.sendMessage(text("Build groups of " + buildWorld.getName() + " reset",
                                             YELLOW));
                 }
+            });
+        return true;
+    }
+
+    private boolean copy(CommandSender sender, String[] args) {
+        requireCreativeServer();
+        if (args.length != 2) return false;
+        final String a = args[0];
+        final String b = args[1];
+        final BuildWorld oldWorld = requireBuildWorld(a);
+        final BuildWorld no = plugin.getBuildWorldByPathIgnoreCase(b);
+        if (no != null) throw new CommandWarn("World already exists: " + no.getPath());
+        SQLWorld row = oldWorld.getRow().clone();
+        row.setId(null);
+        row.setPath(b);
+        BuildWorld buildWorld = new BuildWorld(row, List.of());
+        buildWorld.insertAsync(() -> {
+                plugin.getBuildWorlds().add(buildWorld);
+                Files.copyFileStructure(oldWorld.getWorldFolder(), buildWorld.getWorldFolder());
+                sender.sendMessage(text("World copied: " + oldWorld.getPath() + " => " + buildWorld.getPath(), YELLOW));
             });
         return true;
     }

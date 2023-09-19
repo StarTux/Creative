@@ -153,6 +153,15 @@ public final class CreativePlugin extends JavaPlugin {
         return null;
     }
 
+    public BuildWorld getBuildWorldByPathIgnoreCase(String path) {
+        for (BuildWorld buildWorld : buildWorlds) {
+            if (path.equalsIgnoreCase(buildWorld.getPath())) {
+                return buildWorld;
+            }
+        }
+        return null;
+    }
+
     public BuildWorld getBuildWorldByWorld(World world) {
         if (world == null) return null;
         return getBuildWorldByPath(world.getName());

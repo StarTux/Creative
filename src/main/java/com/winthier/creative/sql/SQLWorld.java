@@ -15,14 +15,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 import org.bukkit.World;
 import org.bukkit.WorldType;
 import static com.winthier.creative.CreativePlugin.plugin;
 
 @Name("worlds")
-@Getter @Setter @NotNull
+@Data @NotNull
 public final class SQLWorld implements SQLRow {
     @Id private Integer id;
     @Unique private String path; // key
@@ -64,6 +62,41 @@ public final class SQLWorld implements SQLRow {
     @Default("0") private int voteScore;
 
     public SQLWorld() { }
+
+    public SQLWorld(final SQLWorld o) {
+        this.path = o.path;
+        this.name = o.name;
+        this.description = o.description;
+        this.owner = o.owner;
+        this.publicTrust = o.publicTrust;
+        this.created = o.created;
+        this.tag = o.tag;
+        this.borderCenterX = o.borderCenterX;
+        this.borderCenterZ = o.borderCenterZ;
+        this.borderSize = o.borderSize;
+        this.spawnX = o.spawnX;
+        this.spawnY = o.spawnY;
+        this.spawnZ = o.spawnZ;
+        this.spawnYaw = o.spawnYaw;
+        this.spawnPitch = o.spawnPitch;
+        this.generator = o.generator;
+        this.seed = o.seed;
+        this.worldType = o.worldType;
+        this.environment = o.environment;
+        this.generateStructures = o.generateStructures;
+        this.generatorSettings = o.generatorSettings;
+        this.purpose = o.purpose;
+        this.purposeType = o.purposeType;
+        this.purposeTag = o.purposeTag;
+        this.purposeConfirmed = o.purposeConfirmed;
+        this.purposeConfirmedWhen = o.purposeConfirmedWhen;
+        this.purposeIndex = o.purposeIndex;
+        this.voteScore = o.voteScore;
+    }
+
+    public SQLWorld clone() {
+        return new SQLWorld(this);
+    }
 
     @Data
     public static final class Tag {

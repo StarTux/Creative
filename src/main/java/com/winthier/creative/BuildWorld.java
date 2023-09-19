@@ -446,7 +446,7 @@ public final class BuildWorld {
         return list.size();
     }
 
-    public void makeCopyAsync(Consumer<World> callback) {
+    public void makeLocalCopyAsync(Consumer<World> callback) {
         final File src = new File("/home/cavetale/creative/worlds/" + getPath());
         if (!src.exists()) {
             throw new IllegalStateException("Source folder not found: " + src);
