@@ -1,7 +1,9 @@
 package com.winthier.creative.sql;
 
+import com.cavetale.core.event.minigame.MinigameMatchType;
 import com.cavetale.core.util.Json;
 import com.winthier.creative.BuildWorld.Flag;
+import com.winthier.creative.BuildWorldPurpose;
 import com.winthier.creative.Trust;
 import com.winthier.sql.SQLRow.Name;
 import com.winthier.sql.SQLRow.NotNull;
@@ -32,27 +34,6 @@ public final class SQLWorld implements SQLRow {
     @Text private String tag = "{}";
     private transient Tag cachedTag;
 
-    public SQLWorld() { }
-
-    @Data
-    public static final class Tag {
-        private List<String> buildGroups = new ArrayList<>();
-        private Map<Flag, Boolean> flags = new EnumMap<>(Flag.class);
-    }
-
-    public void unpack() {
-        cachedTag = Json.deserialize(tag, Tag.class, Tag::new);
-    }
-
-    public void pack() {
-        tag = Json.serialize(cachedTag);
-    }
-
-    public Tag getCachedTag() {
-        if (cachedTag == null) unpack();
-        return cachedTag;
-    }
-
     // World Border
     private int borderCenterX = 0;
     private int borderCenterZ = 0;
@@ -76,8 +57,32 @@ public final class SQLWorld implements SQLRow {
     // Purpose
     @Nullable private String purpose;
     @Nullable private String purposeType;
-    private int purposeIndex;
-    private int voteScore;
+    @Nullable @LongText private String purposeTag;
+    @Default("0") private boolean purposeConfirmed;
+    @Nullable private Date purposeConfirmedWhen;
+    @Default("0") private int purposeIndex;
+    @Default("0") private int voteScore;
+
+    public SQLWorld() { }
+
+    @Data
+    public static final class Tag {
+        private List<String> buildGroups = new ArrayList<>();
+        private Map<Flag, Boolean> flags = new EnumMap<>(Flag.class);
+    }
+
+    public void unpack() {
+        cachedTag = Json.deserialize(tag, Tag.class, Tag::new);
+    }
+
+    public void pack() {
+        tag = Json.serialize(cachedTag);
+    }
+
+    public Tag getCachedTag() {
+        if (cachedTag == null) unpack();
+        return cachedTag;
+    }
 
     public boolean isSpawnSet() {
         return spawnX != 0.0
@@ -115,5 +120,36 @@ public final class SQLWorld implements SQLRow {
             plugin().getLogger().severe("[SQLWorld] " + id + ": Invalid environment: " + environment);
             return World.Environment.NORMAL;
         }
+    }
+
+    public BuildWorldPurpose parsePurpose() {
+        if (purpose == null) return BuildWorldPurpose.UNKNOWN;
+        try {
+            return BuildWorldPurpose.valueOf(purpose.toUpperCase());
+        } catch (IllegalArgumentException iae) {
+            return BuildWorldPurpose.UNKNOWN;
+        }
+    }
+
+    public MinigameMatchType parseMinigame() {
+        if (parsePurpose() != BuildWorldPurpose.MINIGAME) return null;
+        if (purposeType == null) return null;
+        try {
+            return MinigameMatchType.valueOf(purposeType.toUpperCase());
+        } catch (IllegalArgumentException iae) {
+            return null;
+        }
+    }
+
+    public void resetPurpose() {
+        this.purpose = null;
+        this.purposeType = null;
+        this.purposeConfirmed = false;
+    }
+
+    public void setMinigame(MinigameMatchType type) {
+        this.purpose = BuildWorldPurpose.MINIGAME.name().toLowerCase();
+        this.purposeType = type.name().toLowerCase();
+        this.purposeConfirmed = false;
     }
 }

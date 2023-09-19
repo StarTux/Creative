@@ -5,13 +5,17 @@ import com.cavetale.core.command.CommandArgCompleter;
 import com.cavetale.core.command.CommandContext;
 import com.cavetale.core.command.CommandNode;
 import com.cavetale.core.command.CommandWarn;
+import com.cavetale.core.event.minigame.MinigameMatchType;
 import com.cavetale.core.perm.Perm;
 import com.cavetale.core.playercache.PlayerCache;
+import com.winthier.creative.file.Files;
+import com.winthier.creative.sql.SQLWorld;
 import com.winthier.creative.sql.SQLWorldTrust;
-import com.winthier.creative.util.Files;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 import net.kyori.adventure.text.Component;
@@ -23,9 +27,11 @@ import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import static com.cavetale.core.command.CommandArgCompleter.enumLowerList;
 import static com.cavetale.core.command.CommandArgCompleter.list;
+import static com.cavetale.core.command.CommandArgCompleter.requireEnum;
 import static com.cavetale.core.command.CommandArgCompleter.supplyList;
 import static com.winthier.creative.CreativePlugin.plugin;
 import static net.kyori.adventure.text.Component.join;
@@ -154,9 +160,50 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             .completers(CommandArgCompleter.PLAYER_CACHE,
                         CommandArgCompleter.PLAYER_CACHE)
             .senderCaller(this::transferAllCommand);
-        rootNode.addChild("legacyworldconvert").denyTabCompletion()
-            .description("Transfer legacy worlds")
-            .senderCaller(this::legacyWorldConvert);
+        // rootNode.addChild("legacyworldconvert").denyTabCompletion()
+        //     .description("Transfer legacy worlds")
+        //     .senderCaller(this::legacyWorldConvert);
+        // Minigame
+        CommandNode minigameNode = rootNode.addChild("minigame")
+            .description("Minigame subcommands");
+        minigameNode.addChild("list").arguments("<minigame>")
+            .description("List all games for minigame")
+            .completers(enumLowerList(MinigameMatchType.class))
+            .senderCaller(this::minigameList);
+        minigameNode.addChild("reset").arguments("<world>")
+            .description("Reset minigame purpose")
+            .completers(supplyList(AdminCommand::supplyWorldPaths))
+            .senderCaller(this::minigameReset);
+        minigameNode.addChild("set").arguments("<world> <minigame>")
+            .description("Set minigame purpose")
+            .completers(supplyList(AdminCommand::supplyWorldPaths),
+                        enumLowerList(MinigameMatchType.class))
+            .senderCaller(this::minigameSet);
+        minigameNode.addChild("confirm").arguments("<world> true|false")
+            .description("Confirm minigame validity")
+            .completers(supplyList(AdminCommand::supplyWorldPaths),
+                        CommandArgCompleter.BOOLEAN)
+            .senderCaller(this::minigameConfirm);
+        // Purpose
+        CommandNode purposeNode = rootNode.addChild("purpose")
+            .description("Purpose subcommands");
+        purposeNode.addChild("list").arguments("<type>")
+            .description("List worlds with purpose")
+            .completers(enumLowerList(BuildWorldPurpose.class))
+            .senderCaller(this::purposeList);
+        purposeNode.addChild("index").arguments("<world> <index>")
+            .description("Set purpose index")
+            .completers(supplyList(AdminCommand::supplyWorldPaths),
+                        CommandArgCompleter.integer(i -> true))
+            .senderCaller(this::purposeIndex);
+        purposeNode.addChild("score").arguments("<world> <score>")
+            .description("Set purpose score")
+            .completers(supplyList(AdminCommand::supplyWorldPaths),
+                        CommandArgCompleter.integer(i -> true))
+            .senderCaller(this::purposeScore);
+        purposeNode.addChild("import").denyTabCompletion()
+            .description("Import purposes from file")
+            .senderCaller(this::purposeImport);
     }
 
     private static List<String> supplyWorldPaths() {
@@ -246,6 +293,12 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         return result;
     }
 
+    private BuildWorld requireBuildWorld(String arg) {
+        final BuildWorld buildWorld = plugin.getBuildWorldByPath(arg);
+        if (buildWorld == null) throw new CommandWarn("World path not found: " + arg);
+        return buildWorld;
+    }
+
     private void reloadCommand(CommandSender sender) {
         plugin.reloadAllConfigs();
         sender.sendMessage(text("Configs reloaded", AQUA));
@@ -253,7 +306,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
 
     private boolean infoCommand(CommandSender sender, String[] args) {
         if (args.length > 1) return false;
-        BuildWorld buildWorld;
+        final BuildWorld buildWorld;
         if (args.length == 0) {
             Player player = sender instanceof Player
                 ? (Player) sender
@@ -270,31 +323,32 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
                 throw new CommandWarn("World not found: " + name);
             }
         }
-        sender.sendMessage(textOfChildren(text("Id ", GRAY), text(buildWorld.getRow().getId(), YELLOW)).insertion("" + buildWorld.getRow().getId()));
+        final SQLWorld row = buildWorld.getRow();
+        sender.sendMessage(textOfChildren(text("Id ", GRAY), text(row.getId(), YELLOW)).insertion("" + row.getId()));
         sender.sendMessage(textOfChildren(text("Path ", GRAY), text(buildWorld.getPath(), YELLOW)).insertion(buildWorld.getPath()));
         sender.sendMessage(textOfChildren(text("Name ", GRAY), text(buildWorld.getName(), YELLOW)));
-        final String desc = buildWorld.getRow().getDescription() != null ? buildWorld.getRow().getDescription() : "";
+        final String desc = row.getDescription() != null ? row.getDescription() : "";
         sender.sendMessage(textOfChildren(text("Description ", GRAY), text(desc, YELLOW)));
         sender.sendMessage(textOfChildren(text("Owner ", GRAY), text(buildWorld.getOwnerName(), YELLOW)));
-        if (!buildWorld.getRow().isSpawnSet()) {
+        if (!row.isSpawnSet()) {
             sender.sendMessage(textOfChildren(text("Spawn ", GRAY), text("N/A", DARK_GRAY, ITALIC)));
         } else {
             sender.sendMessage(textOfChildren(text("Spawn ", GRAY),
-                                              text((int) Math.round(buildWorld.getRow().getSpawnX()), YELLOW),
+                                              text((int) Math.round(row.getSpawnX()), YELLOW),
                                               text(",", GRAY),
-                                              text((int) Math.round(buildWorld.getRow().getSpawnY()), YELLOW),
+                                              text((int) Math.round(row.getSpawnY()), YELLOW),
                                               text(",", GRAY),
-                                              text((int) Math.round(buildWorld.getRow().getSpawnZ()), YELLOW)));
+                                              text((int) Math.round(row.getSpawnZ()), YELLOW)));
         }
         String groups = "[" + String.join(" ", buildWorld.getBuildGroups()) + "]";
         sender.sendMessage(textOfChildren(text("BuildGroups ", GRAY), text(groups, YELLOW)));
         List<Component> trusted = new ArrayList<>();
-        for (SQLWorldTrust row : buildWorld.getTrusted().values()) {
-            final String name = PlayerCache.nameForUuid(row.getPlayer());
+        for (SQLWorldTrust trustRow : buildWorld.getTrusted().values()) {
+            final String name = PlayerCache.nameForUuid(trustRow.getPlayer());
             trusted.add(textOfChildren(text(name, YELLOW),
                                        text(":", GRAY),
-                                       text(row.getTrustValue().nice(), YELLOW))
-                        .insertion("/cra trust " + buildWorld.getPath() + " " + name + " " + row.getTrustValue().name().toLowerCase()));
+                                       text(trustRow.getTrustValue().nice(), YELLOW))
+                        .insertion("/cra trust " + buildWorld.getPath() + " " + name + " " + trustRow.getTrustValue().name().toLowerCase()));
         }
         sender.sendMessage(textOfChildren(text("Trusted ", GRAY), join(separator(space()), trusted)));
         sender.sendMessage(textOfChildren(text("Public Trust ", GRAY), text(buildWorld.getPublicTrust().nice(), YELLOW)));
@@ -307,20 +361,32 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         sender.sendMessage(textOfChildren(text("Flags ", GRAY), join(separator(space()), flags)));
         sender.sendMessage(textOfChildren(text("Border ", GRAY),
                                           text("center:", GRAY),
-                                          text(buildWorld.getRow().getBorderCenterX() + ","
-                                               + buildWorld.getRow().getBorderCenterZ(), YELLOW),
+                                          text(row.getBorderCenterX() + ","
+                                               + row.getBorderCenterZ(), YELLOW),
                                           text(" size:", GRAY),
-                                          text(buildWorld.getRow().getBorderSize(), YELLOW)));
-        sender.sendMessage(textOfChildren(text("Generator ", GRAY), text("" + buildWorld.getRow().getGenerator(), YELLOW))
-                           .insertion("" + buildWorld.getRow().getGenerator()));
-        sender.sendMessage(textOfChildren(text("Seed ", GRAY), text(buildWorld.getRow().getSeed(), YELLOW))
-                           .insertion("" + buildWorld.getRow().getSeed()));
-        sender.sendMessage(textOfChildren(text("Environment ", GRAY), text("" + buildWorld.getRow().getEnvironment(), YELLOW)));
-        sender.sendMessage(textOfChildren(text("WorldType ", GRAY), text("" + buildWorld.getRow().getWorldType(), YELLOW)));
+                                          text(row.getBorderSize(), YELLOW)));
+        sender.sendMessage(textOfChildren(text("Generator ", GRAY), text("" + row.getGenerator(), YELLOW))
+                           .insertion("" + row.getGenerator()));
+        sender.sendMessage(textOfChildren(text("Seed ", GRAY), text(row.getSeed(), YELLOW))
+                           .insertion("" + row.getSeed()));
+        sender.sendMessage(textOfChildren(text("Environment ", GRAY), text("" + row.getEnvironment(), YELLOW)));
+        sender.sendMessage(textOfChildren(text("WorldType ", GRAY), text("" + row.getWorldType(), YELLOW)));
         sender.sendMessage(textOfChildren(text("GeneratorSettings ", GRAY),
-                                          text(buildWorld.getRow().isGenerateStructures(), YELLOW),
+                                          text(row.isGenerateStructures(), YELLOW),
                                           text(", ", GRAY),
-                                          text("" + buildWorld.getRow().getGeneratorSettings(), YELLOW)));
+                                          text("" + row.getGeneratorSettings(), YELLOW)));
+        final BuildWorldPurpose purpose = row.parsePurpose();
+        if (purpose != null) {
+            sender.sendMessage(textOfChildren(text("Purpose ", GRAY),
+                                              text(purpose.displayName, YELLOW),
+                                              space(),
+                                              (row.isPurposeConfirmed() ? text("Confirmed", GREEN) : text("Unconfirmed", RED))));
+        }
+        final MinigameMatchType minigame = row.parseMinigame();
+        if (minigame != null) {
+            sender.sendMessage(textOfChildren(text("Minigame ", GRAY),
+                                              text(minigame.displayName, YELLOW)));
+        }
         return true;
     }
 
@@ -378,7 +444,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         if (buildWorld == null) {
             throw new CommandWarn("World not found: " + name);
         }
-        for (String key: buildWorld.getWorldConfig().getKeys(true)) {
+        for (String key : buildWorld.getWorldConfig().getKeys(true)) {
             Object o = buildWorld.getWorldConfig().get(key);
             if (o instanceof ConfigurationSection) continue;
             sender.sendMessage(textOfChildren(text(key + "='", GRAY),
@@ -521,7 +587,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         }
         buildWorld.deleteAsync(() -> {
                 plugin.getBuildWorlds().remove(buildWorld);
-                Files.deleteRecursively(buildWorld.getWorldFolder());
+                Files.deleteFileStructure(buildWorld.getWorldFolder());
                 sender.sendMessage(text("World removed: " + buildWorld.getPath(),
                                         YELLOW));
             });
@@ -828,7 +894,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             throw new CommandWarn("World not found: " + worldName);
         }
         PlayerCache target = PlayerCache.require(playerName);
-        final Trust trust = CommandArgCompleter.requireEnum(Trust.class, trustName);
+        final Trust trust = requireEnum(Trust.class, trustName);
         buildWorld.setTrust(target.getUuid(), trust, () -> {
                 Player targetPlayer = Bukkit.getPlayer(target.uuid);
                 if (targetPlayer != null) {
@@ -847,7 +913,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         if (buildWorld == null) {
             throw new CommandWarn("World not found: " + worldName);
         }
-        final Trust trust = CommandArgCompleter.requireEnum(Trust.class, trustName);
+        final Trust trust = requireEnum(Trust.class, trustName);
         if (trust == buildWorld.getPublicTrust()) {
             throw new CommandWarn("Public trust already is " + trust.nice() + " in " + buildWorld.getPath());
         }
@@ -987,5 +1053,154 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
     private void legacyWorldConvert(CommandSender sender) {
         sender.sendMessage(text("Starting conversion. See console", YELLOW));
         Legacy.transferAllBuildWorlds();
+    }
+
+    private boolean minigameList(CommandSender sender, String[] args) {
+        if (args.length != 1) return false;
+        final MinigameMatchType type = CommandArgCompleter.requireEnum(MinigameMatchType.class, args[0]);
+        int total = 0;
+        sender.sendMessage(text("Build worlds for minigame " + type.displayName, GOLD, BOLD));
+        for (BuildWorld buildWorld : BuildWorld.findMinigameWorlds(type, false)) {
+            if (buildWorld.getRow().parsePurpose() != BuildWorldPurpose.MINIGAME) continue;
+            if (buildWorld.getRow().parseMinigame() != type) continue;
+            sender.sendMessage(textOfChildren(text("- ", GRAY),
+                                              text(buildWorld.getName(), YELLOW),
+                                              text(" by ", GRAY),
+                                              text(buildWorld.getOwnerName(), YELLOW),
+                                              space(),
+                                              (buildWorld.getRow().isPurposeConfirmed()
+                                               ? text("Confirmed", GREEN)
+                                               : text("Unconfirmed", RED))));
+            total += 1;
+        }
+        sender.sendMessage(text("Total " + total, GRAY));
+        return true;
+    }
+
+    private boolean minigameReset(CommandSender sender, String[] args) {
+        if (args.length != 1) return false;
+        final BuildWorld buildWorld = requireBuildWorld(args[0]);
+        buildWorld.getRow().resetPurpose();
+        buildWorld.savePurposeAsync(() -> {
+                sender.sendMessage(text("Purpose reset: " + buildWorld.getPath(), YELLOW));
+            });
+        return true;
+    }
+
+    private boolean minigameSet(CommandSender sender, String[] args) {
+        if (args.length != 2) return false;
+        final BuildWorld buildWorld = requireBuildWorld(args[0]);
+        final MinigameMatchType minigame = CommandArgCompleter.requireEnum(MinigameMatchType.class, args[1]);
+        buildWorld.getRow().setMinigame(minigame);
+        buildWorld.savePurposeAsync(() -> {
+                sender.sendMessage(text("Purpose set: " + buildWorld.getPath() + ", " + minigame, YELLOW));
+            });
+        return true;
+    }
+
+    private boolean minigameConfirm(CommandSender sender, String[] args) {
+        if (args.length != 2) return false;
+        final BuildWorld buildWorld = requireBuildWorld(args[0]);
+        final boolean value = CommandArgCompleter.requireBoolean(args[1]);
+        final MinigameMatchType minigame = buildWorld.getRow().parseMinigame();
+        if (minigame == null) {
+            throw new CommandWarn("Not a minigame world: " + buildWorld.getPath());
+        }
+        buildWorld.getRow().setPurposeConfirmed(value);
+        buildWorld.getRow().setPurposeConfirmedWhen(new Date());
+        buildWorld.savePurposeAsync(() -> {
+                sender.sendMessage(text("Minigame confirmed: " + buildWorld.getPath() + ", " + minigame + ", " + value, YELLOW));
+            });
+        return true;
+    }
+
+    private boolean purposeList(CommandSender sender, String[] args) {
+        if (args.length != 1) return false;
+        final BuildWorldPurpose type = CommandArgCompleter.requireEnum(BuildWorldPurpose.class, args[0]);
+        int total = 0;
+        sender.sendMessage(text("Build worlds with purpose " + type.displayName, GOLD, BOLD));
+        for (BuildWorld buildWorld : plugin.getBuildWorlds()) {
+            if (buildWorld.getRow().parsePurpose() != type) continue;
+            sender.sendMessage(textOfChildren(text("- ", GRAY),
+                                              text(buildWorld.getName(), YELLOW),
+                                              text(" by ", GRAY),
+                                              text(buildWorld.getOwnerName(), YELLOW)));
+            total += 1;
+        }
+        sender.sendMessage(text("Total " + total, GRAY));
+        return true;
+    }
+
+    private boolean purposeIndex(CommandSender sender, String[] args) {
+        if (args.length != 2) return false;
+        final BuildWorld buildWorld = requireBuildWorld(args[0]);
+        final int value = CommandArgCompleter.requireInt(args[1]);
+        final BuildWorldPurpose purpose = buildWorld.getRow().parsePurpose();
+        if (purpose == null) {
+            throw new CommandWarn("No purpose: " + buildWorld.getPath());
+        }
+        buildWorld.getRow().setPurposeIndex(value);
+        buildWorld.savePurposeAsync(() -> {
+                sender.sendMessage(text("Purpose index updated: " + buildWorld.getPath() + ", " + purpose + ", " + value, YELLOW));
+            });
+        return true;
+    }
+
+    private boolean purposeScore(CommandSender sender, String[] args) {
+        if (args.length != 2) return false;
+        final BuildWorld buildWorld = requireBuildWorld(args[0]);
+        final int value = CommandArgCompleter.requireInt(args[1]);
+        final BuildWorldPurpose purpose = buildWorld.getRow().parsePurpose();
+        if (purpose == null) {
+            throw new CommandWarn("No purpose: " + buildWorld.getPath());
+        }
+        buildWorld.getRow().setVoteScore(value);
+        buildWorld.savePurposeAsync(() -> {
+                sender.sendMessage(text("Vote score updated: " + buildWorld.getPath() + ", " + purpose + ", " + value, YELLOW));
+            });
+        return true;
+    }
+
+    private void purposeImport(CommandSender sender) {
+        File folder = new File(plugin.getDataFolder(), "purposeimport");
+        if (!folder.isDirectory()) {
+            throw new CommandWarn("Folder not found: " + folder);
+        }
+        for (File file : folder.listFiles()) {
+            String name = file.getName();
+            if (!name.endsWith(".yml")) continue;
+            name = name.substring(0, name.length() - 4);
+            final MinigameMatchType type;
+            try {
+                type = MinigameMatchType.valueOf(name.toUpperCase());
+            } catch (IllegalArgumentException iae) {
+                sender.sendMessage(text("Unknown minigame type: " + name, RED));
+                continue;
+            }
+            final YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+            int count = 0;
+            List<String> lines = config.getStringList("Worlds");
+            if (lines.isEmpty()) lines = config.getStringList("worlds");
+            if (lines.isEmpty()) lines = config.getStringList("Maps");
+            if (lines.isEmpty()) lines = config.getStringList("maps");
+            if (lines.isEmpty()) {
+                sender.sendMessage(text(file + ": World list not found!", RED));
+                continue;
+            }
+            for (String line : lines) {
+                BuildWorld buildWorld = plugin.getBuildWorldByPath(line);
+                if (buildWorld == null) {
+                    sender.sendMessage(text(type + ": World not found: " + line, RED));
+                    continue;
+                }
+                buildWorld.getRow().setPurpose(BuildWorldPurpose.MINIGAME.name().toLowerCase());
+                buildWorld.getRow().setPurposeType(type.name().toLowerCase());
+                buildWorld.getRow().setPurposeConfirmed(true);
+                buildWorld.getRow().setPurposeConfirmedWhen(new Date());
+                buildWorld.savePurposeAsync(() -> { });
+                count += 1;
+            }
+            sender.sendMessage(text(type + ": " + count + " worlds imported", YELLOW));
+        }
     }
 }

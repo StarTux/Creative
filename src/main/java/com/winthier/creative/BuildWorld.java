@@ -1,7 +1,9 @@
 package com.winthier.creative;
 
+import com.cavetale.core.event.minigame.MinigameMatchType;
 import com.cavetale.core.perm.Perm;
 import com.cavetale.core.playercache.PlayerCache;
+import com.winthier.creative.file.Files;
 import com.winthier.creative.sql.SQLWorld;
 import com.winthier.creative.sql.SQLWorldTrust;
 import java.io.File;
@@ -14,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.util.TriState;
@@ -64,8 +67,12 @@ public final class BuildWorld {
         row.setCreated(new Date());
     }
 
+    private void info(String msg) {
+        plugin().getLogger().info("[" + getPath() + "] " + msg);
+    }
+
     private void severe(String msg) {
-        plugin().getLogger().severe("[" + row.getPath() + "] " + msg);
+        plugin().getLogger().severe("[" + getPath() + "] " + msg);
     }
 
     public enum Flag {
@@ -203,24 +210,32 @@ public final class BuildWorld {
 
     public File getWorldFolder() {
         if (!plugin().isCreativeServer()) return null;
-        return new File(plugin().getServer().getWorldContainer(), row.getPath());
+        return new File(plugin().getServer().getWorldContainer(), getPath());
     }
 
     public World getWorld() {
         if (!plugin().isCreativeServer()) return null;
-        return Bukkit.getServer().getWorld(row.getPath());
+        return Bukkit.getServer().getWorld(getPath());
     }
 
     public World loadWorld() {
         if (!plugin().isCreativeServer()) return null;
-        World result = getWorld();
-        if (result != null) return result;
-        File dir = getWorldFolder();
+        final World alreadyLoaded = getWorld();
+        if (alreadyLoaded != null) return alreadyLoaded;
+        final File dir = getWorldFolder();
         if (!dir.isDirectory()) {
             severe("World folder does not exist: " + dir);
             return null;
         }
-        WorldCreator creator = WorldCreator.name(row.getPath());
+        return createWorld();
+    }
+
+    private World createWorld() {
+        return createWorld(getPath());
+    }
+
+    private World createWorld(final String path) {
+        WorldCreator creator = WorldCreator.name(path);
         creator.generator(row.getGenerator());
         creator.environment(row.getEnvironmentValue());
         creator.generateStructures(row.isGenerateStructures());
@@ -230,7 +245,7 @@ public final class BuildWorld {
         if (row.getSeed() != null) creator.seed(row.getSeed());
         creator.type(row.getWorldTypeValue());
         creator.keepSpawnLoaded(TriState.FALSE);
-        result = creator.createWorld();
+        final World result = creator.createWorld();
         result.setSpawnFlags(true, true);
         for (SpawnCategory spawnCategory : SpawnCategory.values()) {
             if (spawnCategory == SpawnCategory.MISC) continue;
@@ -376,6 +391,10 @@ public final class BuildWorld {
         saveAsync(Set.of("spawnX", "spawnY", "spawnZ", "spawnYaw", "spawnPitch"), callback);
     }
 
+    public void savePurposeAsync(Runnable callback) {
+        saveAsync(Set.of("purpose", "purposeType", "purposeConfirmed"), callback);
+    }
+
     public void saveAsync(Set<String> rowNames, Runnable callback) {
         if (rowNames.contains("tag")) {
             row.pack();
@@ -425,5 +444,45 @@ public final class BuildWorld {
                 }
             });
         return list.size();
+    }
+
+    public void makeCopyAsync(Consumer<World> callback) {
+        final File src = new File("/home/cavetale/creative/worlds/" + getPath());
+        if (!src.exists()) {
+            throw new IllegalStateException("Source folder not found: " + src);
+        }
+        String tmpPath = null;
+        File tmpDest = null;
+        for (int suffix = 0; suffix <= 999; suffix += 1) {
+            tmpPath = String.format("tmp_%03d_%s", suffix, getPath());
+            tmpDest = new File(Bukkit.getWorldContainer(), tmpPath);
+            if (tmpDest.exists()) continue;
+            break;
+        }
+        final File finalDest = tmpDest;
+        if (finalDest.exists()) {
+            throw new IllegalStateException("Cannot find folder: " + getPath());
+        }
+        info("BuildWorld#makeCopyAsync using dest: " + finalDest);
+        finalDest.mkdirs();
+        final String finalPath = tmpPath;
+        Bukkit.getScheduler().runTaskAsynchronously(plugin(), () -> {
+                Files.copyFileStructure(src, finalDest);
+                Bukkit.getScheduler().runTask(plugin(), () -> {
+                        final World world = createWorld(finalPath);
+                        callback.accept(world);
+                    });
+            });
+    }
+
+    public static List<BuildWorld> findMinigameWorlds(MinigameMatchType type, boolean requireConfirmation) {
+        List<BuildWorld> result = new ArrayList<>();
+        for (BuildWorld it : plugin().getBuildWorlds()) {
+            if (it.getRow().parsePurpose() != BuildWorldPurpose.MINIGAME) continue;
+            if (it.getRow().parseMinigame() != type) continue;
+            if (requireConfirmation && !it.getRow().isPurposeConfirmed()) continue;
+            result.add(it);
+        }
+        return result;
     }
 }
