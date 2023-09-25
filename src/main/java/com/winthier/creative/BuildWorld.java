@@ -19,6 +19,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import lombok.Getter;
 import lombok.Setter;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.util.TriState;
 import org.bukkit.Bukkit;
 import org.bukkit.GameRule;
@@ -34,6 +35,13 @@ import org.bukkit.entity.SpawnCategory;
 import static com.winthier.creative.ConnectListener.broadcastWorldUpdate;
 import static com.winthier.creative.CreativePlugin.plugin;
 import static com.winthier.creative.sql.Database.sql;
+import static net.kyori.adventure.text.Component.empty;
+import static net.kyori.adventure.text.Component.join;
+import static net.kyori.adventure.text.Component.newline;
+import static net.kyori.adventure.text.Component.text;
+import static net.kyori.adventure.text.JoinConfiguration.separator;
+import static net.kyori.adventure.text.format.NamedTextColor.*;
+import static net.kyori.adventure.text.format.TextDecoration.*;
 
 @Getter @Setter
 public final class BuildWorld {
@@ -208,6 +216,19 @@ public final class BuildWorld {
         }
     }
 
+    public List<String> getBuilderNames() {
+        List<String> result = new ArrayList<>();
+        result.add(getOwnerName());
+        for (SQLWorldTrust trust : trusted.values()) {
+            final Trust type = trust.getTrustValue();
+            if (!type.canBuild()) continue;
+            final String name = PlayerCache.nameForUuid(trust.getPlayer());
+            if (result.contains(name)) continue;
+            result.add(name);
+        }
+        return result;
+    }
+
     public File getWorldFolder() {
         if (!plugin().isCreativeServer()) return null;
         return new File(plugin().getServer().getWorldContainer(), getPath());
@@ -293,7 +314,7 @@ public final class BuildWorld {
             border.setSize((double) row.getBorderSize());
         }
         if (row.isSpawnSet()) {
-            result.setSpawnLocation(getSpawnLocation());
+            result.setSpawnLocation(getSpawnLocation(result));
         }
         return result;
     }
@@ -328,9 +349,11 @@ public final class BuildWorld {
     }
 
     public Location getSpawnLocation() {
-        World w = getWorld();
-        if (w == null) return null;
-        return new Location(w, row.getSpawnX(), row.getSpawnY(), row.getSpawnZ(),
+        return getSpawnLocation(getWorld());
+    }
+
+    public Location getSpawnLocation(World world) {
+        return new Location(world, row.getSpawnX(), row.getSpawnY(), row.getSpawnZ(),
                             (float) row.getSpawnYaw(), (float) row.getSpawnPitch());
     }
 
@@ -470,9 +493,17 @@ public final class BuildWorld {
                 Files.copyFileStructure(src, finalDest);
                 Bukkit.getScheduler().runTask(plugin(), () -> {
                         final World world = createWorld(finalPath);
+                        world.setAutoSave(false);
                         callback.accept(world);
                     });
             });
+    }
+
+    public static BuildWorld findWithPath(final String name) {
+        for (BuildWorld it : plugin().getBuildWorlds()) {
+            if (it.getPath().equalsIgnoreCase(name)) return it;
+        }
+        return null;
     }
 
     public static List<BuildWorld> findMinigameWorlds(MinigameMatchType type, boolean requireConfirmation) {
@@ -484,5 +515,20 @@ public final class BuildWorld {
             result.add(it);
         }
         return result;
+    }
+
+    public void announceMap(World world) {
+        List<Component> messageLines = new ArrayList<>();
+        messageLines.addAll(List.of(empty(),
+                                    text(getName(), GREEN),
+                                    text("By " + String.join(", ", getBuilderNames()), GRAY)));
+        if (row.getDescription() != null) {
+            messageLines.add(text(row.getDescription(), LIGHT_PURPLE, ITALIC));
+        }
+        messageLines.add(empty());
+        Component message = join(separator(newline()), messageLines);
+        for (Player target : world.getPlayers()) {
+            target.sendMessage(message);
+        }
     }
 }

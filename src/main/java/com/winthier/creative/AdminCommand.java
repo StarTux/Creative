@@ -5,6 +5,7 @@ import com.cavetale.core.command.CommandArgCompleter;
 import com.cavetale.core.command.CommandContext;
 import com.cavetale.core.command.CommandNode;
 import com.cavetale.core.command.CommandWarn;
+import com.cavetale.core.connect.NetworkServer;
 import com.cavetale.core.event.minigame.MinigameMatchType;
 import com.cavetale.core.perm.Perm;
 import com.cavetale.core.playercache.PlayerCache;
@@ -72,6 +73,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             .completers(supplyList(AdminCommand::supplyWorldPaths))
             .senderCaller(this::configCommand);
         rootNode.addChild("listunregistered").denyTabCompletion()
+            .remoteServer(NetworkServer.CREATIVE)
             .description("List unregistered worlds")
             .senderCaller(this::listUnregisteredCommand);
         rootNode.addChild("list").arguments("[player]")
@@ -79,12 +81,15 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             .completers(CommandArgCompleter.PLAYER_CACHE)
             .senderCaller(this::listCommand);
         rootNode.addChild("who").denyTabCompletion()
+            .remoteServer(NetworkServer.CREATIVE)
             .description("List players in worlds")
             .senderCaller(this::whoCommand);
         rootNode.addChild("listloaded").denyTabCompletion()
+            .remoteServer(NetworkServer.CREATIVE)
             .description("List loaded worlds")
             .senderCaller(this::listLoadedCommand);
         rootNode.addChild("tp").arguments("[player] <world>")
+            .remoteServer(NetworkServer.CREATIVE)
             .description("Teleport to world")
             .completers(supplyList(AdminCommand::supplyWorldPaths))
             .senderCaller(this::tpCommand);
@@ -121,24 +126,29 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
                         CommandArgCompleter.PLAYER_CACHE)
             .senderCaller(this::setOwnerCommand);
         rootNode.addChild("create").arguments("n:name p:path o:owner g:generator G:generatorSettings e:environment t:worldType s:seed S:generateStructures")
+            .remoteServer(NetworkServer.CREATIVE)
             .completers(AdminCommand::completeCreateArgs, CommandArgCompleter.REPEAT)
             .description("Create a world")
             .senderCaller(this::createCommand);
         rootNode.addChild("createvoid").arguments("<name> [environment]")
+            .remoteServer(NetworkServer.CREATIVE)
             .description("Create empty world")
             .completers(supplyList(AdminCommand::supplyWorldPaths),
                         enumLowerList(World.Environment.class))
             .senderCaller(this::createVoidCommand);
         rootNode.addChild("import").arguments("<world> [generator]")
+            .remoteServer(NetworkServer.CREATIVE)
             .description("Import loaded world")
             .completers(supplyList(AdminCommand::loadedWorldNames),
                         list(List.of("VoidGenerator")))
             .senderCaller(this::importCommand);
         rootNode.addChild("load").arguments("<world>")
+            .remoteServer(NetworkServer.CREATIVE)
             .description("Load build world")
             .completers(supplyList(AdminCommand::supplyWorldPaths))
             .senderCaller(this::loadCommand);
         rootNode.addChild("unload").arguments("<world>")
+            .remoteServer(NetworkServer.CREATIVE)
             .description("Unload build world")
             .completers(supplyList(AdminCommand::supplyWorldPaths))
             .senderCaller(this::unloadCommand);
@@ -311,6 +321,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
     }
 
     private void reloadCommand(CommandSender sender) {
+        requireCreativeServer();
         plugin.reloadAllConfigs();
         sender.sendMessage(text("Configs reloaded", AQUA));
     }
@@ -402,6 +413,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
     }
 
     private boolean setCommand(CommandSender sender, String[] args) {
+        requireCreativeServer();
         Player player = sender instanceof Player
             ? (Player) sender
             : null;
@@ -449,6 +461,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
     }
 
     private boolean configCommand(CommandSender sender, String[] args) {
+        requireCreativeServer();
         if (args.length != 1) return false;
         String name = args[0];
         BuildWorld buildWorld = plugin.getBuildWorldByPath(name);
@@ -466,6 +479,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
     }
 
     private void listUnregisteredCommand(CommandSender sender) {
+        requireCreativeServer();
         sender.sendMessage(text("Unregistered worlds:", AQUA));
         int count = 0;
         for (String dir: plugin.getServer().getWorldContainer().list()) {
@@ -521,6 +535,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
     }
 
     private void whoCommand(CommandSender sender) {
+        requireCreativeServer();
         List<Component> lines = new ArrayList<>();
         lines.add(text("World Player List", YELLOW));
         for (World world: plugin.getServer().getWorlds()) {
@@ -540,6 +555,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
     }
 
     private void listLoadedCommand(CommandSender sender) {
+        requireCreativeServer();
         int count = 0;
         for (World world: plugin.getServer().getWorlds()) {
             if (plugin.getBuildWorldByWorld(world) == null) {
@@ -555,6 +571,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
     }
 
     private boolean tpCommand(CommandSender sender, String[] args) {
+        requireCreativeServer();
         Player player = sender instanceof Player
             ? (Player) sender
             : null;
@@ -587,6 +604,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
     }
 
     private boolean removeCommand(CommandSender sender, String[] args) {
+        requireCreativeServer();
         if (args.length != 1) return false;
         String worldKey = args[0];
         BuildWorld buildWorld = plugin.getBuildWorldByPath(worldKey);
@@ -606,6 +624,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
     }
 
     private boolean resetOwnerCommand(CommandSender sender, String[] args) {
+        requireCreativeServer();
         if (args.length > 1) return false;
         BuildWorld buildWorld;
         if (args.length >= 1) {
@@ -615,6 +634,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
                 throw new CommandWarn("World not found: " + worldKey);
             }
         } else if (sender instanceof Player) {
+            requireCreativeServer();
             Player player = (Player) sender;
             buildWorld = plugin.getBuildWorldByWorld(player.getWorld());
             if (buildWorld == null) {
@@ -647,6 +667,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
     }
 
     private boolean createCommand(CommandSender sender, String[] args) {
+        requireCreativeServer();
         if (args.length == 0) return false;
         PlayerCache owner = null;
         String name = null;
@@ -757,6 +778,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
     }
 
     private boolean createVoidCommand(CommandSender sender, String[] args) {
+        requireCreativeServer();
         if (!(sender instanceof Player)) {
             throw new CommandWarn("Player expected");
         }
@@ -805,6 +827,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
     }
 
     private boolean importCommand(CommandSender sender, String[] args) {
+        requireCreativeServer();
         if (args.length != 2) return false;
         String name = args[0];
         String generator = args[1];
@@ -832,6 +855,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
     }
 
     private boolean loadCommand(CommandSender sender, String[] args) {
+        requireCreativeServer();
         if (args.length != 1) return false;
         String name = args[0];
         BuildWorld buildWorld = plugin.getBuildWorldByPath(name);
@@ -848,6 +872,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
     }
 
     private boolean unloadCommand(CommandSender sender, String[] args) {
+        requireCreativeServer();
         if (args.length > 2) return false;
         String name = args[0];
         BuildWorld buildWorld = plugin.getBuildWorldByPath(name);
@@ -877,6 +902,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
     }
 
     private void ignoreCommand(Player player) {
+        requireCreativeServer();
         if (plugin.toggleIgnore(player)) {
             player.sendMessage(text("Ignoring world perms", YELLOW));
         } else {
@@ -886,6 +912,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
     }
 
     private void debugPlotCommand(Player player) {
+        requireCreativeServer();
         Block block = player.getLocation().getBlock();
         PlotWorld plotWorld = plugin.getPlotWorld(block.getWorld());
         if (plotWorld == null) {
@@ -937,11 +964,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
 
     private boolean clearTrustCommand(CommandSender sender, String[] args) {
         if (args.length != 1) return false;
-        String worldName = args[0];
-        BuildWorld buildWorld = plugin.getBuildWorldByPath(worldName);
-        if (buildWorld == null) {
-            throw new CommandWarn("World not found: " + worldName);
-        }
+        BuildWorld buildWorld = requireBuildWorld(args[0]);
         final int count = buildWorld.getTrusted().size();
         buildWorld.clearTrustAsync(() -> {
                 sender.sendMessage(text("Removed " + count + " players who were trusted in " + buildWorld.getPath(), YELLOW));
@@ -983,10 +1006,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
 
     private boolean buildGroupsCommand(CommandSender sender, String[] args) {
         if (args.length == 0) return false;
-        BuildWorld buildWorld = plugin.getBuildWorldByPath(args[0]);
-        if (buildWorld == null) {
-            throw new CommandWarn("World not found: " + args[0]);
-        }
+        final BuildWorld buildWorld = requireBuildWorld(args[0]);
         List<String> buildGroups = List.of(Arrays.copyOfRange(args, 1, args.length));
         buildWorld.getRow().getCachedTag().setBuildGroups(buildGroups);
         buildWorld.saveAsync("tag", () -> {
@@ -1022,6 +1042,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
     }
 
     private void autoConvertCommand(CommandSender sender) {
+        requireCreativeServer();
         if (!(sender instanceof ConsoleCommandSender)) {
             throw new CommandWarn("Console expected");
         }
@@ -1034,6 +1055,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
     }
 
     private boolean transferAllCommand(CommandSender sender, String[] args) {
+        requireCreativeServer();
         if (!(sender instanceof ConsoleCommandSender)) {
             throw new CommandWarn("Console expected");
         }
@@ -1082,6 +1104,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
     }
 
     private void legacyWorldConvert(CommandSender sender) {
+        requireCreativeServer();
         sender.sendMessage(text("Starting conversion. See console", YELLOW));
         Legacy.transferAllBuildWorlds();
     }
@@ -1096,12 +1119,14 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             if (buildWorld.getRow().parseMinigame() != type) continue;
             sender.sendMessage(textOfChildren(text("- ", GRAY),
                                               text(buildWorld.getName(), YELLOW),
-                                              text(" by ", GRAY),
-                                              text(buildWorld.getOwnerName(), YELLOW),
+                                              text(" by " + buildWorld.getOwnerName(), GRAY),
                                               space(),
                                               (buildWorld.getRow().isPurposeConfirmed()
                                                ? text("Confirmed", GREEN)
-                                               : text("Unconfirmed", RED))));
+                                               : text("Unconfirmed", RED)))
+                               .hoverEvent(showText(text(buildWorld.getPath(), GRAY)))
+                               .clickEvent(suggestCommand("/cra tp " + buildWorld.getPath()))
+                               .insertion(buildWorld.getPath()));
             total += 1;
         }
         sender.sendMessage(text("Total " + total, GRAY));

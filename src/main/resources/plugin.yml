@@ -8,8 +8,8 @@ description: Manage Creative Worlds
 author: StarTux
 website: https://github.com/StarTux/Creative
 
-depend: [Core, SQL, VoidGenerator, FlatGenerator, Mytems]
-softdepend: [Shutdown, WorldEdit]
+depend: [Core, SQL, Mytems]
+softdepend: [Shutdown, WorldEdit, VoidGenerator, FlatGenerator]
 
 commands:
 
@@ -79,6 +79,12 @@ commands:
     permission: creative.kit
     usage: /kit
 
+  mapvote:
+    aliases: []
+    description: Vote on a map
+    permission: creative.mapvote
+    usage: /mapvote
+
 permissions:
 
   creative.creative:
@@ -99,4 +105,8 @@ permissions:
 
   creative.kit:
     description: Use /ckit
+    default: op
+
+  creative.mapvote:
+    description: Use /mapvote
     default: op

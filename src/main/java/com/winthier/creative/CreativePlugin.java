@@ -4,6 +4,7 @@ import com.cavetale.core.connect.NetworkServer;
 import com.winthier.creative.sql.Database;
 import com.winthier.creative.sql.SQLWorld;
 import com.winthier.creative.sql.SQLWorldTrust;
+import com.winthier.creative.vote.MapVotes;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,6 +38,7 @@ public final class CreativePlugin extends JavaPlugin {
     private WorldEditListener worldEditListener = new WorldEditListener(this);
     private final Random random = ThreadLocalRandom.current();
     private final CoreWorlds coreWorlds = new CoreWorlds(this);
+    private final MapVotes mapVotes = new MapVotes();
     // Commands
     private final AdminCommand adminCommand = new AdminCommand(this);
     private final CreativeCommand creativeCommand = new CreativeCommand(this);
@@ -70,6 +72,7 @@ public final class CreativePlugin extends JavaPlugin {
             loadPlotWorlds();
             worldEditListener.enable();
         }
+        mapVotes.enable();
         getLogger().info(isCreativeServer
                          ? "This is the Creative server"
                          : "This is NOT the Creative server");

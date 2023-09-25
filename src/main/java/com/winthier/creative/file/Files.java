@@ -8,8 +8,15 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.util.List;
+import org.bukkit.Bukkit;
+import org.bukkit.World;
+import org.bukkit.entity.Player;
 import static com.winthier.creative.CreativePlugin.plugin;
 
+/**
+ * World related file operations to help copy worlds from point a to
+ * point b, or delete them.
+ */
 public final class Files {
     private static void copyFileStructure(File source, File target, int depth) {
         plugin().getLogger().info("Files#copyFileStructure " + source + " => " + target);
@@ -56,6 +63,18 @@ public final class Files {
             }
         }
         file.delete();
+    }
+
+    public static boolean deleteWorld(World world) {
+        for (Player playerInWorld : world.getPlayers()) {
+            playerInWorld.teleport(Bukkit.getWorlds().get(0).getSpawnLocation());
+        }
+        if (!Bukkit.unloadWorld(world, false)) {
+            plugin().getLogger().severe("[Files] Failed to unload world: " + world.getName());
+            return false;
+        }
+        deleteFileStructure(world.getWorldFolder());
+        return true;
     }
 
     private Files() { }
