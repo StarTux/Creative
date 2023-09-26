@@ -3,6 +3,7 @@ package com.winthier.creative;
 import com.cavetale.core.event.minigame.MinigameMatchType;
 import com.cavetale.core.perm.Perm;
 import com.cavetale.core.playercache.PlayerCache;
+import com.cavetale.mytems.util.Text;
 import com.winthier.creative.file.Files;
 import com.winthier.creative.sql.SQLWorld;
 import com.winthier.creative.sql.SQLWorldTrust;
@@ -39,6 +40,7 @@ import static net.kyori.adventure.text.Component.empty;
 import static net.kyori.adventure.text.Component.join;
 import static net.kyori.adventure.text.Component.newline;
 import static net.kyori.adventure.text.Component.text;
+import static net.kyori.adventure.text.Component.textOfChildren;
 import static net.kyori.adventure.text.JoinConfiguration.separator;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
 import static net.kyori.adventure.text.format.TextDecoration.*;
@@ -536,5 +538,17 @@ public final class BuildWorld {
         for (Player target : world.getPlayers()) {
             target.sendMessage(message);
         }
+    }
+
+    public Component adminTooltip() {
+        List<Component> lines = new ArrayList<>();
+        lines.add(text(getName(), GREEN));
+        lines.add(textOfChildren(text("Path ", GRAY), text(getPath(), WHITE)));
+        lines.add(textOfChildren(text("Owner ", GRAY), text(getOwnerName(), WHITE)));
+        lines.add(textOfChildren(text("Purpose ", GRAY), text(row.parsePurpose().displayName, WHITE)));
+        if (row.getDescription() != null) {
+            lines.addAll(Text.wrapLore(row.getDescription(), c -> c.color(LIGHT_PURPLE).decorate(ITALIC)));
+        }
+        return join(separator(newline()), lines);
     }
 }

@@ -1133,7 +1133,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
                                               (buildWorld.getRow().isPurposeConfirmed()
                                                ? text("Confirmed", GREEN)
                                                : text("Unconfirmed", RED)))
-                               .hoverEvent(showText(text(buildWorld.getPath(), GRAY)))
+                               .hoverEvent(showText(buildWorld.adminTooltip()))
                                .clickEvent(suggestCommand("/cra tp " + buildWorld.getPath()))
                                .insertion(buildWorld.getPath()));
             total += 1;
@@ -1186,10 +1186,14 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         sender.sendMessage(text("Build worlds with purpose " + type.displayName, GOLD, BOLD));
         for (BuildWorld buildWorld : plugin.getBuildWorlds()) {
             if (buildWorld.getRow().parsePurpose() != type) continue;
+            List<Component> tooltip = new ArrayList<>();
             sender.sendMessage(textOfChildren(text("- ", GRAY),
                                               text(buildWorld.getName(), YELLOW),
                                               text(" by ", GRAY),
-                                              text(buildWorld.getOwnerName(), YELLOW)));
+                                              text(buildWorld.getOwnerName(), YELLOW))
+                               .hoverEvent(showText(buildWorld.adminTooltip()))
+                               .clickEvent(suggestCommand("/cra tp " + buildWorld.getPath()))
+                               .insertion(buildWorld.getPath()));
             total += 1;
         }
         sender.sendMessage(text("Total " + total, GRAY));
