@@ -12,6 +12,7 @@ public enum BuildWorldPurpose {
     LOBBY("Lobby"),
     EVENT("Event"),
     TEST("Test"),
+    FESTIVAL("Festival"),
     ;
 
     public final String displayName;
