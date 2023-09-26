@@ -415,7 +415,13 @@ public final class BuildWorld {
     }
 
     public void savePurposeAsync(Runnable callback) {
-        saveAsync(Set.of("purpose", "purposeType", "purposeConfirmed"), callback);
+        saveAsync(Set.of("purpose",
+                         "purposeType",
+                         "purposeTag",
+                         "purposeConfirmed",
+                         "purposeConfirmedWhen",
+                         "purposeIndex",
+                         "voteScore"), callback);
     }
 
     public void saveAsync(Set<String> rowNames, Runnable callback) {

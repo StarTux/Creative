@@ -206,6 +206,15 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             .description("List worlds with purpose")
             .completers(enumLowerList(BuildWorldPurpose.class))
             .senderCaller(this::purposeList);
+        purposeNode.addChild("reset").arguments("<world>")
+            .description("Reset world purpose")
+            .completers(supplyList(AdminCommand::supplyWorldPaths))
+            .senderCaller(this::purposeReset);
+        purposeNode.addChild("set").arguments("<world> <purpose>")
+            .description("Set world purpose")
+            .completers(supplyList(AdminCommand::supplyWorldPaths),
+                        enumLowerList(BuildWorldPurpose.class))
+            .senderCaller(this::purposeSet);
         purposeNode.addChild("index").arguments("<world> <index>")
             .description("Set purpose index")
             .completers(supplyList(AdminCommand::supplyWorldPaths),
@@ -1149,7 +1158,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         final MinigameMatchType minigame = CommandArgCompleter.requireEnum(MinigameMatchType.class, args[1]);
         buildWorld.getRow().setMinigame(minigame);
         buildWorld.savePurposeAsync(() -> {
-                sender.sendMessage(text("Purpose set: " + buildWorld.getPath() + ", " + minigame, YELLOW));
+                sender.sendMessage(text("Minigame set: " + buildWorld.getPath() + ", " + minigame, YELLOW));
             });
         return true;
     }
@@ -1184,6 +1193,27 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             total += 1;
         }
         sender.sendMessage(text("Total " + total, GRAY));
+        return true;
+    }
+
+    private boolean purposeSet(CommandSender sender, String[] args) {
+        if (args.length != 2) return false;
+        final BuildWorld buildWorld = requireBuildWorld(args[0]);
+        final BuildWorldPurpose purpose = CommandArgCompleter.requireEnum(BuildWorldPurpose.class, args[1]);
+        buildWorld.getRow().setPurpose(purpose.name().toLowerCase());
+        buildWorld.savePurposeAsync(() -> {
+                sender.sendMessage(text("Purpose set: " + buildWorld.getPath() + ", " + purpose, YELLOW));
+            });
+        return true;
+    }
+
+    private boolean purposeReset(CommandSender sender, String[] args) {
+        if (args.length != 1) return false;
+        final BuildWorld buildWorld = requireBuildWorld(args[0]);
+        buildWorld.getRow().resetPurpose();
+        buildWorld.savePurposeAsync(() -> {
+                sender.sendMessage(text("Purpose reset: " + buildWorld.getPath(), YELLOW));
+            });
         return true;
     }
 

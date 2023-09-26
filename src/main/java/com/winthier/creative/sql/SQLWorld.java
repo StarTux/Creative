@@ -177,7 +177,11 @@ public final class SQLWorld implements SQLRow {
     public void resetPurpose() {
         this.purpose = null;
         this.purposeType = null;
+        this.purposeTag = null;
         this.purposeConfirmed = false;
+        this.purposeConfirmedWhen = null;
+        this.purposeIndex = 0;
+        this.voteScore = 0;
     }
 
     public void setMinigame(MinigameMatchType type) {

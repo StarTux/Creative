@@ -8,6 +8,10 @@ public enum BuildWorldPurpose {
     MINIGAME("Minigame"),
     BUILD_EVENT("Build Event"),
     PLOT("Plot"), // Legacy
+    SPAWN("Spawn"),
+    LOBBY("Lobby"),
+    EVENT("Event"),
+    TEST("Test"),
     ;
 
     public final String displayName;
