@@ -8,7 +8,6 @@ import com.winthier.creative.BuildWorld;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +28,8 @@ import org.bukkit.scheduler.BukkitTask;
 import static com.winthier.creative.CreativePlugin.plugin;
 import static com.winthier.creative.review.MapReviewMenu.starComponent;
 import static com.winthier.creative.vote.MapVotes.mapVotes;
+import static java.util.Comparator.comparing;
+import static java.util.Comparator.comparingInt;
 import static net.kyori.adventure.text.Component.empty;
 import static net.kyori.adventure.text.Component.join;
 import static net.kyori.adventure.text.Component.newline;
@@ -232,8 +233,8 @@ public final class MapVote {
     public void openVoteBook(Player player) {
         List<BuildWorld> mapList = new ArrayList<>();
         mapList.addAll(maps.values());
-        Collections.sort(mapList, Comparator.<BuildWorld, String>comparing(BuildWorld::getName, String.CASE_INSENSITIVE_ORDER));
-        Collections.sort(mapList, Comparator.<BuildWorld>comparingInt(bw -> bw.getRow().getVoteScore()).reversed());
+        Collections.sort(mapList, comparing(BuildWorld::getName, String.CASE_INSENSITIVE_ORDER));
+        Collections.sort(mapList, comparingInt((BuildWorld bw) -> bw.getRow().getVoteScore()).reversed());
         List<Component> lines = new ArrayList<>();
         for (BuildWorld buildWorld : mapList) {
             List<Component> tooltip = new ArrayList<>();
