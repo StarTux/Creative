@@ -5,6 +5,7 @@ import com.cavetale.core.perm.Perm;
 import com.cavetale.core.playercache.PlayerCache;
 import com.cavetale.mytems.util.Text;
 import com.winthier.creative.file.Files;
+import com.winthier.creative.sql.SQLReview;
 import com.winthier.creative.sql.SQLWorld;
 import com.winthier.creative.sql.SQLWorldTrust;
 import java.io.File;
@@ -77,11 +78,11 @@ public final class BuildWorld {
         row.setCreated(new Date());
     }
 
-    private void info(String msg) {
+    public void info(String msg) {
         plugin().getLogger().info("[" + getPath() + "] " + msg);
     }
 
-    private void severe(String msg) {
+    public void severe(String msg) {
         plugin().getLogger().severe("[" + getPath() + "] " + msg);
     }
 
@@ -550,5 +551,23 @@ public final class BuildWorld {
             lines.addAll(Text.wrapLore(row.getDescription(), c -> c.color(LIGHT_PURPLE).decorate(ITALIC)));
         }
         return join(separator(newline()), lines);
+    }
+
+    public void updateVoteScore() {
+        sql().find(SQLReview.class).eq("path", getPath()).findListAsync(list -> {
+                int totalReviews = 0;
+                int totalStars = 0;
+                for (SQLReview it : list) {
+                    if (it.getStars() == 0) continue;
+                    totalStars += it.getStars();
+                    totalReviews += 1;
+                }
+                row.setVoteScore(totalReviews > 0
+                                 ? (totalStars * 100) / totalReviews
+                                 : 0);
+                saveAsync("voteScore", () -> {
+                        info("New vote score " + row.getVoteScore());
+                    });
+            });
     }
 }

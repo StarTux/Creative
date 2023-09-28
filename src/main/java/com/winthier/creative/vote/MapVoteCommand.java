@@ -5,6 +5,7 @@ import com.cavetale.core.command.CommandWarn;
 import com.cavetale.core.event.minigame.MinigameMatchType;
 import com.winthier.creative.BuildWorld;
 import com.winthier.creative.CreativePlugin;
+import com.winthier.creative.review.MapReview;
 import org.bukkit.entity.Player;
 import static com.winthier.creative.vote.MapVotes.mapVotes;
 import static net.kyori.adventure.text.Component.text;
@@ -31,6 +32,10 @@ public final class MapVoteCommand extends AbstractCommand<CreativePlugin> {
             .description("Vote on a map")
             .hidden(true)
             .playerCaller(this::vote);
+        rootNode.addChild("review").arguments("<path>")
+            .description("Review a map")
+            .hidden(true)
+            .playerCaller(this::review);
     }
 
     private void mapVote(Player player) {
@@ -75,7 +80,7 @@ public final class MapVoteCommand extends AbstractCommand<CreativePlugin> {
             throw new CommandWarn("Map not available");
         }
         mapVote.vote(player.getUniqueId(), map);
-        player.sendMessage(text("Voted for map: " + map.getName() + " by " + map.getBuilderNames(), GREEN)
+        player.sendMessage(text("Voted for map: " + map.getName() + " by " + String.join(" ", map.getBuilderNames()), GREEN)
                            .hoverEvent(showText(text("Change your vote", GRAY)))
                            .clickEvent(runCommand("/mapvote open " + minigame.name().toLowerCase())));
         return true;
@@ -87,5 +92,16 @@ public final class MapVoteCommand extends AbstractCommand<CreativePlugin> {
         } catch (IllegalArgumentException iae) {
             return null;
         }
+    }
+
+    private boolean review(Player player, String[] args) {
+        if (args.length != 1) return false;
+        final String worldName = args[0];
+        final MapReview mapReview = MapReview.of(worldName);
+        if (mapReview == null || !mapReview.isActive()) {
+            throw new CommandWarn("The review is over");
+        }
+        mapReview.open(player);
+        return true;
     }
 }

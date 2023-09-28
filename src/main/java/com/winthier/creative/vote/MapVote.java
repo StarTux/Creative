@@ -8,6 +8,7 @@ import com.winthier.creative.BuildWorld;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.scheduler.BukkitTask;
 import static com.winthier.creative.CreativePlugin.plugin;
+import static com.winthier.creative.review.MapReviewMenu.starComponent;
 import static com.winthier.creative.vote.MapVotes.mapVotes;
 import static net.kyori.adventure.text.Component.empty;
 import static net.kyori.adventure.text.Component.join;
@@ -230,7 +232,8 @@ public final class MapVote {
     public void openVoteBook(Player player) {
         List<BuildWorld> mapList = new ArrayList<>();
         mapList.addAll(maps.values());
-        Collections.sort(mapList, (a, b) -> String.CASE_INSENSITIVE_ORDER.compare(a.getName(), b.getName()));
+        Collections.sort(mapList, Comparator.<BuildWorld, String>comparing(BuildWorld::getName, String.CASE_INSENSITIVE_ORDER));
+        Collections.sort(mapList, Comparator.<BuildWorld>comparingInt(bw -> bw.getRow().getVoteScore()).reversed());
         List<Component> lines = new ArrayList<>();
         for (BuildWorld buildWorld : mapList) {
             List<Component> tooltip = new ArrayList<>();
@@ -238,6 +241,11 @@ public final class MapVote {
             if (raw.length() > 16) raw = raw.substring(0, 16);
             Component displayName = text(raw, BLUE);
             tooltip.add(displayName);
+            if (buildWorld.getRow().getVoteScore() > 0) {
+                final int starCount = (int) Math.round((double) buildWorld.getRow().getVoteScore() / 100.0);
+                System.out.println("STAR " + starCount);
+                tooltip.add(starComponent(starCount));
+            }
             String by = "By " + String.join(", ", buildWorld.getBuilderNames());
             tooltip.addAll(Text.wrapLore(by, c -> c.color(GRAY)));
             if (buildWorld.getRow().getDescription() != null) {

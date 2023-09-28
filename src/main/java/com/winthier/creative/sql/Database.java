@@ -15,7 +15,8 @@ public final class Database {
 
     public static List<Class<? extends SQLRow>> getAllTableClasses() {
         return List.of(SQLWorld.class,
-                       SQLWorldTrust.class);
+                       SQLWorldTrust.class,
+                       SQLReview.class);
     }
 
     public void enable() {

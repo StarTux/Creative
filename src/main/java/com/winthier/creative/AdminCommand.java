@@ -61,7 +61,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         rootNode.addChild("info").arguments("[path]")
             .description("Get world info")
             .completers(supplyList(AdminCommand::supplyWorldPaths))
-            .senderCaller(this::infoCommand);
+            .senderCaller(this::info);
         rootNode.addChild("set").arguments("[world] <flag> <value>")
             .description("Change world settings")
             .completers(supplyList(AdminCommand::supplyWorldPaths),
@@ -335,7 +335,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         sender.sendMessage(text("Configs reloaded", AQUA));
     }
 
-    private boolean infoCommand(CommandSender sender, String[] args) {
+    private boolean info(CommandSender sender, String[] args) {
         if (args.length > 1) return false;
         final BuildWorld buildWorld;
         if (args.length == 0) {
@@ -418,6 +418,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             sender.sendMessage(textOfChildren(text("Minigame ", GRAY),
                                               text(minigame.displayName, YELLOW)));
         }
+        sender.sendMessage(textOfChildren(text("Vote score ", GRAY), text(buildWorld.getRow().getVoteScore(), YELLOW)));
         return true;
     }
 

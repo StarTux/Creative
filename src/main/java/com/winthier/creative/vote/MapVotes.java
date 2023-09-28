@@ -36,6 +36,13 @@ public final class MapVotes implements Listener {
         Bukkit.getPluginManager().registerEvents(this, plugin());
     }
 
+    public void disable() {
+        for (MapVote it : minigameVoteMap.values()) {
+            it.stopVote();
+        }
+        minigameVoteMap.clear();
+    }
+
     public static MapVotes mapVotes() {
         return plugin().getMapVotes();
     }
