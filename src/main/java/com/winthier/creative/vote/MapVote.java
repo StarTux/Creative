@@ -157,7 +157,8 @@ public final class MapVote {
         if (avoidRepetition > 0) {
             MapVoteTag tag = loadTag();
             final List<String> list = new ArrayList<>();
-            list.add(0, buildWorldWinner.getPath());
+            list.add(buildWorldWinner.getPath());
+            list.addAll(tag.avoidRepetitionList);
             while (list.size() > avoidRepetition) {
                 list.remove(list.size() - 1);
             }
