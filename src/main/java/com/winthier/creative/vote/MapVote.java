@@ -245,7 +245,6 @@ public final class MapVote {
             tooltip.add(displayName);
             if (buildWorld.getRow().getVoteScore() > 0) {
                 final int starCount = (int) Math.round((double) buildWorld.getRow().getVoteScore() / 100.0);
-                System.out.println("STAR " + starCount);
                 tooltip.add(starComponent(starCount));
             }
             String by = "By " + String.join(", ", buildWorld.getBuilderNames());
