@@ -7,6 +7,7 @@ import com.cavetale.mytems.util.Text;
 import com.winthier.creative.BuildWorld;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -48,6 +49,11 @@ import static net.kyori.adventure.text.format.TextDecoration.*;
  *
  * The expected lifetime of this object is one vote.  New votes shall
  * create a new copy, see MapVotes.
+ *
+ * The regular callback is called after a map has been chosen and
+ * loaded.
+ * The voteHandler is the alternative callback which can be used if
+ * the players should be split into smaller groups in the end.
  */
 @Getter
 public final class MapVote {
@@ -55,6 +61,7 @@ public final class MapVote {
     // Settings
     @Setter private Component title = empty();
     @Setter private MapVoteScheme scheme = MapVoteScheme.CHANCE;
+    @Setter private Consumer<MapVote> voteHandler = null;
     @Setter private Consumer<MapVoteResult> callback = null;
     @Setter private int maxTicks = 20 * 60;
     @Setter private int avoidRepetition = 3;
@@ -149,9 +156,24 @@ public final class MapVote {
 
     public void finishVote() {
         stopVote();
+        printVoteStats();
+        if (voteHandler != null) {
+            voteHandler.accept(this);
+        } else {
+            findAndLoadWinner(List.copyOf(votes.keySet()), this.callback);
+        }
+    }
+
+    public void findAndLoadWinnersFor(Collection<Player> players, Consumer<MapVoteResult> theCallback) {
+        List<UUID> uuids = new ArrayList<>();
+        for (var p : players) uuids.add(p.getUniqueId());
+        findAndLoadWinner(uuids, theCallback);
+    }
+
+    public void findAndLoadWinner(Collection<UUID> playerIds, Consumer<MapVoteResult> theCallback) {
         BuildWorld buildWorldWinner = switch (scheme) {
-        case CHANCE -> findWinnerByChance();
-        case HIGHEST -> findHighestWinner();
+        case CHANCE -> findWinnerByChance(playerIds);
+        case HIGHEST -> findHighestWinner(playerIds);
         default -> throw new IllegalStateException("scheme=" + scheme);
         };
         if (avoidRepetition > 0) {
@@ -167,38 +189,39 @@ public final class MapVote {
         }
         loadingWorld = true;
         buildWorldWinner.makeLocalCopyAsync(world -> {
-                if (callback != null) {
+                if (theCallback != null) {
                     MapVoteResult result = new MapVoteResult(this, buildWorldWinner, world);
-                    callback.accept(result);
+                    theCallback.accept(result);
                 }
                 loadingWorld = false;
             });
     }
 
-    public void printVoteStats() {
-        plugin().getLogger().info("[MapVote] [" + minigame.displayName + "] " + votes);
-        final Map<String, Integer> stats = new HashMap<>();
-        for (String it : votes.values()) {
-            stats.compute(it, (s, i) -> i != null ? i + 1 : 1);
-        }
-        plugin().getLogger().info("[MapVote] [" + minigame.displayName + "] " + stats);
+    public BuildWorld findWinnerAtRandom() {
+        final List<BuildWorld> all = List.copyOf(maps.values());
+        return all.get(random.nextInt(all.size()));
     }
 
-    public BuildWorld findWinnerByChance() {
+    public BuildWorld findWinnerByChance(Collection<UUID> playerIds) {
         final List<BuildWorld> randomMaps = new ArrayList<>();
-        for (String it : votes.values()) {
+        for (var uuid : playerIds) {
+            String it = votes.get(uuid);
+            if (it == null) continue;
             BuildWorld buildWorld = maps.get(it);
             if (buildWorld != null) randomMaps.add(buildWorld);
         }
-        if (randomMaps.isEmpty()) randomMaps.addAll(maps.values());
+        if (randomMaps.isEmpty()) return findWinnerAtRandom();
         return randomMaps.get(random.nextInt(randomMaps.size()));
     }
 
-    public BuildWorld findHighestWinner() {
+    public BuildWorld findHighestWinner(Collection<UUID> playerIds) {
         final Map<String, Integer> stats = new HashMap<>();
-        for (String it : votes.values()) {
+        for (var uuid : playerIds) {
+            final String it = votes.get(uuid);
+            if (it == null) continue;
             stats.compute(it, (s, i) -> i != null ? i + 1 : 1);
         }
+        if (stats.isEmpty()) return findWinnerAtRandom();
         int highest = 0;
         for (int value : stats.values()) {
             if (value > highest) highest = value;
@@ -210,8 +233,17 @@ public final class MapVote {
             if (buildWorld == null) continue;
             candidates.add(buildWorld);
         }
-        if (candidates.isEmpty()) candidates.addAll(maps.values());
+        if (candidates.isEmpty()) return findWinnerAtRandom();
         return candidates.get(random.nextInt(candidates.size()));
+    }
+
+    public void printVoteStats() {
+        plugin().getLogger().info("[MapVote] [" + minigame.displayName + "] " + votes);
+        final Map<String, Integer> stats = new HashMap<>();
+        for (String it : votes.values()) {
+            stats.compute(it, (s, i) -> i != null ? i + 1 : 1);
+        }
+        plugin().getLogger().info("[MapVote] [" + minigame.displayName + "] " + stats);
     }
 
     public void remindToVote(World world) {
