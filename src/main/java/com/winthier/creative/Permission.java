@@ -25,6 +25,11 @@ final class Permission {
                 givePermission(player, perm);
             }
         }
+        if (trust.isOwner()) {
+            for (String perm: getPermissionsFile().getStringList("Owner")) {
+                givePermission(player, perm);
+            }
+        }
         if (buildWorld.isSet(BuildWorld.Flag.WORLD_EDIT)
             && trust.canUseWorldEdit()
             && player.hasPermission("creative.worldedit")) {
