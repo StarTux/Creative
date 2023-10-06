@@ -117,8 +117,10 @@ public final class MapVote {
 
     protected void stopVote() {
         voteActive = false;
-        task.cancel();
-        task = null;
+        if (task == null) {
+            task.cancel();
+            task = null;
+        }
     }
 
     public File getTagFolder() {
