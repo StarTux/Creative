@@ -24,12 +24,14 @@ import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.ComponentLike;
 import net.kyori.adventure.text.JoinConfiguration;
+import org.bukkit.Bukkit;
 import org.bukkit.Difficulty;
 import org.bukkit.GameMode;
 import org.bukkit.GameRule;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.WorldType;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import static com.cavetale.core.command.CommandArgCompleter.enumLowerList;
 import static com.cavetale.core.command.CommandArgCompleter.list;
@@ -60,6 +62,9 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
 
     @Override
     protected void onEnable() {
+        rootNode.denyTabCompletion()
+            .description("Creative world commands")
+            .senderCaller(this::creative);
         rootNode.addChild("tp").arguments("<world>")
             .remoteServer(NetworkServer.CREATIVE)
             .description("Teleport to world")
@@ -158,6 +163,18 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
     public List<String> completeWorldNames(CommandContext context, CommandNode node, String arg) {
         if (!context.isPlayer()) return List.of();
         return plugin.completeWorldNames(context.player, arg);
+    }
+
+    private boolean creative(CommandSender sender, String[] args) {
+        if (args.length != 0) return false;
+        if (plugin.isCreativeServer() && sender instanceof RemotePlayer rp && !rp.isPlayer()) {
+            rp.bring(plugin, Bukkit.getWorlds().get(0).getSpawnLocation(), p -> {
+                    p.sendMessage(text("Welcome to the Creative server", GREEN));
+                });
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public boolean worldTeleport(RemotePlayer remote, String[] args) {
