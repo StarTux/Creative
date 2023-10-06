@@ -62,9 +62,8 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
 
     @Override
     protected void onEnable() {
-        rootNode.denyTabCompletion()
+        rootNode.description("Creative world commands")
             .remoteServer(NetworkServer.CREATIVE)
-            .description("Creative world commands")
             .senderCaller(this::creative);
         rootNode.addChild("tp").arguments("<world>")
             .remoteServer(NetworkServer.CREATIVE)
