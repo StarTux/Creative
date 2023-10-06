@@ -117,7 +117,7 @@ public final class MapVote {
 
     protected void stopVote() {
         voteActive = false;
-        if (task == null) {
+        if (task != null) {
             task.cancel();
             task = null;
         }
