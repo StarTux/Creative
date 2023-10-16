@@ -13,6 +13,7 @@ public enum BuildWorldPurpose {
     EVENT("Event"),
     TEST("Test"),
     FESTIVAL("Festival"),
+    RAID("Raid"),
     ;
 
     public final String displayName;
