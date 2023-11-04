@@ -449,13 +449,13 @@ public final class CreativeListener implements Listener {
         case SHOULDER_ENTITY:
             return;
         case SPAWNER_EGG: {
-	    switch (event.getEntityType()) {
-	    case ENDER_DRAGON:
-	    case WITHER:
-		event.setCancelled(true);
-		break;
-	    default: break;
-	    }
+            switch (event.getEntityType()) {
+            case ENDER_DRAGON:
+            case WITHER:
+                event.setCancelled(true);
+                break;
+            default: break;
+            }
             if (!buildWorld.isSet(BuildWorld.Flag.MOBS)) {
                 event.setCancelled(true);
                 return;
