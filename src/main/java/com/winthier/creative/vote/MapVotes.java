@@ -50,11 +50,13 @@ public final class MapVotes implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     private void onPlayerJoin(PlayerJoinEvent event) {
         final Player player = event.getPlayer();
-        for (MapVote mapVote : minigameVoteMap.values()) {
-            if (!mapVote.isVoteActive()) continue;
-            if (!player.getWorld().equals(mapVote.getLobbyWorld())) continue;
-            mapVote.remindToVote(player);
-        }
+        Bukkit.getScheduler().runTaskLater(plugin(), () -> {
+                for (MapVote mapVote : minigameVoteMap.values()) {
+                    if (!mapVote.isVoteActive()) continue;
+                    if (!player.getWorld().equals(mapVote.getLobbyWorld())) continue;
+                    mapVote.remindToVote(player);
+                }
+            }, 20L);
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
