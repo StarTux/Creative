@@ -79,7 +79,7 @@ public final class MapVoteCommand extends AbstractCommand<CreativePlugin> {
         if (map == null) {
             throw new CommandWarn("Map not available");
         }
-        mapVote.vote(player.getUniqueId(), map);
+        if (!mapVote.vote(player.getUniqueId(), map)) return true;
         player.sendMessage(text("Voted for map: " + map.getName() + " by " + String.join(" ", map.getBuilderNames()), GREEN)
                            .hoverEvent(showText(text("Change your vote", GRAY)))
                            .clickEvent(runCommand("/mapvote open " + minigame.name().toLowerCase())));

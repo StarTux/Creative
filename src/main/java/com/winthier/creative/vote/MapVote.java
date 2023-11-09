@@ -68,6 +68,7 @@ public final class MapVote {
     @Setter private World lobbyWorld = null;
     // Runtime
     private Map<String, BuildWorld> maps = Map.of();
+    private List<String> blacklistedMaps = new ArrayList<>();
     private Map<UUID, String> votes = new HashMap<>();
     private boolean voteActive;
     private boolean loadingWorld;
@@ -88,19 +89,16 @@ public final class MapVote {
         }
         // Prune maps if configured to avoid repetition.
         if (avoidRepetition > 0) {
-            Map<String, BuildWorld> prunedMaps = new HashMap<>(newMaps);
             MapVoteTag tag = loadTag();
             for (int i = 0; i < avoidRepetition; i += 1) {
                 if (i >= tag.avoidRepetitionList.size()) break;
-                final String key = tag.avoidRepetitionList.get(i);
-                prunedMaps.remove(key);
+                blacklistedMaps.add(tag.avoidRepetitionList.get(i));
             }
-            if (prunedMaps.isEmpty()) {
+            if (blacklistedMaps.size() >= newMaps.size()) {
                 // No maps are left! Clear the list of repeated maps.
+                blacklistedMaps.clear();
                 tag.avoidRepetitionList.clear();
                 saveTag(tag);
-            } else {
-                newMaps = prunedMaps;
             }
         }
         this.maps = newMaps;
@@ -152,8 +150,10 @@ public final class MapVote {
         return Math.max(0f, Math.min(1f, 1f - ((float) ticksLeft / (float) maxTicks)));
     }
 
-    public void vote(UUID uuid, BuildWorld map) {
+    public boolean vote(UUID uuid, BuildWorld map) {
+        if (blacklistedMaps.contains(map.getPath())) return false;
         votes.put(uuid, map.getPath());
+        return true;
     }
 
     public void finishVote() {
@@ -272,11 +272,13 @@ public final class MapVote {
         Collections.sort(mapList, comparingInt((BuildWorld bw) -> bw.getRow().getVoteScore()).reversed());
         List<Component> lines = new ArrayList<>();
         for (BuildWorld buildWorld : mapList) {
+            final boolean blacklisted = blacklistedMaps.contains(buildWorld.getPath());
             List<Component> tooltip = new ArrayList<>();
             String raw = buildWorld.getName();
             if (raw.length() > 16) raw = raw.substring(0, 16);
-            Component displayName = text(raw, BLUE);
+            Component displayName = text(raw, blacklisted ? GRAY : BLUE);
             tooltip.add(displayName);
+            if (blacklisted) tooltip.add(text("On Timeout", DARK_GRAY, ITALIC));
             if (buildWorld.getRow().getVoteScore() > 0) {
                 final int starCount = (int) Math.round((double) buildWorld.getRow().getVoteScore() / 100.0);
                 tooltip.add(starComponent(starCount));
@@ -286,10 +288,12 @@ public final class MapVote {
             if (buildWorld.getRow().getDescription() != null) {
                 tooltip.addAll(Text.wrapLore(buildWorld.getRow().getDescription(), c -> c.color(LIGHT_PURPLE).decorate(ITALIC)));
             }
-            final String command = "/mapvote vote " + minigame.name().toLowerCase() + " " + buildWorld.getPath();
-            lines.add(displayName
-                      .hoverEvent(showText(join(separator(newline()), tooltip)))
-                      .clickEvent(runCommand(command)));
+            Component line = displayName.hoverEvent(showText(join(separator(newline()), tooltip)));
+            if (!blacklisted) {
+                final String command = "/mapvote vote " + minigame.name().toLowerCase() + " " + buildWorld.getPath();
+                line = line.clickEvent(runCommand(command));
+            }
+            lines.add(line);
         }
         bookLines(player, lines);
     }
