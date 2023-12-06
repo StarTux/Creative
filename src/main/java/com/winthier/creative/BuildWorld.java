@@ -526,6 +526,16 @@ public final class BuildWorld {
         return result;
     }
 
+    public static List<BuildWorld> findPurposeWorlds(BuildWorldPurpose purpose, boolean requireConfirmation) {
+        List<BuildWorld> result = new ArrayList<>();
+        for (BuildWorld it : plugin().getBuildWorlds()) {
+            if (it.getRow().parsePurpose() != purpose) continue;
+            if (requireConfirmation && !it.getRow().isPurposeConfirmed()) continue;
+            result.add(it);
+        }
+        return result;
+    }
+
     public void announceMap(World world) {
         List<Component> messageLines = new ArrayList<>();
         messageLines.addAll(List.of(empty(),
