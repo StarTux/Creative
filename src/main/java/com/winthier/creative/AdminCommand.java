@@ -35,6 +35,7 @@ import static com.cavetale.core.command.CommandArgCompleter.list;
 import static com.cavetale.core.command.CommandArgCompleter.requireEnum;
 import static com.cavetale.core.command.CommandArgCompleter.supplyList;
 import static com.winthier.creative.CreativePlugin.plugin;
+import static net.kyori.adventure.text.Component.empty;
 import static net.kyori.adventure.text.Component.join;
 import static net.kyori.adventure.text.Component.newline;
 import static net.kyori.adventure.text.Component.space;
@@ -199,6 +200,9 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             .completers(supplyList(AdminCommand::supplyWorldPaths),
                         CommandArgCompleter.BOOLEAN)
             .senderCaller(this::minigameConfirm);
+        minigameNode.addChild("import").denyTabCompletion()
+            .description("Import minigames from file")
+            .senderCaller(this::minigameImport);
         // Purpose
         CommandNode purposeNode = rootNode.addChild("purpose")
             .description("Purpose subcommands");
@@ -1180,6 +1184,49 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         return true;
     }
 
+    private void minigameImport(CommandSender sender) {
+        requireCreativeServer();
+        File folder = new File(plugin.getDataFolder(), "minigameimport");
+        if (!folder.isDirectory()) {
+            throw new CommandWarn("Folder not found: " + folder);
+        }
+        for (File file : folder.listFiles()) {
+            String name = file.getName();
+            if (!name.endsWith(".yml")) continue;
+            name = name.substring(0, name.length() - 4);
+            final MinigameMatchType type;
+            try {
+                type = MinigameMatchType.valueOf(name.toUpperCase());
+            } catch (IllegalArgumentException iae) {
+                sender.sendMessage(text("Unknown minigame type: " + name, RED));
+                continue;
+            }
+            final YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+            int count = 0;
+            List<String> lines = config.getStringList("Worlds");
+            if (lines.isEmpty()) lines = config.getStringList("worlds");
+            if (lines.isEmpty()) lines = config.getStringList("Maps");
+            if (lines.isEmpty()) lines = config.getStringList("maps");
+            if (lines.isEmpty()) {
+                sender.sendMessage(text(file + ": World list not found!", RED));
+                continue;
+            }
+            for (String line : lines) {
+                BuildWorld buildWorld = plugin.getBuildWorldByPath(line);
+                if (buildWorld == null) {
+                    sender.sendMessage(text(type + ": World not found: " + line, RED));
+                    continue;
+                }
+                buildWorld.getRow().setPurpose(BuildWorldPurpose.MINIGAME.name().toLowerCase());
+                buildWorld.getRow().setPurposeType(type.name().toLowerCase());
+                buildWorld.getRow().setPurposeConfirmed(true);
+                buildWorld.getRow().setPurposeConfirmedWhen(new Date());
+                buildWorld.savePurposeAsync(() -> { });
+                count += 1;
+            }
+            sender.sendMessage(text(type + ": " + count + " worlds imported", YELLOW));
+        }
+    }
     private boolean purposeList(CommandSender sender, String[] args) {
         if (args.length != 1) return false;
         final BuildWorldPurpose type = CommandArgCompleter.requireEnum(BuildWorldPurpose.class, args[0]);
@@ -1190,6 +1237,9 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             List<Component> tooltip = new ArrayList<>();
             sender.sendMessage(textOfChildren(text("- ", GRAY),
                                               text(buildWorld.getName(), YELLOW),
+                                              (buildWorld.getRow().getPurposeType() != null
+                                               ? text(" (" + buildWorld.getRow().getPurposeType() + ")", GRAY)
+                                               : empty()),
                                               text(" by ", GRAY),
                                               text(buildWorld.getOwnerName(), YELLOW))
                                .hoverEvent(showText(buildWorld.adminTooltip()))
@@ -1253,6 +1303,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
     }
 
     private void purposeImport(CommandSender sender) {
+        requireCreativeServer();
         File folder = new File(plugin.getDataFolder(), "purposeimport");
         if (!folder.isDirectory()) {
             throw new CommandWarn("Folder not found: " + folder);
@@ -1260,38 +1311,40 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         for (File file : folder.listFiles()) {
             String name = file.getName();
             if (!name.endsWith(".yml")) continue;
+            sender.sendMessage(text("Parsing " + name + "...", GRAY));
             name = name.substring(0, name.length() - 4);
-            final MinigameMatchType type;
+            final BuildWorldPurpose purpose;
             try {
-                type = MinigameMatchType.valueOf(name.toUpperCase());
+                purpose = BuildWorldPurpose.valueOf(name.toUpperCase());
             } catch (IllegalArgumentException iae) {
-                sender.sendMessage(text("Unknown minigame type: " + name, RED));
+                sender.sendMessage(text("Unknown BuildWorldPurpose: " + name, RED));
                 continue;
             }
             final YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
             int count = 0;
-            List<String> lines = config.getStringList("Worlds");
-            if (lines.isEmpty()) lines = config.getStringList("worlds");
-            if (lines.isEmpty()) lines = config.getStringList("Maps");
-            if (lines.isEmpty()) lines = config.getStringList("maps");
-            if (lines.isEmpty()) {
-                sender.sendMessage(text(file + ": World list not found!", RED));
-                continue;
-            }
-            for (String line : lines) {
-                BuildWorld buildWorld = plugin.getBuildWorldByPath(line);
+            for (String key : config.getKeys(false)) {
+                ConfigurationSection section = config.getConfigurationSection(key);
+                final String path = section.getString("MapPath");
+                String[] pathTokens = path.split("/");
+                final String mapId = pathTokens[pathTokens.length - 1];
+                final String displayName = section.getString("DisplayName");
+                final String category = section.getString("Category");
+                BuildWorld buildWorld = plugin.getBuildWorldByPath(mapId);
                 if (buildWorld == null) {
-                    sender.sendMessage(text(type + ": World not found: " + line, RED));
+                    sender.sendMessage(text(purpose.displayName + ": World not found: " + mapId, RED));
                     continue;
                 }
-                buildWorld.getRow().setPurpose(BuildWorldPurpose.MINIGAME.name().toLowerCase());
-                buildWorld.getRow().setPurposeType(type.name().toLowerCase());
-                buildWorld.getRow().setPurposeConfirmed(true);
-                buildWorld.getRow().setPurposeConfirmedWhen(new Date());
+                buildWorld.getRow().setPurpose(purpose.name().toLowerCase());
+                buildWorld.getRow().setPurposeType(category);
                 buildWorld.savePurposeAsync(() -> { });
+                if (displayName != null) {
+                    buildWorld.getRow().setName(displayName);
+                    buildWorld.saveAsync("name", () -> { });
+                }
                 count += 1;
+                sender.sendMessage((displayName != null ? displayName : buildWorld.getName()) + " is a " + purpose + ", " + category + ": " + buildWorld.getPath());
             }
-            sender.sendMessage(text(type + ": " + count + " worlds imported", YELLOW));
+            sender.sendMessage(text(purpose.displayName + ": " + count + " worlds imported", AQUA));
         }
     }
 }
