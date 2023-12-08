@@ -254,10 +254,20 @@ public final class BuildWorld {
         return createWorld();
     }
 
+    /**
+     * Create the world for the creative server.
+     */
     private World createWorld() {
-        return createWorld(getPath());
+        World world = createWorld(getPath());
+        applyWorld(world);
+        return world;
     }
 
+    /**
+     * Create the world, which may be the original on the creative
+     * server, or a copy on a minigame server.  This is a helper to
+     * other functions.
+     */
     private World createWorld(final String path) {
         WorldCreator creator = WorldCreator.name(path);
         creator.generator(row.getGenerator());
@@ -269,57 +279,63 @@ public final class BuildWorld {
         if (row.getSeed() != null) creator.seed(row.getSeed());
         creator.type(row.getWorldTypeValue());
         creator.keepSpawnLoaded(TriState.FALSE);
-        final World result = creator.createWorld();
-        result.setSpawnFlags(true, true);
+        return creator.createWorld();
+    }
+
+    /**
+     * Apply all BuildWorld settings to a loaded world on the creative
+     * server.
+     */
+    private void applyWorld(World world) {
+        world.setSpawnFlags(true, true);
         for (SpawnCategory spawnCategory : SpawnCategory.values()) {
             if (spawnCategory == SpawnCategory.MISC) continue;
-            result.setSpawnLimit(spawnCategory, 0);
-            result.setTicksPerSpawns(spawnCategory, 999999999);
+            world.setSpawnLimit(spawnCategory, 0);
+            world.setTicksPerSpawns(spawnCategory, 999999999);
         }
-        result.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false);
-        result.setGameRule(GameRule.COMMAND_BLOCK_OUTPUT, true);
-        result.setGameRule(GameRule.DISABLE_ELYTRA_MOVEMENT_CHECK, true);
-        result.setGameRule(GameRule.DISABLE_RAIDS, true);
-        //result.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, true);
-        result.setGameRule(GameRule.DO_ENTITY_DROPS, false);
-        result.setGameRule(GameRule.DO_FIRE_TICK, false);
-        result.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true);
-        result.setGameRule(GameRule.DO_INSOMNIA, false);
-        result.setGameRule(GameRule.DO_LIMITED_CRAFTING, false);
-        result.setGameRule(GameRule.DO_MOB_LOOT, false);
-        result.setGameRule(GameRule.DO_MOB_SPAWNING, false);
-        result.setGameRule(GameRule.DO_PATROL_SPAWNING, false);
-        result.setGameRule(GameRule.DO_TILE_DROPS, false);
-        result.setGameRule(GameRule.DO_TRADER_SPAWNING, false);
-        result.setGameRule(GameRule.DO_WEATHER_CYCLE, false);
-        result.setGameRule(GameRule.DROWNING_DAMAGE, true);
-        result.setGameRule(GameRule.FALL_DAMAGE, true);
-        result.setGameRule(GameRule.FIRE_DAMAGE, true);
-        result.setGameRule(GameRule.FORGIVE_DEAD_PLAYERS, true);
-        result.setGameRule(GameRule.FREEZE_DAMAGE, true);
-        result.setGameRule(GameRule.KEEP_INVENTORY, true);
-        result.setGameRule(GameRule.LOG_ADMIN_COMMANDS, true);
-        result.setGameRule(GameRule.MAX_COMMAND_CHAIN_LENGTH, 1);
-        result.setGameRule(GameRule.MAX_ENTITY_CRAMMING, 0);
-        result.setGameRule(GameRule.MOB_GRIEFING, false);
-        result.setGameRule(GameRule.NATURAL_REGENERATION, true);
-        result.setGameRule(GameRule.PLAYERS_SLEEPING_PERCENTAGE, 101);
-        result.setGameRule(GameRule.RANDOM_TICK_SPEED, 0);
-        result.setGameRule(GameRule.REDUCED_DEBUG_INFO, false);
-        result.setGameRule(GameRule.SEND_COMMAND_FEEDBACK, true);
-        result.setGameRule(GameRule.SHOW_DEATH_MESSAGES, false);
-        result.setGameRule(GameRule.SPAWN_RADIUS, 0);
-        result.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, false);
-        result.setGameRule(GameRule.UNIVERSAL_ANGER, false);
-        WorldBorder border = result.getWorldBorder();
+        world.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false);
+        world.setGameRule(GameRule.COMMAND_BLOCK_OUTPUT, true);
+        world.setGameRule(GameRule.DISABLE_ELYTRA_MOVEMENT_CHECK, true);
+        world.setGameRule(GameRule.DISABLE_RAIDS, true);
+        //world.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, true);
+        world.setGameRule(GameRule.DO_ENTITY_DROPS, false);
+        world.setGameRule(GameRule.DO_FIRE_TICK, false);
+        world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true);
+        world.setGameRule(GameRule.DO_INSOMNIA, false);
+        world.setGameRule(GameRule.DO_LIMITED_CRAFTING, false);
+        world.setGameRule(GameRule.DO_MOB_LOOT, false);
+        world.setGameRule(GameRule.DO_MOB_SPAWNING, false);
+        world.setGameRule(GameRule.DO_PATROL_SPAWNING, false);
+        world.setGameRule(GameRule.DO_TILE_DROPS, false);
+        world.setGameRule(GameRule.DO_TRADER_SPAWNING, false);
+        world.setGameRule(GameRule.DO_WEATHER_CYCLE, false);
+        world.setGameRule(GameRule.DROWNING_DAMAGE, true);
+        world.setGameRule(GameRule.FALL_DAMAGE, true);
+        world.setGameRule(GameRule.FIRE_DAMAGE, true);
+        world.setGameRule(GameRule.FORGIVE_DEAD_PLAYERS, true);
+        world.setGameRule(GameRule.FREEZE_DAMAGE, true);
+        world.setGameRule(GameRule.KEEP_INVENTORY, true);
+        world.setGameRule(GameRule.LOG_ADMIN_COMMANDS, true);
+        world.setGameRule(GameRule.MAX_COMMAND_CHAIN_LENGTH, 1);
+        world.setGameRule(GameRule.MAX_ENTITY_CRAMMING, 0);
+        world.setGameRule(GameRule.MOB_GRIEFING, false);
+        world.setGameRule(GameRule.NATURAL_REGENERATION, true);
+        world.setGameRule(GameRule.PLAYERS_SLEEPING_PERCENTAGE, 101);
+        world.setGameRule(GameRule.RANDOM_TICK_SPEED, 0);
+        world.setGameRule(GameRule.REDUCED_DEBUG_INFO, false);
+        world.setGameRule(GameRule.SEND_COMMAND_FEEDBACK, true);
+        world.setGameRule(GameRule.SHOW_DEATH_MESSAGES, false);
+        world.setGameRule(GameRule.SPAWN_RADIUS, 0);
+        world.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, false);
+        world.setGameRule(GameRule.UNIVERSAL_ANGER, false);
+        WorldBorder border = world.getWorldBorder();
         if (row.getBorderSize() > 0) {
             border.setCenter(row.getBorderCenterX(), row.getBorderCenterZ());
             border.setSize((double) row.getBorderSize());
         }
         if (row.isSpawnSet()) {
-            result.setSpawnLocation(getSpawnLocation(result));
+            world.setSpawnLocation(getSpawnLocation(world));
         }
-        return result;
     }
 
     public ConfigurationSection getWorldConfig() {
@@ -506,6 +522,17 @@ public final class BuildWorld {
                         callback.accept(world);
                     });
             });
+    }
+
+    public World makeLocalCopy(final String name) {
+        final File src = new File("/home/cavetale/creative/worlds/" + getPath());
+        if (!src.exists()) throw new IllegalStateException("Source folder not found: " + src);
+        final File dest = new File(Bukkit.getWorldContainer(), name);
+        if (dest.exists()) throw new IllegalStateException("Target folder already exists: " + dest);
+        Files.copyFileStructure(src, dest);
+        final World world = createWorld(name);
+        world.setAutoSave(false);
+        return world;
     }
 
     public static BuildWorld findWithPath(final String name) {
