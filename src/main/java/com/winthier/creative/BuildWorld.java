@@ -33,7 +33,6 @@ import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.SpawnCategory;
 import static com.winthier.creative.ConnectListener.broadcastWorldUpdate;
 import static com.winthier.creative.CreativePlugin.plugin;
 import static com.winthier.creative.sql.Database.sql;
@@ -288,11 +287,6 @@ public final class BuildWorld {
      */
     private void applyWorld(World world) {
         world.setSpawnFlags(true, true);
-        for (SpawnCategory spawnCategory : SpawnCategory.values()) {
-            if (spawnCategory == SpawnCategory.MISC) continue;
-            world.setSpawnLimit(spawnCategory, 0);
-            world.setTicksPerSpawns(spawnCategory, 999999999);
-        }
         world.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false);
         world.setGameRule(GameRule.COMMAND_BLOCK_OUTPUT, true);
         world.setGameRule(GameRule.DISABLE_ELYTRA_MOVEMENT_CHECK, true);
