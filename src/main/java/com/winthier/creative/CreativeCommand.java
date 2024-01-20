@@ -765,7 +765,7 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
             String code = randomString();
             confirm(RemotePlayer.wrap(player), code, remote -> confirmUnlock(remote, buildWorld, flag));
         } else if (args.length == 2) {
-            boolean newValue = args[1].equals("on") ? true : false;
+            final boolean newValue = args[1].equals("on");
             if (buildWorld.isSet(flag) == newValue) {
                 throw new CommandWarn("Already " + (newValue ? "enabled" : "disabled"));
             }
