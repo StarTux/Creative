@@ -16,6 +16,7 @@ public enum BuildWorldPurpose {
     RAID("Raid"),
     ADVENTURE("Adventure"),
     SKYBLOCK("Skyblock"),
+    WINDICATOR("Windicator"),
     ;
 
     public final String displayName;
