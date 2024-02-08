@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -498,7 +499,24 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
     }
 
     private boolean setBorder(CommandSender sender, String[] args) {
-        return false;
+        if (args.length != 4) return false;
+        final BuildWorld buildWorld = requireBuildWorld(args[0]);
+        final int centerX = CommandArgCompleter.requireInt(args[1]);
+        final int centerZ = CommandArgCompleter.requireInt(args[2]);
+        final int size = CommandArgCompleter.requireInt(args[3]);
+        buildWorld.getRow().setBorderCenterX(centerX);
+        buildWorld.getRow().setBorderCenterZ(centerZ);
+        buildWorld.getRow().setBorderSize(size);
+        buildWorld.saveAsync(Set.of("borderCenterX", "borderCenterZ", "borderSize"), () -> {
+                final World world = buildWorld.getWorld();
+                if (world != null) {
+                    final var border = world.getWorldBorder();
+                    border.setCenter(centerX, centerZ);
+                    border.setSize((double) size);
+                }
+                sender.sendMessage(text("World border of " + buildWorld.getPath() + " updated: " + centerX + "x" + centerZ + ", " + size, YELLOW));
+            });
+        return true;
     }
 
     private boolean configCommand(CommandSender sender, String[] args) {
