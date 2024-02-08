@@ -61,17 +61,24 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             .senderCaller(this::reloadCommand);
         rootNode.addChild("info").arguments("[path]")
             .description("Get world info")
-            .completers(supplyList(AdminCommand::supplyWorldPaths))
+            .completers(AdminCommand::completeWorldPaths)
             .senderCaller(this::info);
         rootNode.addChild("set").arguments("[world] <flag> <value>")
             .description("Change world settings")
-            .completers(supplyList(AdminCommand::supplyWorldPaths),
+            .completers(AdminCommand::completeWorldPaths,
                         enumLowerList(BuildWorld.Flag.class),
                         CommandArgCompleter.BOOLEAN)
             .senderCaller(this::setCommand);
+        rootNode.addChild("setborder").arguments("<world> <centerx> <centerz> <size>")
+            .description("Change world border")
+            .completers(AdminCommand::completeWorldPaths,
+                        CommandArgCompleter.INTEGER,
+                        CommandArgCompleter.INTEGER,
+                        CommandArgCompleter.INTEGER)
+            .senderCaller(this::setBorder);
         rootNode.addChild("config").arguments("<world>")
             .description("Print world config")
-            .completers(supplyList(AdminCommand::supplyWorldPaths))
+            .completers(AdminCommand::completeWorldPaths)
             .senderCaller(this::configCommand);
         rootNode.addChild("listunregistered").denyTabCompletion()
             .remoteServer(NetworkServer.CREATIVE)
@@ -92,38 +99,38 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         rootNode.addChild("tp").arguments("[player] <world>")
             .remoteServer(NetworkServer.CREATIVE)
             .description("Teleport to world")
-            .completers(supplyList(AdminCommand::supplyWorldPaths))
+            .completers(AdminCommand::completeWorldPaths)
             .senderCaller(this::tpCommand);
         rootNode.addChild("remove").arguments("<world>")
             .description("Remove a world")
-            .completers(supplyList(AdminCommand::supplyWorldPaths))
+            .completers(AdminCommand::completeWorldPaths)
             .senderCaller(this::removeCommand);
         rootNode.addChild("trust").arguments("<world> <player> <trust>")
             .description("Edit player world trust")
-            .completers(supplyList(AdminCommand::supplyWorldPaths),
+            .completers(AdminCommand::completeWorldPaths,
                         CommandArgCompleter.PLAYER_CACHE,
                         enumLowerList(Trust.class))
             .senderCaller(this::trustCommand);
         rootNode.addChild("publictrust").arguments("<world> <trust>")
             .description("Set public trust")
-            .completers(supplyList(AdminCommand::supplyWorldPaths),
+            .completers(AdminCommand::completeWorldPaths,
                         enumLowerList(Trust.class))
             .senderCaller(this::publicTrustCommand);
         rootNode.addChild("cleartrust").arguments("<world>")
             .description("Clear trusted players")
-            .completers(supplyList(AdminCommand::supplyWorldPaths))
+            .completers(AdminCommand::completeWorldPaths)
             .senderCaller(this::clearTrustCommand);
         rootNode.addChild("ranktrust").arguments("<world>")
             .description("Rank worlds by trusted players")
-            .completers(supplyList(AdminCommand::supplyWorldPaths))
+            .completers(AdminCommand::completeWorldPaths)
             .senderCaller(this::rankTrustCommand);
         rootNode.addChild("resetowner").arguments("<world>")
             .description("Reset world ownership")
-            .completers(supplyList(AdminCommand::supplyWorldPaths))
+            .completers(AdminCommand::completeWorldPaths)
             .senderCaller(this::resetOwnerCommand);
         rootNode.addChild("setowner").arguments("<world> <player>")
             .description("Set world ownership")
-            .completers(supplyList(AdminCommand::supplyWorldPaths),
+            .completers(AdminCommand::completeWorldPaths,
                         CommandArgCompleter.PLAYER_CACHE)
             .senderCaller(this::setOwnerCommand);
         rootNode.addChild("create").arguments("n:name p:path o:owner g:generator G:generatorSettings e:environment t:worldType s:seed S:generateStructures")
@@ -134,7 +141,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         rootNode.addChild("createvoid").arguments("<name> [environment]")
             .remoteServer(NetworkServer.CREATIVE)
             .description("Create empty world")
-            .completers(supplyList(AdminCommand::supplyWorldPaths),
+            .completers(AdminCommand::completeWorldPaths,
                         enumLowerList(World.Environment.class))
             .senderCaller(this::createVoidCommand);
         rootNode.addChild("import").arguments("<world> [generator]")
@@ -146,12 +153,12 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         rootNode.addChild("load").arguments("<world>")
             .remoteServer(NetworkServer.CREATIVE)
             .description("Load build world")
-            .completers(supplyList(AdminCommand::supplyWorldPaths))
+            .completers(AdminCommand::completeWorldPaths)
             .senderCaller(this::loadCommand);
         rootNode.addChild("unload").arguments("<world>")
             .remoteServer(NetworkServer.CREATIVE)
             .description("Unload build world")
-            .completers(supplyList(AdminCommand::supplyWorldPaths))
+            .completers(AdminCommand::completeWorldPaths)
             .senderCaller(this::unloadCommand);
         rootNode.addChild("ignore").denyTabCompletion()
             .description("Ignore build restrictions")
@@ -165,8 +172,8 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             .senderCaller(this::buildGroupsCommand);
         rootNode.addChild("copy").arguments("<from> <to>")
             .description("Create a world copy")
-            .completers(supplyList(AdminCommand::supplyWorldPaths),
-                        supplyList(AdminCommand::supplyWorldPaths))
+            .completers(AdminCommand::completeWorldPaths,
+                        AdminCommand::completeWorldPaths)
             .senderCaller(this::copy);
         rootNode.addChild("autoconvert").denyTabCompletion()
             .description("Load and save all worlds")
@@ -188,16 +195,16 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             .senderCaller(this::minigameList);
         minigameNode.addChild("reset").arguments("<world>")
             .description("Reset minigame purpose")
-            .completers(supplyList(AdminCommand::supplyWorldPaths))
+            .completers(AdminCommand::completeWorldPaths)
             .senderCaller(this::minigameReset);
         minigameNode.addChild("set").arguments("<world> <minigame>")
             .description("Set minigame purpose")
-            .completers(supplyList(AdminCommand::supplyWorldPaths),
+            .completers(AdminCommand::completeWorldPaths,
                         enumLowerList(MinigameMatchType.class))
             .senderCaller(this::minigameSet);
         minigameNode.addChild("confirm").arguments("<world> true|false")
             .description("Confirm minigame validity")
-            .completers(supplyList(AdminCommand::supplyWorldPaths),
+            .completers(AdminCommand::completeWorldPaths,
                         CommandArgCompleter.BOOLEAN)
             .senderCaller(this::minigameConfirm);
         minigameNode.addChild("import").denyTabCompletion()
@@ -212,21 +219,21 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             .senderCaller(this::purposeList);
         purposeNode.addChild("reset").arguments("<world>")
             .description("Reset world purpose")
-            .completers(supplyList(AdminCommand::supplyWorldPaths))
+            .completers(AdminCommand::completeWorldPaths)
             .senderCaller(this::purposeReset);
         purposeNode.addChild("set").arguments("<world> <purpose>")
             .description("Set world purpose")
-            .completers(supplyList(AdminCommand::supplyWorldPaths),
+            .completers(AdminCommand::completeWorldPaths,
                         enumLowerList(BuildWorldPurpose.class))
             .senderCaller(this::purposeSet);
         purposeNode.addChild("index").arguments("<world> <index>")
             .description("Set purpose index")
-            .completers(supplyList(AdminCommand::supplyWorldPaths),
+            .completers(AdminCommand::completeWorldPaths,
                         CommandArgCompleter.integer(i -> true))
             .senderCaller(this::purposeIndex);
         purposeNode.addChild("score").arguments("<world> <score>")
             .description("Set purpose score")
-            .completers(supplyList(AdminCommand::supplyWorldPaths),
+            .completers(AdminCommand::completeWorldPaths,
                         CommandArgCompleter.integer(i -> true))
             .senderCaller(this::purposeScore);
         purposeNode.addChild("import").denyTabCompletion()
@@ -237,6 +244,22 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
     private static List<String> supplyWorldPaths() {
         List<String> result = new ArrayList<>();
         for (BuildWorld buildWorld : plugin().getBuildWorlds()) {
+            result.add(buildWorld.getPath());
+        }
+        return result;
+    }
+
+    private static List<String> completeWorldPaths(CommandContext context, CommandNode node, String arg) {
+        final String lower = arg.toLowerCase();
+        if (context.isPlayer() && arg.isEmpty()) {
+            final BuildWorld buildWorld = BuildWorld.in(context.player.getWorld());
+            if (buildWorld != null) {
+                return List.of(buildWorld.getPath());
+            }
+        }
+        List<String> result = new ArrayList<>();
+        for (BuildWorld buildWorld : plugin().getBuildWorlds()) {
+            if (!buildWorld.getPath().toLowerCase().contains(lower)) continue;
             result.add(buildWorld.getPath());
         }
         return result;
@@ -472,6 +495,10 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             plugin.getPermission().updatePermissions(bukkitWorld);
         }
         return true;
+    }
+
+    private boolean setBorder(CommandSender sender, String[] args) {
+        return false;
     }
 
     private boolean configCommand(CommandSender sender, String[] args) {

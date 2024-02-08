@@ -536,6 +536,10 @@ public final class BuildWorld {
         return null;
     }
 
+    public static BuildWorld in(final World world) {
+        return findWithPath(world.getName());
+    }
+
     public static List<BuildWorld> findMinigameWorlds(MinigameMatchType type, boolean requireConfirmation) {
         List<BuildWorld> result = new ArrayList<>();
         for (BuildWorld it : plugin().getBuildWorlds()) {
