@@ -17,6 +17,7 @@ public enum BuildWorldPurpose {
     ADVENTURE("Adventure"),
     SKYBLOCK("Skyblock"),
     WINDICATOR("Windicator"),
+    RED_LIGHT_GREEN_LIGHT("Red Light Green Light"),
     ;
 
     public final String displayName;
