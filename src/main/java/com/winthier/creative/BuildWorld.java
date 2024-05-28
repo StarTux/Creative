@@ -310,7 +310,7 @@ public final class BuildWorld {
         world.setGameRule(GameRule.FREEZE_DAMAGE, true);
         world.setGameRule(GameRule.KEEP_INVENTORY, true);
         world.setGameRule(GameRule.LOG_ADMIN_COMMANDS, true);
-        world.setGameRule(GameRule.MAX_COMMAND_CHAIN_LENGTH, 1);
+        world.setGameRule(GameRule.MAX_COMMAND_CHAIN_LENGTH, 100);
         world.setGameRule(GameRule.MAX_ENTITY_CRAMMING, 0);
         world.setGameRule(GameRule.MOB_GRIEFING, false);
         world.setGameRule(GameRule.NATURAL_REGENERATION, true);
