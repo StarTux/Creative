@@ -58,8 +58,8 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.inventory.ItemStack;
 import static com.cavetale.core.font.Unicode.tiny;
@@ -391,7 +391,7 @@ public final class CreativeListener implements Listener {
         BuildWorld buildWorld = plugin.getBuildWorldByWorld(world);
         if (buildWorld == null) return;
         switch (event.getEntity().getType()) {
-        case FIREWORK:
+        case FIREWORK_ROCKET:
             if (!buildWorld.isSet(BuildWorld.Flag.PROJECTILES)) {
                 event.setCancelled(true);
             }
