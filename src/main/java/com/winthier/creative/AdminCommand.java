@@ -426,7 +426,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
                                           text(row.getBorderSize(), YELLOW)));
         sender.sendMessage(textOfChildren(text("Generator ", GRAY), text("" + row.getGenerator(), YELLOW))
                            .insertion("" + row.getGenerator()));
-        sender.sendMessage(textOfChildren(text("Seed ", GRAY), text(row.getSeed(), YELLOW))
+        sender.sendMessage(textOfChildren(text("Seed ", GRAY), text("" + row.getSeed(), YELLOW))
                            .insertion("" + row.getSeed()));
         sender.sendMessage(textOfChildren(text("Environment ", GRAY), text("" + row.getEnvironment(), YELLOW)));
         sender.sendMessage(textOfChildren(text("WorldType ", GRAY), text("" + row.getWorldType(), YELLOW)));
