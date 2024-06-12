@@ -18,6 +18,7 @@ public enum BuildWorldPurpose {
     SKYBLOCK("Skyblock"),
     WINDICATOR("Windicator"),
     RED_LIGHT_GREEN_LIGHT("Red Light Green Light"),
+    MOB_ARENA("Mob Arena");
     ;
 
     public final String displayName;
