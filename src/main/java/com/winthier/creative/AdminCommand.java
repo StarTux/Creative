@@ -187,6 +187,9 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         // rootNode.addChild("legacyworldconvert").denyTabCompletion()
         //     .description("Transfer legacy worlds")
         //     .senderCaller(this::legacyWorldConvert);
+        // rootNode.addChild("mobarenasplit").denyTabCompletion()
+        //     .description("Split Mob Arena")
+        //     .senderCaller(this::mobArenaSplit);
         // Minigame
         CommandNode minigameNode = rootNode.addChild("minigame")
             .description("Minigame subcommands");
@@ -1172,6 +1175,11 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         sender.sendMessage(text("Starting conversion. See console", YELLOW));
         Legacy.transferAllBuildWorlds();
     }
+
+    // private void mobArenaSplit(CommandSender sender) {
+    //     sender.sendMessage(text("Starting Mob Arena Split. See console", YELLOW));
+    //     new MobArenaSplit().start();
+    // }
 
     private boolean minigameList(CommandSender sender, String[] args) {
         if (args.length != 1) return false;

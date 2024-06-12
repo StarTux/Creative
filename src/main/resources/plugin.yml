@@ -8,8 +8,15 @@ description: Manage Creative Worlds
 author: StarTux
 website: https://github.com/StarTux/Creative
 
-depend: [Core, SQL, Mytems]
-softdepend: [Shutdown, WorldEdit, VoidGenerator, FlatGenerator]
+depend:
+- Core
+- SQL
+- Mytems
+softdepend:
+- Shutdown
+- WorldEdit
+- VoidGenerator
+- FlatGenerator
 
 commands:
 
