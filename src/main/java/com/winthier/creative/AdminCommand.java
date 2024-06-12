@@ -237,6 +237,11 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             .completers(AdminCommand::completeWorldPaths,
                         CommandArgCompleter.integer(i -> true))
             .senderCaller(this::purposeScore);
+        purposeNode.addChild("confirm").arguments("<world> true|false")
+            .description("Confirm world purpose validity")
+            .completers(AdminCommand::completeWorldPaths,
+                        CommandArgCompleter.BOOLEAN)
+            .senderCaller(this::purposeConfirm);
         purposeNode.addChild("import").denyTabCompletion()
             .description("Import purposes from file")
             .senderCaller(this::purposeImport);
@@ -1343,6 +1348,22 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         buildWorld.getRow().setVoteScore(value);
         buildWorld.savePurposeAsync(() -> {
                 sender.sendMessage(text("Vote score updated: " + buildWorld.getPath() + ", " + purpose + ", " + value, YELLOW));
+            });
+        return true;
+    }
+
+    private boolean purposeConfirm(CommandSender sender, String[] args) {
+        if (args.length != 2) return false;
+        final BuildWorld buildWorld = requireBuildWorld(args[0]);
+        final boolean value = CommandArgCompleter.requireBoolean(args[1]);
+        final BuildWorldPurpose purpose = buildWorld.getRow().parsePurpose();
+        if (purpose == null) {
+            throw new CommandWarn("World without purpose: " + buildWorld.getPath());
+        }
+        buildWorld.getRow().setPurposeConfirmed(value);
+        buildWorld.getRow().setPurposeConfirmedWhen(new Date());
+        buildWorld.savePurposeAsync(() -> {
+                sender.sendMessage(text("Purpose confirmed: " + buildWorld.getPath() + ", " + purpose + ", " + value, YELLOW));
             });
         return true;
     }
