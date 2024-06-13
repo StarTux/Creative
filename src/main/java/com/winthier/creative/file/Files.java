@@ -73,7 +73,8 @@ public final class Files {
             plugin().getLogger().severe("[Files] Failed to unload world: " + world.getName());
             return false;
         }
-        deleteFileStructure(world.getWorldFolder());
+        final File worldFolder = world.getWorldFolder();
+        Bukkit.getScheduler().runTaskAsynchronously(plugin(), () -> deleteFileStructure(worldFolder));
         return true;
     }
 
