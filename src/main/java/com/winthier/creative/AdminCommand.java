@@ -1285,6 +1285,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             sender.sendMessage(text(type + ": " + count + " worlds imported", YELLOW));
         }
     }
+
     private boolean purposeList(CommandSender sender, String[] args) {
         if (args.length != 1) return false;
         final BuildWorldPurpose type = CommandArgCompleter.requireEnum(BuildWorldPurpose.class, args[0]);
@@ -1299,7 +1300,10 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
                                                ? text(" (" + buildWorld.getRow().getPurposeType() + ")", GRAY)
                                                : empty()),
                                               text(" by ", GRAY),
-                                              text(buildWorld.getOwnerName(), YELLOW))
+                                              text(buildWorld.getOwnerName(), YELLOW),
+                                              (buildWorld.getRow().isPurposeConfirmed()
+                                               ? text(" Confirmed", GREEN)
+                                               : text(" Unconfirmed", RED)))
                                .hoverEvent(showText(buildWorld.adminTooltip()))
                                .clickEvent(suggestCommand("/cra tp " + buildWorld.getPath()))
                                .insertion(buildWorld.getPath()));
