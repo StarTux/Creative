@@ -7,12 +7,12 @@ import com.winthier.sql.SQLRow.NotNull;
 import com.winthier.sql.SQLRow.UniqueKey;
 import java.util.Date;
 import java.util.UUID;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 import static com.winthier.creative.CreativePlugin.plugin;
 
+@Data
 @Name("trusted")
-@Getter @Setter @NotNull
+@NotNull
 @UniqueKey(name = "world_player", value = {"world", "player"})
 public final class SQLWorldTrust implements SQLRow {
     @Id private Integer id;
