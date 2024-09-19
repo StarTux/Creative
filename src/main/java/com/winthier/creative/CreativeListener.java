@@ -11,6 +11,7 @@ import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.World;
@@ -56,6 +57,7 @@ import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
@@ -581,5 +583,22 @@ public final class CreativeListener implements Listener {
         if (buildWorld == null) return;
         event.header(PlayerHudPriority.HIGH,
                      List.of(join(noSeparators(), text(tiny("build world "), GRAY), text(buildWorld.getName(), GREEN))));
+    }
+
+    /**
+     * Deny players leaving the world border, which can happen in
+     * spectator mode.
+     */
+    @EventHandler
+    private void onPlayerMove(PlayerMoveEvent event) {
+        final Player player = event.getPlayer();
+        if (player.isOp()) return;
+        final Location to = event.getTo();
+        final World world = to.getWorld();
+        final BuildWorld buildWorld = plugin.getBuildWorldByWorld(world);
+        if (buildWorld == null) return;
+        if (world.getWorldBorder().isInside(to)) return;
+        event.setCancelled(true);
+        Bukkit.getScheduler().runTask(plugin, () -> buildWorld.teleportToSpawn(player));
     }
 }
