@@ -1,6 +1,5 @@
 package com.winthier.creative.sql;
 
-import org.junit.Test;
 import static com.winthier.sql.SQLDatabase.testTableCreation;
 
 public final class SQLTest {
