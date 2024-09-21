@@ -211,7 +211,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             .completers(AdminCommand::completeWorldPaths,
                         CommandArgCompleter.BOOLEAN)
             .senderCaller(this::minigameConfirm);
-        minigameNode.addChild("import").denyTabCompletion()
+        minigameNode.addChild("import").arguments("[-importworldfolder]")
             .description("Import minigames from file")
             .senderCaller(this::minigameImport);
         // Purpose
@@ -1242,7 +1242,10 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         return true;
     }
 
-    private void minigameImport(CommandSender sender) {
+    private boolean minigameImport(CommandSender sender, String[] args) {
+        if (args.length > 1) return false;
+        final boolean doImportWorldFolder = args.length >= 1 && args[0].equals("-importworldfolder");
+        if (args.length > 0 && !doImportWorldFolder) return false;
         requireCreativeServer();
         File folder = new File(plugin.getDataFolder(), "minigameimport");
         if (!folder.isDirectory()) {
@@ -1272,8 +1275,27 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             for (String line : lines) {
                 BuildWorld buildWorld = plugin.getBuildWorldByPath(line);
                 if (buildWorld == null) {
-                    sender.sendMessage(text(type + ": World not found: " + line, RED));
-                    continue;
+                    if (doImportWorldFolder) {
+                        // Outsource this into its own command?
+                        // Guess dimension!
+                        if (!new File(Bukkit.getWorldContainer(), line).isDirectory()) {
+                            sender.sendMessage(text(type + ": World path not found: " + line, RED));
+                            continue;
+                        }
+                        final BuildWorld newBuildWorld = new BuildWorld(line, line, (sender instanceof Player player ? player.getUniqueId() : null));
+                        buildWorld = newBuildWorld;
+                        buildWorld.getRow().setGenerator("VoidGenerator");
+                        buildWorld.getRow().setGenerateStructures(false);
+                        final World world = buildWorld.loadWorld();
+                        buildWorld.importWorld(world);
+                        buildWorld.insertAsync(() -> {
+                                plugin.getBuildWorlds().add(newBuildWorld);
+                                sender.sendMessage(text("Build World '" + newBuildWorld.getName() + "' created", YELLOW));
+                            });
+                    } else {
+                        sender.sendMessage(text(type + ": World not found: " + line, RED));
+                        continue;
+                    }
                 }
                 buildWorld.getRow().setPurpose(BuildWorldPurpose.MINIGAME.name().toLowerCase());
                 buildWorld.getRow().setPurposeType(type.name().toLowerCase());
@@ -1282,8 +1304,9 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
                 buildWorld.savePurposeAsync(() -> { });
                 count += 1;
             }
-            sender.sendMessage(text(type + ": " + count + " worlds imported", YELLOW));
+            sender.sendMessage(text(type + ": " + count + " " + type + " minigame worlds imported", YELLOW));
         }
+        return true;
     }
 
     private boolean purposeList(CommandSender sender, String[] args) {

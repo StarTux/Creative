@@ -332,6 +332,20 @@ public final class BuildWorld {
         }
     }
 
+    public void importWorld(World world) {
+        setSpawnLocation(world.getSpawnLocation());
+        WorldBorder worldBorder = world.getWorldBorder();
+        row.setBorderCenterX(worldBorder.getCenter().getBlockX());
+        row.setBorderCenterZ(worldBorder.getCenter().getBlockZ());
+        row.setBorderSize((int) Math.round(worldBorder.getSize()));
+        row.setSeed(world.getSeed());
+        row.setWorldType(world.getWorldType() != null
+                         ? world.getWorldType().name().toLowerCase()
+                         : null);
+        row.setEnvironment(world.getEnvironment().name().toLowerCase());
+        row.setGenerateStructures(world.canGenerateStructures());
+    }
+
     public ConfigurationSection getWorldConfig() {
         if (worldConfig == null) {
             File dir = getWorldFolder();
