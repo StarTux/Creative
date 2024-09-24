@@ -236,6 +236,10 @@ public final class BuildWorld {
         return new File(plugin().getServer().getWorldContainer(), getPath());
     }
 
+    public File getCreativeWorldFolder() {
+        return new File("/home/cavetale/creative/worlds/" + getPath());
+    }
+
     public World getWorld() {
         if (!plugin().isCreativeServer()) return null;
         return Bukkit.getServer().getWorld(getPath());
@@ -503,7 +507,7 @@ public final class BuildWorld {
     }
 
     public void makeLocalCopyAsync(Consumer<World> callback) {
-        final File src = new File("/home/cavetale/creative/worlds/" + getPath());
+        final File src = getCreativeWorldFolder();
         if (!src.exists()) {
             throw new IllegalStateException("Source folder not found: " + src);
         }
@@ -533,7 +537,7 @@ public final class BuildWorld {
     }
 
     public World makeLocalCopy(final String name) {
-        final File src = new File("/home/cavetale/creative/worlds/" + getPath());
+        final File src = getCreativeWorldFolder();
         if (!src.exists()) throw new IllegalStateException("Source folder not found: " + src);
         final File dest = new File(Bukkit.getWorldContainer(), name);
         if (dest.exists()) throw new IllegalStateException("Target folder already exists: " + dest);
