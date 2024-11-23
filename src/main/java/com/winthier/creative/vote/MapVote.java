@@ -274,10 +274,7 @@ public final class MapVote {
         for (BuildWorld buildWorld : mapList) {
             final boolean blacklisted = blacklistedMaps.contains(buildWorld.getPath());
             List<Component> tooltip = new ArrayList<>();
-            String raw = buildWorld.getName();
-            if (raw.length() > 16) raw = raw.substring(0, 16);
-            Component displayName = text(raw, blacklisted ? GRAY : BLUE);
-            tooltip.add(displayName);
+            tooltip.add(text(buildWorld.getName(), BLUE));
             if (blacklisted) tooltip.add(text("On Timeout", DARK_GRAY, ITALIC));
             if (buildWorld.getRow().getVoteScore() > 0) {
                 final int starCount = (int) Math.round((double) buildWorld.getRow().getVoteScore() / 100.0);
@@ -288,7 +285,9 @@ public final class MapVote {
             if (buildWorld.getRow().getDescription() != null) {
                 tooltip.addAll(Text.wrapLore(buildWorld.getRow().getDescription(), c -> c.color(LIGHT_PURPLE).decorate(ITALIC)));
             }
-            Component line = displayName.hoverEvent(showText(join(separator(newline()), tooltip)));
+            String raw = buildWorld.getName();
+            if (raw.length() > 16) raw = raw.substring(0, 16);
+            Component line = text(raw, blacklisted ? GRAY : BLUE).hoverEvent(showText(join(separator(newline()), tooltip)));
             if (!blacklisted) {
                 final String command = "/mapvote vote " + minigame.name().toLowerCase() + " " + buildWorld.getPath();
                 line = line.clickEvent(runCommand(command));
