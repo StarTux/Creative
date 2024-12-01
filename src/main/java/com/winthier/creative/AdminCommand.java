@@ -169,7 +169,9 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             .playerCaller(this::debugPlotCommand);
         rootNode.addChild("buildgroups").arguments("<world> [group...]")
             .description("Set build groups")
-            .completers(supplyList(() -> Perm.get().getGroupNames()))
+            .completers(AdminCommand::completeWorldPaths,
+                        supplyList(() -> Perm.get().getGroupNames()),
+                        CommandArgCompleter.REPEAT)
             .senderCaller(this::buildGroupsCommand);
         rootNode.addChild("copy").arguments("<from> <to>")
             .description("Create a world copy")
