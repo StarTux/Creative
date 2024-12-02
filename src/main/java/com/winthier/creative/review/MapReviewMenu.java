@@ -63,7 +63,7 @@ public final class MapReviewMenu {
             List<Component> tooltip = new ArrayList<>();
             tooltip.add(textOfChildren(starComponent(starCount), text(" " + starCount + "/5 Stars", GOLD)));
             tooltip.add(text(slogan(starCount), GRAY));
-            tooltip.add(text("All reviews are secret an anonymous", DARK_GRAY, ITALIC));
+            tooltip.add(text("All reviews are secret and anonymous", DARK_GRAY, ITALIC));
             ItemStack icon = currentStars >= starCount
                 ? Mytems.STAR.createIcon(tooltip)
                 : Mytems.CHECKBOX.createIcon(tooltip);
