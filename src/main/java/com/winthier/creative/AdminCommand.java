@@ -13,6 +13,7 @@ import com.winthier.creative.file.Files;
 import com.winthier.creative.sql.SQLWorld;
 import com.winthier.creative.sql.SQLWorldTrust;
 import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -49,8 +50,8 @@ import static net.kyori.adventure.text.format.NamedTextColor.*;
 import static net.kyori.adventure.text.format.TextDecoration.*;
 
 public final class AdminCommand extends AbstractCommand<CreativePlugin> {
+    private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("yyyy MMM dd HH:mm:ss");
     protected AutoConverter autoConverter;
-
     AdminCommand(final CreativePlugin plugin) {
         super(plugin, "creativeadmin");
     }
@@ -397,8 +398,9 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         sender.sendMessage(textOfChildren(text("Path ", GRAY), text(buildWorld.getPath(), YELLOW)).insertion(buildWorld.getPath()));
         sender.sendMessage(textOfChildren(text("Name ", GRAY), text(buildWorld.getName(), YELLOW)));
         final String desc = row.getDescription() != null ? row.getDescription() : "";
-        sender.sendMessage(textOfChildren(text("Description ", GRAY), text(desc, YELLOW)));
         sender.sendMessage(textOfChildren(text("Owner ", GRAY), text(buildWorld.getOwnerName(), YELLOW)));
+        sender.sendMessage(textOfChildren(text("Created ", GRAY), text(TIME_FORMAT.format(buildWorld.getRow().getCreated()), YELLOW)));
+        sender.sendMessage(textOfChildren(text("Description ", GRAY), text(desc, YELLOW)));
         if (!row.isSpawnSet()) {
             sender.sendMessage(textOfChildren(text("Spawn ", GRAY), text("N/A", DARK_GRAY, ITALIC)));
         } else {
