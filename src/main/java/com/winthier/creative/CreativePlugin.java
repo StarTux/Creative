@@ -79,6 +79,7 @@ public final class CreativePlugin extends JavaPlugin {
         getLogger().info(isCreativeServer
                          ? "This is the Creative server"
                          : "This is NOT the Creative server");
+        new ConnectListener().enable();
     }
 
     @Override
