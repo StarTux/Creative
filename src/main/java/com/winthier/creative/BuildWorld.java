@@ -3,6 +3,7 @@ package com.winthier.creative;
 import com.cavetale.core.event.minigame.MinigameMatchType;
 import com.cavetale.core.perm.Perm;
 import com.cavetale.core.playercache.PlayerCache;
+import com.cavetale.mytems.Mytems;
 import com.cavetale.mytems.util.Text;
 import com.winthier.creative.file.Files;
 import com.winthier.creative.sql.SQLReview;
@@ -41,6 +42,7 @@ import static net.kyori.adventure.text.Component.join;
 import static net.kyori.adventure.text.Component.newline;
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.Component.textOfChildren;
+import static net.kyori.adventure.text.JoinConfiguration.noSeparators;
 import static net.kyori.adventure.text.JoinConfiguration.separator;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
 import static net.kyori.adventure.text.format.TextDecoration.*;
@@ -622,5 +624,21 @@ public final class BuildWorld {
                         info("New vote score " + row.getVoteScore());
                     });
             });
+    }
+
+    /**
+     * Return average rating between 0 and 5.
+     */
+    public int getStarRating() {
+        return (int) Math.round((double) row.getVoteScore() / 100.0);
+    }
+
+    public Component getStarRatingComponent() {
+        final int starCount = getStarRating();
+        List<Component> stars = new ArrayList<>(5);
+        for (int i = 0; i < starCount; i += 1) {
+            stars.add(Mytems.STAR.asComponent());
+        }
+        return join(noSeparators(), stars);
     }
 }
