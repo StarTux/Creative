@@ -21,6 +21,7 @@ import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -263,6 +264,7 @@ public final class MapVote {
                                            .hoverEvent(showText(text("Map Selection", GRAY)))
                                            .clickEvent(runCommand("/mapvote open " + minigame.name().toLowerCase()))),
                                           newline()));
+        player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BELL, 0.5f, 0.5f);
     }
 
     public void openVoteBook(Player player) {
