@@ -46,6 +46,7 @@ final class KitCommand extends AbstractCommand<CreativePlugin> {
         inventory.addItem(Mytems.DIVIDERS.createItemStack());
         inventory.addItem(Mytems.YARDSTICK.createItemStack());
         inventory.addItem(Mytems.LUMINATOR.createItemStack());
+        inventory.addItem(Mytems.WHITE_PAINTBRUSH.createItemStack());
         player.openInventory(inventory);
         player.playSound(player.getLocation(), Sound.BLOCK_CHEST_OPEN, SoundCategory.MASTER, 0.5f, 1.2f);
     }
