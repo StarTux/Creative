@@ -73,6 +73,12 @@ public final class CreativePlugin extends JavaPlugin {
             }
             loadPlotWorlds();
             worldEditListener.enable();
+            for (BuildWorld buildWorld : buildWorlds) {
+                if (buildWorld.isSet(BuildWorld.Flag.KEEP_IN_MEMORY)) {
+                    getLogger().info("Loading Keep In Memory world: " + buildWorld.getPath());
+                    buildWorld.loadWorld();
+                }
+            }
         }
         mapVotes.enable();
         mapReviews.enable();
