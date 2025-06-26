@@ -560,6 +560,15 @@ public final class BuildWorld {
         return findWithPath(world.getName());
     }
 
+    public static List<BuildWorld> findOwnedWorlds(UUID owner) {
+        final List<BuildWorld> result = new ArrayList<>();
+        for (BuildWorld it : plugin().getBuildWorlds()) {
+            if (!owner.equals(it.getOwner())) continue;
+            result.add(it);
+        }
+        return result;
+    }
+
     public static List<BuildWorld> findMinigameWorlds(MinigameMatchType type, boolean requireConfirmation) {
         List<BuildWorld> result = new ArrayList<>();
         for (BuildWorld it : plugin().getBuildWorlds()) {
@@ -596,8 +605,22 @@ public final class BuildWorld {
         }
     }
 
-    public Component adminTooltip() {
-        List<Component> lines = new ArrayList<>();
+    public List<Component> getTooltipLines() {
+        final List<Component> lines = new ArrayList<>();
+        lines.add(text(getName(), GREEN));
+        lines.add(text("by " + String.join(", ", getBuilderNames()), GRAY));
+        if (row.getDescription() != null) {
+            lines.addAll(Text.wrapLore(row.getDescription(), c -> c.color(WHITE)));
+        }
+        return lines;
+    }
+
+    public Component tooltip() {
+        return join(separator(newline()), getTooltipLines());
+    }
+
+    public List<Component> getAdminTooltipLines() {
+        final List<Component> lines = new ArrayList<>();
         lines.add(text(getName(), GREEN));
         lines.add(textOfChildren(text("Path ", GRAY), text(getPath(), WHITE)));
         lines.add(textOfChildren(text("Owner ", GRAY), text(getOwnerName(), WHITE)));
@@ -605,7 +628,11 @@ public final class BuildWorld {
         if (row.getDescription() != null) {
             lines.addAll(Text.wrapLore(row.getDescription(), c -> c.color(LIGHT_PURPLE).decorate(ITALIC)));
         }
-        return join(separator(newline()), lines);
+        return lines;
+    }
+
+    public Component adminTooltip() {
+        return join(separator(newline()), getAdminTooltipLines());
     }
 
     public void updateVoteScore() {
