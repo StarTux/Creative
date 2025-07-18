@@ -10,6 +10,7 @@ import com.cavetale.core.event.minigame.MinigameMatchType;
 import com.cavetale.core.perm.Perm;
 import com.cavetale.core.playercache.PlayerCache;
 import com.winthier.creative.file.Files;
+import com.winthier.creative.sql.SQLReview;
 import com.winthier.creative.sql.SQLWorld;
 import com.winthier.creative.sql.SQLWorldTrust;
 import java.io.File;
@@ -37,6 +38,7 @@ import static com.cavetale.core.command.CommandArgCompleter.list;
 import static com.cavetale.core.command.CommandArgCompleter.requireEnum;
 import static com.cavetale.core.command.CommandArgCompleter.supplyList;
 import static com.winthier.creative.CreativePlugin.plugin;
+import static com.winthier.creative.sql.Database.sql;
 import static net.kyori.adventure.text.Component.empty;
 import static net.kyori.adventure.text.Component.join;
 import static net.kyori.adventure.text.Component.newline;
@@ -175,10 +177,17 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
                         CommandArgCompleter.REPEAT)
             .senderCaller(this::buildGroupsCommand);
         rootNode.addChild("copy").arguments("<from> <to>")
+            .alias("cp")
             .description("Create a world copy")
             .completers(AdminCommand::completeWorldPaths,
                         AdminCommand::completeWorldPaths)
             .senderCaller(this::copy);
+        rootNode.addChild("move").arguments("<from> <to>")
+            .alias("mv")
+            .description("Move a world path")
+            .completers(AdminCommand::completeWorldPaths,
+                        AdminCommand::completeWorldPaths)
+            .senderCaller(this::move);
         rootNode.addChild("autoconvert").denyTabCompletion()
             .description("Load and save all worlds")
             .senderCaller(this::autoConvertCommand);
@@ -1109,6 +1118,48 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
                 Files.copyFileStructure(oldWorld.getWorldFolder(), buildWorld.getWorldFolder());
                 sender.sendMessage(text("World copied: " + oldWorld.getPath() + " => " + buildWorld.getPath(), YELLOW));
             });
+        return true;
+    }
+
+    private boolean move(CommandSender sender, String[] args) {
+        requireCreativeServer();
+        if (args.length != 2) return false;
+        final String fromPath = args[0];
+        final String toPath = args[1];
+        if (fromPath.equals(toPath)) {
+            throw new CommandWarn("Paths are identical: " + fromPath);
+        }
+        final BuildWorld buildWorld = requireBuildWorld(fromPath);
+        if (buildWorld.getWorld() != null) {
+            throw new CommandWarn("World still loaded: " + buildWorld.getPath());
+        }
+        if (!fromPath.equalsIgnoreCase(toPath)) {
+            final BuildWorld no = plugin.getBuildWorldByPathIgnoreCase(toPath);
+            if (no != null) {
+                throw new CommandWarn("World already exists: " + no.getPath());
+            }
+        }
+        final File toFile = new File(Bukkit.getWorldContainer(), toPath);
+        if (toFile.exists()) {
+            throw new CommandWarn("Folder or file already exists: " + toFile);
+        }
+        final String moveId = fromPath + " => " + toPath;
+        plugin.getLogger().info("Renaming world: " + moveId);
+        if (!buildWorld.getWorldFolder().renameTo(toFile)) {
+            throw new CommandWarn("Renaming folder failed: " + toFile);
+        }
+        buildWorld.getRow().setPath(toPath);
+        buildWorld.saveAsync(Set.of("path"), () -> {
+                sender.sendMessage(text("World moved: " + moveId, YELLOW));
+            });
+        sql().update(SQLReview.class)
+            .set("path", toPath)
+            .where(c -> c.eq("path", fromPath))
+            .async(num -> plugin.getLogger().info(moveId + ": " + num + " reviews"));
+        sql().update(SQLWorldTrust.class)
+            .set("world", toPath)
+            .where(c -> c.eq("world", fromPath))
+            .async(num -> plugin.getLogger().info(moveId + ": " + num + " world trusts"));
         return true;
     }
 
