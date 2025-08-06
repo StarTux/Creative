@@ -27,6 +27,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.scheduler.BukkitTask;
+import static com.cavetale.core.font.DefaultFont.bookmarked;
 import static com.winthier.creative.CreativePlugin.plugin;
 import static com.winthier.creative.review.MapReviewMenu.starComponent;
 import static com.winthier.creative.vote.MapVotes.mapVotes;
@@ -41,6 +42,7 @@ import static net.kyori.adventure.text.JoinConfiguration.separator;
 import static net.kyori.adventure.text.event.ClickEvent.runCommand;
 import static net.kyori.adventure.text.event.HoverEvent.showText;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
+import static net.kyori.adventure.text.format.TextColor.color;
 import static net.kyori.adventure.text.format.TextDecoration.*;
 
 /**
@@ -318,7 +320,7 @@ public final class MapVote {
         List<Component> pages = new ArrayList<>((lineCount - 1) / linesPerPage + 1);
         for (int i = 0; i < lineCount; i += linesPerPage) {
             List<Component> page = new ArrayList<>(14);
-            page.add(title);
+            page.add(bookmarked(color(0x333333), title));
             page.add(empty());
             page.addAll(lines.subList(i, Math.min(lines.size(), i + linesPerPage)));
             pages.add(join(separator(newline()), page));
