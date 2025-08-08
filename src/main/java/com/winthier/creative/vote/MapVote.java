@@ -10,11 +10,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.bossbar.BossBar;
@@ -69,9 +72,10 @@ public final class MapVote {
     @Setter private int maxTicks = 20 * 60;
     @Setter private int avoidRepetition = 3;
     @Setter private World lobbyWorld = null;
+    @Setter private Function<BuildWorld, String> voteBookCommandMaker;
     // Runtime
     private Map<String, BuildWorld> maps = Map.of();
-    private List<String> blacklistedMaps = new ArrayList<>();
+    private Set<String> blacklistedMaps = new HashSet<>();
     private Map<UUID, String> votes = new HashMap<>();
     private boolean voteActive;
     private boolean loadingWorld;
@@ -80,11 +84,11 @@ public final class MapVote {
     private final Random random = new Random();
     private BossBar bossBar;
 
-    protected MapVote(final MinigameMatchType minigame) {
+    public MapVote(final MinigameMatchType minigame) {
         this.minigame = minigame;
     }
 
-    protected void load() {
+    public void load() {
         Map<String, BuildWorld> newMaps = new HashMap<>();
         final boolean requireConfirmation = true;
         for (BuildWorld buildWorld : BuildWorld.findMinigameWorlds(minigame, requireConfirmation)) {
@@ -293,7 +297,9 @@ public final class MapVote {
             if (raw.length() > 16) raw = raw.substring(0, 16);
             Component line = text(raw, blacklisted ? GRAY : BLUE).hoverEvent(showText(join(separator(newline()), tooltip)));
             if (!blacklisted) {
-                final String command = "/mapvote vote " + minigame.name().toLowerCase() + " " + buildWorld.getPath();
+                final String command = voteBookCommandMaker != null
+                    ? voteBookCommandMaker.apply(buildWorld)
+                    : "/mapvote vote " + minigame.name().toLowerCase() + " " + buildWorld.getPath();
                 line = line.clickEvent(runCommand(command));
             }
             lines.add(line);
