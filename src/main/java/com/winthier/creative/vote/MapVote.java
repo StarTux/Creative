@@ -73,6 +73,7 @@ public final class MapVote {
     @Setter private int avoidRepetition = 3;
     @Setter private World lobbyWorld = null;
     @Setter private Function<BuildWorld, String> voteBookCommandMaker;
+    @Setter private Consumer<MapTooltipBuilder> mapTooltipHandler;
     // Runtime
     private Map<String, BuildWorld> maps = Map.of();
     private Set<String> blacklistedMaps = new HashSet<>();
@@ -280,23 +281,28 @@ public final class MapVote {
         Collections.sort(mapList, comparingInt((BuildWorld bw) -> bw.getRow().getVoteScore()).reversed());
         List<Component> lines = new ArrayList<>();
         for (BuildWorld buildWorld : mapList) {
-            final boolean blacklisted = blacklistedMaps.contains(buildWorld.getPath());
-            List<Component> tooltip = new ArrayList<>();
-            tooltip.add(text(buildWorld.getName(), BLUE));
-            if (blacklisted) tooltip.add(text("On Timeout", DARK_GRAY, ITALIC));
+            final boolean isOnTimeout = blacklistedMaps.contains(buildWorld.getPath());
+            final MapTooltipBuilder builder = new MapTooltipBuilder(buildWorld, isOnTimeout);
+            builder.setTitle(List.of(text(buildWorld.getName(), BLUE)));
+            if (isOnTimeout) {
+                builder.setTimeout(List.of(text("On Timeout", DARK_GRAY, ITALIC)));
+            }
             if (buildWorld.getRow().getVoteScore() > 0) {
                 final int starCount = (int) Math.round((double) buildWorld.getRow().getVoteScore() / 100.0);
-                tooltip.add(starComponent(starCount));
+                builder.setRating(List.of(starComponent(starCount)));
             }
             String by = "By " + String.join(", ", buildWorld.getBuilderNames());
-            tooltip.addAll(Text.wrapLore(by, c -> c.color(GRAY)));
+            builder.setCredits(Text.wrapLore(by, c -> c.color(GRAY)));
             if (buildWorld.getRow().getDescription() != null) {
-                tooltip.addAll(Text.wrapLore(buildWorld.getRow().getDescription(), c -> c.color(LIGHT_PURPLE).decorate(ITALIC)));
+                builder.setDescription(Text.wrapLore(buildWorld.getRow().getDescription(), c -> c.color(LIGHT_PURPLE).decorate(ITALIC)));
             }
             String raw = buildWorld.getName();
             if (raw.length() > 16) raw = raw.substring(0, 16);
-            Component line = text(raw, blacklisted ? GRAY : BLUE).hoverEvent(showText(join(separator(newline()), tooltip)));
-            if (!blacklisted) {
+            if (mapTooltipHandler != null) {
+                mapTooltipHandler.accept(builder);
+            }
+            Component line = text(raw, isOnTimeout ? GRAY : BLUE).hoverEvent(showText(builder.build()));
+            if (!isOnTimeout) {
                 final String command = voteBookCommandMaker != null
                     ? voteBookCommandMaker.apply(buildWorld)
                     : "/mapvote vote " + minigame.name().toLowerCase() + " " + buildWorld.getPath();
