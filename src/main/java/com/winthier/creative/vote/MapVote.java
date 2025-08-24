@@ -60,6 +60,8 @@ import static net.kyori.adventure.text.format.TextDecoration.*;
  * loaded.
  * The voteHandler is the alternative callback which can be used if
  * the players should be split into smaller groups in the end.
+ *
+ * Set lobbyWorld and desiredGroupSize to enable groups.
  */
 @Getter
 public final class MapVote {
@@ -74,12 +76,13 @@ public final class MapVote {
     @Setter private World lobbyWorld = null;
     @Setter private Function<BuildWorld, String> voteBookCommandMaker;
     @Setter private Consumer<MapTooltipBuilder> mapTooltipHandler;
+    @Setter private int desiredGroupSize;
     // Runtime
     private Map<String, BuildWorld> maps = Map.of();
     private Set<String> blacklistedMaps = new HashSet<>();
     private Map<UUID, String> votes = new HashMap<>();
     private boolean voteActive;
-    private boolean loadingWorld;
+    private int loadingWorlds = 0;
     private BukkitTask task;
     private int ticksLeft;
     private final Random random = new Random();
@@ -169,6 +172,8 @@ public final class MapVote {
         printVoteStats();
         if (voteHandler != null) {
             voteHandler.accept(this);
+        } else if (lobbyWorld != null && desiredGroupSize > 0) {
+            makeGroups();
         } else {
             findAndLoadWinner(List.copyOf(votes.keySet()), this.callback);
         }
@@ -197,14 +202,38 @@ public final class MapVote {
             tag.avoidRepetitionList = list;
             saveTag(tag);
         }
-        loadingWorld = true;
+        loadingWorlds += 1;
         buildWorldWinner.makeLocalCopyAsync(world -> {
                 if (theCallback != null) {
-                    MapVoteResult result = new MapVoteResult(this, buildWorldWinner, world);
+                    final MapVoteResult result = new MapVoteResult(this, buildWorldWinner, world, List.copyOf(playerIds));
                     theCallback.accept(result);
                 }
-                loadingWorld = false;
+                loadingWorlds -= 1;
             });
+    }
+
+    public void makeGroups() {
+        final List<Player> allPlayers = lobbyWorld.getPlayers();
+        final List<Player> players = new ArrayList<>(allPlayers);
+        Collections.shuffle(players);
+        List<List<Player>> groups = new ArrayList<>();
+        if (players.size() < desiredGroupSize) {
+            groups.add(List.copyOf(players));
+            players.clear();
+        }
+        while (players.size() >= desiredGroupSize) {
+            List<Player> currentGroup = new ArrayList<>();
+            groups.add(currentGroup);
+            for (int i = 0; i < desiredGroupSize; i += 1) {
+                currentGroup.add(players.remove(players.size() - 1));
+            }
+        }
+        for (int i = 0; i < players.size(); i += 1) {
+            groups.get(i % groups.size()).add(players.get(i));
+        }
+        for (List<Player> group : groups) {
+            findAndLoadWinnersFor(group, this.callback);
+        }
     }
 
     public BuildWorld findWinnerAtRandom() {
@@ -362,7 +391,7 @@ public final class MapVote {
      */
     public static boolean isActive(MinigameMatchType type) {
         MapVote mapVote = of(type);
-        return mapVote != null && (mapVote.voteActive || mapVote.loadingWorld);
+        return mapVote != null && (mapVote.voteActive || mapVote.loadingWorlds > 0);
     }
 
     public static MapVote start(MinigameMatchType type, Consumer<MapVote> theVote) {
