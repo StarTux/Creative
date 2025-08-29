@@ -263,9 +263,7 @@ public final class BuildWorld {
      * Create the world for the creative server.
      */
     private World createWorld() {
-        World world = createWorld(getPath());
-        applyWorld(world);
-        return world;
+        return createWorld(getPath());
     }
 
     /**
@@ -284,14 +282,16 @@ public final class BuildWorld {
         if (row.getSeed() != null) creator.seed(row.getSeed());
         creator.type(row.getWorldTypeValue());
         creator.keepSpawnLoaded(TriState.FALSE);
-        return creator.createWorld();
+        final World result = creator.createWorld();
+        applyWorld(result);
+        return result;
     }
 
     /**
      * Apply all BuildWorld settings to a loaded world on the creative
      * server.
      */
-    private void applyWorld(World world) {
+    public void applyWorld(World world) {
         world.setSpawnFlags(true, true);
         world.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false);
         world.setGameRule(GameRule.COMMAND_BLOCK_OUTPUT, true);
