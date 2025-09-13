@@ -174,6 +174,8 @@ public final class MapVote {
             voteHandler.accept(this);
         } else if (lobbyWorld != null && desiredGroupSize > 0) {
             makeGroups();
+        } else if (lobbyWorld != null) {
+            findAndLoadWinnersFor(lobbyWorld.getPlayers(), this.callback);
         } else {
             findAndLoadWinner(List.copyOf(votes.keySet()), this.callback);
         }
