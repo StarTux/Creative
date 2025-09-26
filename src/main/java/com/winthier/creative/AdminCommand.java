@@ -1206,12 +1206,15 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
                 total += 1;
                 worldCount += 1;
             }
-            Trust trust = buildWorld.getTrust(from.uuid);
-            if (trust != null) {
-                buildWorld.setTrust(from.uuid, Trust.NONE, () -> { });
-                buildWorld.setTrust(to.uuid, trust, () -> { });
-                total += 1;
-                trustCount += 1;
+            final SQLWorldTrust trustRow = buildWorld.getTrusted().get(from.uuid);
+            if (trustRow != null) {
+                final Trust trust = trustRow.getTrustValue();
+                if (trust != null) {
+                    buildWorld.setTrust(from.uuid, Trust.NONE, () -> { });
+                    buildWorld.setTrust(to.uuid, trust, () -> { });
+                    total += 1;
+                    trustCount += 1;
+                }
             }
         }
         if (total == 0) {
