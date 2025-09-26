@@ -1209,7 +1209,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             final SQLWorldTrust trustRow = buildWorld.getTrusted().get(from.uuid);
             if (trustRow != null) {
                 final Trust trust = trustRow.getTrustValue();
-                if (trust != null) {
+                if (trust != null && trust != Trust.NONE) {
                     buildWorld.setTrust(from.uuid, Trust.NONE, () -> { });
                     buildWorld.setTrust(to.uuid, trust, () -> { });
                     total += 1;
