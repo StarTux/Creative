@@ -329,6 +329,7 @@ public final class BuildWorld {
         world.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, false);
         world.setGameRule(GameRule.UNIVERSAL_ANGER, false);
         world.setGameRule(GameRule.LOCATOR_BAR, false);
+        world.setGameRule(GameRule.PVP, false);
         WorldBorder border = world.getWorldBorder();
         if (row.getBorderSize() > 0) {
             border.setCenter(row.getBorderCenterX(), row.getBorderCenterZ());
