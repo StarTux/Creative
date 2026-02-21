@@ -350,8 +350,6 @@ public final class MapVote {
             if (buildWorld.getRow().getDescription() != null) {
                 builder.setDescription(Text.wrapLore(buildWorld.getRow().getDescription(), c -> c.color(LIGHT_PURPLE).decorate(ITALIC)));
             }
-            String raw = buildWorld.getName();
-            if (raw.length() > 16) raw = raw.substring(0, 16);
             if (mapTooltipHandler != null) {
                 mapTooltipHandler.accept(builder);
             }
