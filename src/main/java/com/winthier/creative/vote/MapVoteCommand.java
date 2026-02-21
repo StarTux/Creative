@@ -3,14 +3,10 @@ package com.winthier.creative.vote;
 import com.cavetale.core.command.AbstractCommand;
 import com.cavetale.core.command.CommandWarn;
 import com.cavetale.core.event.minigame.MinigameMatchType;
-import com.winthier.creative.BuildWorld;
 import com.winthier.creative.CreativePlugin;
 import com.winthier.creative.review.MapReview;
 import org.bukkit.entity.Player;
 import static com.winthier.creative.vote.MapVotes.mapVotes;
-import static net.kyori.adventure.text.Component.text;
-import static net.kyori.adventure.text.event.ClickEvent.runCommand;
-import static net.kyori.adventure.text.event.HoverEvent.showText;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
 
 public final class MapVoteCommand extends AbstractCommand<CreativePlugin> {
@@ -28,10 +24,6 @@ public final class MapVoteCommand extends AbstractCommand<CreativePlugin> {
             .description("Open vote book")
             .hidden(true)
             .playerCaller(this::open);
-        rootNode.addChild("vote").arguments("<minigame> <path>")
-            .description("Vote on a map")
-            .hidden(true)
-            .playerCaller(this::vote);
         rootNode.addChild("review").arguments("<path>")
             .description("Review a map")
             .hidden(true)
@@ -44,7 +36,7 @@ public final class MapVoteCommand extends AbstractCommand<CreativePlugin> {
         }
         for (MapVote mapVote : mapVotes().getMinigameVoteMap().values()) {
             if (!mapVote.isVoteActive()) continue;
-            mapVote.openVoteBook(player);
+            mapVote.openVoteDialog(player);
             return;
         }
         throw new CommandWarn("There is no active vote");
@@ -60,29 +52,7 @@ public final class MapVoteCommand extends AbstractCommand<CreativePlugin> {
         if (mapVote == null || !mapVote.isVoteActive()) {
             throw new CommandWarn("There is no active vote");
         }
-        mapVote.openVoteBook(player);
-        return true;
-    }
-
-    private boolean vote(Player player, String[] args) {
-        if (args.length != 2) return false;
-        MinigameMatchType minigame = parseMinigame(args[0]);
-        if (minigame == null) {
-            throw new CommandWarn("There is no active vote");
-        }
-        MapVote mapVote = MapVote.of(minigame);
-        if (mapVote == null || !mapVote.isVoteActive()) {
-            throw new CommandWarn("There is no active vote");
-        }
-        final String mapName = args[1];
-        BuildWorld map = mapVote.getMap(mapName);
-        if (map == null) {
-            throw new CommandWarn("Map not available");
-        }
-        if (!mapVote.vote(player.getUniqueId(), map)) return true;
-        player.sendMessage(text("Voted for map: " + map.getName() + " by " + String.join(" ", map.getBuilderNames()), GREEN)
-                           .hoverEvent(showText(text("Change your vote", GRAY)))
-                           .clickEvent(runCommand("/mapvote open " + minigame.name().toLowerCase())));
+        mapVote.openVoteDialog(player);
         return true;
     }
 

@@ -5,7 +5,14 @@ import com.cavetale.core.util.Json;
 import com.cavetale.mytems.Mytems;
 import com.cavetale.mytems.util.Text;
 import com.winthier.creative.BuildWorld;
+import io.papermc.paper.dialog.Dialog;
+import io.papermc.paper.registry.data.dialog.ActionButton;
+import io.papermc.paper.registry.data.dialog.DialogBase;
+import io.papermc.paper.registry.data.dialog.DialogRegistryEntry;
+import io.papermc.paper.registry.data.dialog.action.DialogAction;
+import io.papermc.paper.registry.data.dialog.type.DialogType;
 import java.io.File;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -16,36 +23,29 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickCallback;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.scheduler.BukkitTask;
-import static com.cavetale.core.font.DefaultFont.bookmarked;
 import static com.winthier.creative.CreativePlugin.plugin;
 import static com.winthier.creative.review.MapReviewMenu.starComponent;
 import static com.winthier.creative.vote.MapVotes.mapVotes;
-import static java.util.Comparator.comparing;
 import static java.util.Comparator.comparingInt;
 import static net.kyori.adventure.text.Component.empty;
-import static net.kyori.adventure.text.Component.join;
 import static net.kyori.adventure.text.Component.newline;
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.Component.textOfChildren;
-import static net.kyori.adventure.text.JoinConfiguration.separator;
 import static net.kyori.adventure.text.event.ClickEvent.runCommand;
 import static net.kyori.adventure.text.event.HoverEvent.showText;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
-import static net.kyori.adventure.text.format.TextColor.color;
 import static net.kyori.adventure.text.format.TextDecoration.*;
 
 /**
@@ -74,7 +74,7 @@ public final class MapVote {
     @Setter private int maxTicks = 20 * 60;
     @Setter private int avoidRepetition = 3;
     @Setter private World lobbyWorld = null;
-    @Setter private Function<BuildWorld, String> voteBookCommandMaker;
+    @Setter private BiConsumer<Player, BuildWorld> voteCallback;
     @Setter private Consumer<MapTooltipBuilder> mapTooltipHandler;
     @Setter private int desiredGroupSize;
     // Runtime
@@ -161,9 +161,25 @@ public final class MapVote {
         return Math.max(0f, Math.min(1f, 1f - ((float) ticksLeft / (float) maxTicks)));
     }
 
-    public boolean vote(UUID uuid, BuildWorld map) {
+    public boolean vote(Player player, BuildWorld map) {
         if (blacklistedMaps.contains(map.getPath())) return false;
-        votes.put(uuid, map.getPath());
+        if (voteCallback != null) {
+            voteCallback.accept(player, map);
+        } else {
+            if (!isVoteActive()) return false;
+            votes.put(player.getUniqueId(), map.getPath());
+            player.sendMessage(
+                textOfChildren(
+                    Mytems.CHECKED_CHECKBOX,
+                    text(" Voted for map: ", GREEN),
+                    text(map.getName()),
+                    text(" by ", GRAY),
+                    text(String.join(" ", map.getBuilderNames()))
+                )
+                .hoverEvent(showText(text("Change your vote?", GRAY)))
+                .clickEvent(runCommand("/mapvote open " + minigame.name().toLowerCase()))
+            );
+        }
         return true;
     }
 
@@ -296,22 +312,29 @@ public final class MapVote {
     public void remindToVote(Player player) {
         if (!voteActive) return;
         if (!player.hasPermission("creative.mapvote")) return;
-        player.sendMessage(textOfChildren(newline(),
-                                          Mytems.ARROW_RIGHT,
-                                          (text(" Click here to vote on the next map", GREEN)
-                                           .hoverEvent(showText(text("Map Selection", GRAY)))
-                                           .clickEvent(runCommand("/mapvote open " + minigame.name().toLowerCase()))),
-                                          newline()));
+        player.sendMessage(
+            textOfChildren(
+                newline(),
+                Mytems.ARROW_RIGHT,
+                (text(" Click here to vote on the next map", GREEN)
+                 .hoverEvent(showText(text("Map Selection", GRAY)))
+                 .clickEvent(runCommand("/mapvote open " + minigame.name().toLowerCase()))),
+                newline()
+            )
+        );
         player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BELL, 0.5f, 0.5f);
     }
 
-    public void openVoteBook(Player player) {
-        List<BuildWorld> mapList = new ArrayList<>();
-        mapList.addAll(maps.values());
-        Collections.sort(mapList, comparing(BuildWorld::getName, String.CASE_INSENSITIVE_ORDER));
-        Collections.sort(mapList, comparingInt((BuildWorld bw) -> bw.getRow().getVoteScore()).reversed());
-        List<Component> lines = new ArrayList<>();
-        for (BuildWorld buildWorld : mapList) {
+    public void openVoteDialog(Player player) {
+        List<BuildWorld> buildWorldList = new ArrayList<>();
+        buildWorldList.addAll(maps.values());
+        Collections.sort(
+            buildWorldList,
+            comparingInt((BuildWorld bw) -> bw.getRow().getVoteScore()).reversed()
+            .thenComparing(BuildWorld::getName, String.CASE_INSENSITIVE_ORDER)
+        );
+        final List<ActionButton> actions = new ArrayList<>(buildWorldList.size());
+        for (BuildWorld buildWorld : buildWorldList) {
             final boolean isOnTimeout = blacklistedMaps.contains(buildWorld.getPath());
             final MapTooltipBuilder builder = new MapTooltipBuilder(buildWorld, isOnTimeout);
             builder.setTitle(List.of(text(buildWorld.getName(), BLUE)));
@@ -332,43 +355,43 @@ public final class MapVote {
             if (mapTooltipHandler != null) {
                 mapTooltipHandler.accept(builder);
             }
-            Component line = text(raw, isOnTimeout ? GRAY : BLUE).hoverEvent(showText(builder.build()));
-            if (!isOnTimeout) {
-                final String command = voteBookCommandMaker != null
-                    ? voteBookCommandMaker.apply(buildWorld)
-                    : "/mapvote vote " + minigame.name().toLowerCase() + " " + buildWorld.getPath();
-                line = line.clickEvent(runCommand(command));
-            }
-            lines.add(line);
+            actions.add(
+                ActionButton.builder(text(buildWorld.getName(), isOnTimeout ? DARK_GRAY : WHITE))
+                .tooltip(builder.build())
+                .action(
+                    DialogAction.customClick(
+                        (_a, _b) -> {
+                            if (builder.isOnTimeout()) {
+                                openVoteDialog(player);
+                            } else {
+                                vote(player, buildWorld);
+                            }
+                        },
+                        ClickCallback.Options.builder()
+                        .lifetime(Duration.ofSeconds(60))
+                        .uses(1)
+                        .build()
+                    )
+                )
+                .build()
+            );
         }
-        bookLines(player, lines);
-    }
-
-    private void bookLines(Player player, List<Component> lines) {
-        ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
-        book.editMeta(m -> {
-                if (m instanceof BookMeta meta) {
-                    meta.author(text("Cavetale"));
-                    meta.title(text("Title"));
-                    meta.pages(toPages(lines));
+        player.showDialog(
+            Dialog.create(
+                factory -> {
+                    DialogRegistryEntry.Builder builder = factory.empty();
+                    builder.base(
+                        DialogBase.builder(title)
+                        .build()
+                    );
+                    builder.type(
+                        DialogType.multiAction(actions)
+                        .columns(1)
+                        .build()
+                    );
                 }
-            });
-        player.closeInventory();
-        player.openBook(book);
-    }
-
-    private List<Component> toPages(List<Component> lines) {
-        final int lineCount = lines.size();
-        final int linesPerPage = 10;
-        List<Component> pages = new ArrayList<>((lineCount - 1) / linesPerPage + 1);
-        for (int i = 0; i < lineCount; i += linesPerPage) {
-            List<Component> page = new ArrayList<>(14);
-            page.add(bookmarked(color(0x333333), title));
-            page.add(empty());
-            page.addAll(lines.subList(i, Math.min(lines.size(), i + linesPerPage)));
-            pages.add(join(separator(newline()), page));
-        }
-        return pages;
+            )
+        );
     }
 
     public List<String> getWorldNames() {
