@@ -333,7 +333,7 @@ public final class BuildWorld {
         WorldBorder border = world.getWorldBorder();
         if (row.getBorderSize() > 0) {
             border.setCenter(row.getBorderCenterX(), row.getBorderCenterZ());
-            border.setSize((double) row.getBorderSize());
+            border.setSize(Math.max(1.0, Math.min(border.getMaxSize(), (double) row.getBorderSize())));
         }
         if (row.isSpawnSet()) {
             world.setSpawnLocation(getSpawnLocation(world));

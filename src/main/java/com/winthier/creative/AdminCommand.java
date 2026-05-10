@@ -533,7 +533,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
                 if (world != null) {
                     final var border = world.getWorldBorder();
                     border.setCenter(centerX, centerZ);
-                    border.setSize((double) size);
+                    border.setSize(Math.max(1.0, Math.min(border.getMaxSize(), (double) size)));
                 }
                 sender.sendMessage(text("World border of " + buildWorld.getPath() + " updated: " + centerX + "x" + centerZ + ", " + size, YELLOW));
             });
