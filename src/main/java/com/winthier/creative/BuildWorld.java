@@ -233,13 +233,17 @@ public final class BuildWorld {
         return result;
     }
 
+    public static File getWorldsFolder() {
+        return Bukkit.getWorlds().get(0).getWorldFolder().getParentFile();
+    }
+
     public File getWorldFolder() {
         if (!plugin().isCreativeServer()) return null;
-        return new File(plugin().getServer().getWorldContainer(), getPath());
+        return new File(getWorldsFolder(), getPath());
     }
 
     public File getCreativeWorldFolder() {
-        return new File("/home/cavetale/creative/worlds/" + getPath());
+        return new File("/home/cavetale/creative/worlds/creative/dimensions/minecraft/" + getPath());
     }
 
     public World getWorld() {
@@ -519,7 +523,7 @@ public final class BuildWorld {
         File tmpDest = null;
         for (int suffix = 0; suffix <= 999; suffix += 1) {
             tmpPath = String.format("tmp_%03d_%s", suffix, getPath());
-            tmpDest = new File(Bukkit.getWorldContainer(), tmpPath);
+            tmpDest = new File(getWorldsFolder(), tmpPath);
             if (tmpDest.exists()) continue;
             break;
         }
@@ -543,7 +547,7 @@ public final class BuildWorld {
     public World makeLocalCopy(final String name) {
         final File src = getCreativeWorldFolder();
         if (!src.exists()) throw new IllegalStateException("Source folder not found: " + src);
-        final File dest = new File(Bukkit.getWorldContainer(), name);
+        final File dest = new File(getWorldsFolder(), name);
         if (dest.exists()) throw new IllegalStateException("Target folder already exists: " + dest);
         Files.copyFileStructure(src, dest);
         final World world = createWorld(name);

@@ -196,12 +196,6 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
             .completers(CommandArgCompleter.PLAYER_CACHE,
                         CommandArgCompleter.PLAYER_CACHE)
             .senderCaller(this::transferAllCommand);
-        // rootNode.addChild("legacyworldconvert").denyTabCompletion()
-        //     .description("Transfer legacy worlds")
-        //     .senderCaller(this::legacyWorldConvert);
-        // rootNode.addChild("mobarenasplit").denyTabCompletion()
-        //     .description("Split Mob Arena")
-        //     .senderCaller(this::mobArenaSplit);
         // Minigame
         CommandNode minigameNode = rootNode.addChild("minigame")
             .description("Minigame subcommands");
@@ -562,7 +556,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         requireCreativeServer();
         sender.sendMessage(text("Unregistered worlds:", AQUA));
         int count = 0;
-        for (String dir: plugin.getServer().getWorldContainer().list()) {
+        for (String dir : BuildWorld.getWorldsFolder().list()) {
             if (plugin.getBuildWorldByPath(dir) == null) {
                 sender.sendMessage(text(" " + dir, YELLOW));
                 count += 1;
@@ -1139,7 +1133,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
                 throw new CommandWarn("World already exists: " + no.getPath());
             }
         }
-        final File toFile = new File(Bukkit.getWorldContainer(), toPath);
+        final File toFile = new File(BuildWorld.getWorldsFolder(), toPath);
         if (toFile.exists()) {
             throw new CommandWarn("Folder or file already exists: " + toFile);
         }
@@ -1227,17 +1221,6 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
                                 YELLOW));
         return true;
     }
-
-    private void legacyWorldConvert(CommandSender sender) {
-        requireCreativeServer();
-        sender.sendMessage(text("Starting conversion. See console", YELLOW));
-        Legacy.transferAllBuildWorlds();
-    }
-
-    // private void mobArenaSplit(CommandSender sender) {
-    //     sender.sendMessage(text("Starting Mob Arena Split. See console", YELLOW));
-    //     new MobArenaSplit().start();
-    // }
 
     private boolean minigameList(CommandSender sender, String[] args) {
         if (args.length != 1) return false;
@@ -1336,7 +1319,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
                     if (doImportWorldFolder) {
                         // Outsource this into its own command?
                         // Guess dimension!
-                        if (!new File(Bukkit.getWorldContainer(), line).isDirectory()) {
+                        if (!new File(BuildWorld.getWorldsFolder(), line).isDirectory()) {
                             sender.sendMessage(text(type + ": World path not found: " + line, RED));
                             continue;
                         }

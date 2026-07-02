@@ -3,6 +3,7 @@ package com.winthier.creative.vote;
 import com.cavetale.core.event.hud.PlayerHudEvent;
 import com.cavetale.core.event.hud.PlayerHudPriority;
 import com.cavetale.core.event.minigame.MinigameMatchType;
+import com.winthier.creative.BuildWorld;
 import com.winthier.creative.file.Files;
 import java.io.File;
 import java.util.EnumMap;
@@ -28,7 +29,7 @@ public final class MapVotes implements Listener {
     public void enable() {
         mapVoteCommand = new MapVoteCommand(plugin());
         mapVoteCommand.enable();
-        for (File file : Bukkit.getWorldContainer().listFiles()) {
+        for (File file : BuildWorld.getWorldsFolder().listFiles()) {
             if (file.getName().startsWith("tmp_")) {
                 Files.deleteFileStructure(file);
             }
