@@ -102,6 +102,7 @@ public final class SQLWorld implements SQLRow {
     public static final class Tag {
         private List<String> buildGroups = new ArrayList<>();
         private Map<Flag, Boolean> flags = new EnumMap<>(Flag.class);
+        private Long time;
     }
 
     public void unpack() {

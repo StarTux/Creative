@@ -254,6 +254,8 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         purposeNode.addChild("import").denyTabCompletion()
             .description("Import purposes from file")
             .senderCaller(this::purposeImport);
+        // World node
+        new AdminWorldCommands(plugin, rootNode.addChild("world")).enable();
     }
 
     private static List<String> supplyWorldPaths() {

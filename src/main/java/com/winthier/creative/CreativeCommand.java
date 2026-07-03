@@ -27,7 +27,7 @@ import net.kyori.adventure.text.JoinConfiguration;
 import org.bukkit.Bukkit;
 import org.bukkit.Difficulty;
 import org.bukkit.GameMode;
-import org.bukkit.GameRule;
+import org.bukkit.GameRules;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.WorldType;
@@ -414,11 +414,16 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
             } else if ("midnight".equalsIgnoreCase(arg)) {
                 time = 18000;
             } else if ("lock".equalsIgnoreCase(arg)) {
-                player.getWorld().setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false);
+                player.getWorld().setGameRule(GameRules.ADVANCE_TIME, false);
+                buildWorld.set(BuildWorld.Flag.LOCK_TIME, true);
+                buildWorld.saveTagAsync(() -> { });
                 player.sendMessage(text("Time locked", GREEN));
                 return true;
             } else if ("unlock".equalsIgnoreCase(arg)) {
-                player.getWorld().setGameRule(GameRule.DO_DAYLIGHT_CYCLE, true);
+                player.getWorld().setGameRule(GameRules.ADVANCE_TIME, true);
+                buildWorld.set(BuildWorld.Flag.LOCK_TIME, false);
+                buildWorld.resetTime();
+                buildWorld.saveTagAsync(() -> { });
                 player.sendMessage(text("Time unlocked", GREEN));
                 return true;
             } else if (arg.contains(":")) {
@@ -443,6 +448,10 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
                 }
             }
             player.getWorld().setTime(time);
+            if (buildWorld.isSet(BuildWorld.Flag.LOCK_TIME)) {
+                buildWorld.setTime(time);
+                buildWorld.saveTagAsync(() -> { });
+            }
             player.sendMessage(text("Time set to " + time, GREEN));
         }
         return true;

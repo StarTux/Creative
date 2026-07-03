@@ -26,6 +26,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.util.TriState;
 import org.bukkit.Bukkit;
 import org.bukkit.GameRule;
+import org.bukkit.GameRules;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.WorldBorder;
@@ -100,7 +101,9 @@ public final class BuildWorld {
         MOBS("Mobs", false, 0),
         LIQUIDS("Liquids", false, 0),
         FALLING_BLOCKS("FallingBlocks", false, 0),
-        LOCKED("Locked", false, -1);
+        LOCKED("Locked", false, -1),
+        LOCK_TIME("LockTime", true, 0),
+        ;
 
         public final String key;
         public final boolean defaultValue;
@@ -301,7 +304,6 @@ public final class BuildWorld {
         world.setGameRule(GameRule.COMMAND_BLOCK_OUTPUT, true);
         world.setGameRule(GameRule.DISABLE_ELYTRA_MOVEMENT_CHECK, true);
         world.setGameRule(GameRule.DISABLE_RAIDS, true);
-        //world.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, true);
         world.setGameRule(GameRule.DO_ENTITY_DROPS, false);
         world.setGameRule(GameRule.DO_FIRE_TICK, false);
         world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true);
@@ -341,6 +343,10 @@ public final class BuildWorld {
         }
         if (row.isSpawnSet()) {
             world.setSpawnLocation(getSpawnLocation(world));
+        }
+        world.setGameRule(GameRules.ADVANCE_TIME, !isSet(Flag.LOCK_TIME));
+        if (isTimeSet()) {
+            Bukkit.getScheduler().runTask(plugin(), () -> world.setTime(getTime()));
         }
     }
 
@@ -416,6 +422,23 @@ public final class BuildWorld {
         row.getCachedTag().getFlags().put(flag, value);
     }
 
+    public boolean isTimeSet() {
+        return row.getCachedTag().getTime() != null;
+    }
+
+    public long getTime() {
+        final Long result = row.getCachedTag().getTime();
+        return result != null ? result : 0L;
+    }
+
+    public void setTime(long value) {
+        row.getCachedTag().setTime(value);
+    }
+
+    public void resetTime() {
+        row.getCachedTag().setTime(null);
+    }
+
     /**
      * Used by AdminCommand::rankTrustCommand.
      */
@@ -443,6 +466,10 @@ public final class BuildWorld {
 
     public Trust getPublicTrust() {
         return row.getPublicTrustValue();
+    }
+
+    public void saveTagAsync(Runnable callback) {
+        saveAsync("tag", callback);
     }
 
     public void saveAsync(String rowName, Runnable callback) {

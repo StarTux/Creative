@@ -54,15 +54,19 @@ public final class Files {
         copyFileStructure(source, target, 0);
     }
 
-    public static void deleteFileStructure(File file) {
-        plugin().getLogger().info("Files#deleteFileStructure " + file);
+    public static void deleteFileStructure(File file, boolean logging) {
+        if (logging) plugin().getLogger().info("Files#deleteFileStructure " + file);
         if (!file.exists()) return;
         if (file.isDirectory()) {
             for (File child : file.listFiles()) {
-                deleteFileStructure(child);
+                deleteFileStructure(child, logging);
             }
         }
         file.delete();
+    }
+
+    public static void deleteFileStructure(File file) {
+        deleteFileStructure(file, true);
     }
 
     public static boolean deleteWorld(World world) {
