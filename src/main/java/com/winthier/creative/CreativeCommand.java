@@ -345,30 +345,11 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
         buildWorld.getRow().setSpawnY(65.0);
         buildWorld.getRow().setSpawnZ(255.5);
         buildWorld.insertAsync(() -> {
-                buildWorld.getWorldConfig().set("world.Seed", 0);
-                buildWorld.getWorldConfig().set("world.WorldType", WorldType.FLAT.name());
-                buildWorld.getWorldConfig().set("world.Environment", dimension.environment.name());
-                buildWorld.getWorldConfig().set("world.GenerateStructures", false);
-                buildWorld.getWorldConfig().set("world.GeneratorSettings", "");
-                buildWorld.getWorldConfig().set("world.SpawnLocation.x", 256);
-                buildWorld.getWorldConfig().set("world.SpawnLocation.y", 64);
-                buildWorld.getWorldConfig().set("world.SpawnLocation.z", 256);
-                buildWorld.getWorldConfig().set("world.SpawnLocation.pitch", 0);
-                buildWorld.getWorldConfig().set("world.SpawnLocation.yaw", 0);
-                switch (type) {
-                case FLAT:
-                    buildWorld.getWorldConfig().set("world.Generator", "FlatGenerator");
-                    break;
-                case VOID:
-                default:
-                    buildWorld.getWorldConfig().set("world.Generator", "VoidGenerator");
-                    break;
-                }
-                buildWorld.saveWorldConfig();
                 plugin.getBuildWorlds().add(buildWorld);
                 player.sendMessage(text("Bought a world for ")
                                    .append(Coin.format(price))
                                    .append(text(". Please wait...")));
+                buildWorld.getWorldFolder().mkdirs();
                 buildWorld.loadWorld();
                 final Location loc = buildWorld.getSpawnLocation();
                 player.bring(plugin, loc, player2 -> {
@@ -911,20 +892,12 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
     private void changeWorldSetting(Player player, BuildWorld buildWorld, String key, List<String> args) {
         if (key.equals("name")) {
             final String name = String.join(" ", args);
-            // File
-            buildWorld.getWorldConfig().set("user.Name", name);
-            buildWorld.saveWorldConfig();
-            // SQL
             buildWorld.getRow().setName(name);
             buildWorld.saveAsync("name", () -> {
                     player.sendMessage(text("Set world name to " + String.join(" ", args), GREEN));
                 });
         } else if (key.equals("description")) {
             final String desc = String.join(" ", args);
-            // File
-            buildWorld.getWorldConfig().set("user.Description", desc);
-            buildWorld.saveWorldConfig();
-            // SQL
             buildWorld.getRow().setDescription(desc);
             buildWorld.saveAsync("description", () -> {
                     player.sendMessage(textOfChildren(text("Set world description to ", GREEN),

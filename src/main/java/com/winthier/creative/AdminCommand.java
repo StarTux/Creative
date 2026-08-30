@@ -80,10 +80,6 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
                         CommandArgCompleter.INTEGER,
                         CommandArgCompleter.INTEGER)
             .senderCaller(this::setBorder);
-        rootNode.addChild("config").arguments("<world>")
-            .description("Print world config")
-            .completers(AdminCommand::completeWorldPaths)
-            .senderCaller(this::configCommand);
         rootNode.addChild("listunregistered").denyTabCompletion()
             .remoteServer(NetworkServer.CREATIVE)
             .description("List unregistered worlds")
@@ -536,24 +532,6 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         return true;
     }
 
-    private boolean configCommand(CommandSender sender, String[] args) {
-        requireCreativeServer();
-        if (args.length != 1) return false;
-        String name = args[0];
-        BuildWorld buildWorld = plugin.getBuildWorldByPath(name);
-        if (buildWorld == null) {
-            throw new CommandWarn("World not found: " + name);
-        }
-        for (String key : buildWorld.getWorldConfig().getKeys(true)) {
-            Object o = buildWorld.getWorldConfig().get(key);
-            if (o instanceof ConfigurationSection) continue;
-            sender.sendMessage(textOfChildren(text(key + "='", GRAY),
-                                              text(o.toString(), YELLOW),
-                                              text("'", GRAY)));
-        }
-        return true;
-    }
-
     private void listUnregisteredCommand(CommandSender sender) {
         requireCreativeServer();
         sender.sendMessage(text("Unregistered worlds:", AQUA));
@@ -840,14 +818,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         final World.Environment finalEnvironment = environment;
         buildWorld.insertAsync(() -> {
                 plugin.getBuildWorlds().add(buildWorld);
-                // getWorldConfig() calls mkdirs()
-                buildWorld.getWorldConfig().set("world.Generator", finalGenerator);
-                buildWorld.getWorldConfig().set("world.GenerateStructures", finalGenerateStructures);
-                buildWorld.getWorldConfig().set("world.GeneratorSettings", finalGeneratorSettings);
-                if (finalSeed != null) buildWorld.getWorldConfig().set("world.Seed", finalSeed);
-                buildWorld.getWorldConfig().set("world.WorldType", finalWorldType.name().toLowerCase());
-                buildWorld.getWorldConfig().set("world.Environment", finalEnvironment.name().toLowerCase());
-                buildWorld.saveWorldConfig();
+                buildWorld.getWorldFolder().mkdirs();
                 sender.sendMessage(text("World '" + finalPath + "' created", YELLOW));
             });
         return true;
@@ -887,16 +858,7 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         final World.Environment finalEnvironment = environment;
         buildWorld.insertAsync(() -> {
                 plugin.getBuildWorlds().add(buildWorld);
-                // getWorldConfig() calls mkdirs()
-                buildWorld.getWorldConfig().set("world.Generator", "VoidGenerator");
-                buildWorld.getWorldConfig().set("world.GenerateStructures", "false");
-                buildWorld.getWorldConfig().set("world.GeneratorSettings", "");
-                buildWorld.getWorldConfig().set("world.Seed", 0L);
-                buildWorld.getWorldConfig().set("world.WorldType", WorldType.FLAT.name());
-                buildWorld.getWorldConfig().set("world.Environment", finalEnvironment.name());
-                buildWorld.saveWorldConfig();
-                buildWorld.loadWorld();
-                buildWorld.teleportToSpawn(player);
+                buildWorld.getWorldFolder().mkdirs();
                 sender.sendMessage(text("World '" + path + "' created", YELLOW));
             });
         return true;
@@ -920,11 +882,6 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         BuildWorld buildWorld = new BuildWorld(name, name, null);
         buildWorld.insertAsync(() -> {
                 plugin.getBuildWorlds().add(buildWorld);
-                buildWorld.getWorldConfig().set("world.Generator", generator);
-                buildWorld.getWorldConfig().set("world.Seed", creator.seed());
-                buildWorld.getWorldConfig().set("world.WorldType", creator.type().name());
-                buildWorld.getWorldConfig().set("world.Environment", creator.environment().name());
-                buildWorld.saveWorldConfig();
                 sender.sendMessage(text("World '" + world.getName() + "' imported", YELLOW));
             });
         return true;
@@ -938,7 +895,6 @@ public final class AdminCommand extends AbstractCommand<CreativePlugin> {
         if (buildWorld == null) {
             throw new CommandWarn("World not found: " + name);
         }
-        buildWorld.reloadWorldConfig();
         World world = buildWorld.loadWorld();
         if (world == null) {
             throw new CommandWarn("Could not load world: " + buildWorld.getPath());

@@ -10,7 +10,6 @@ import com.winthier.creative.sql.SQLReview;
 import com.winthier.creative.sql.SQLWorld;
 import com.winthier.creative.sql.SQLWorldTrust;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
@@ -32,8 +31,6 @@ import org.bukkit.World;
 import org.bukkit.WorldBorder;
 import org.bukkit.WorldCreator;
 import org.bukkit.block.Block;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import static com.winthier.creative.ConnectListener.broadcastWorldUpdate;
 import static com.winthier.creative.CreativePlugin.plugin;
@@ -52,8 +49,6 @@ import static net.kyori.adventure.text.format.TextDecoration.*;
 public final class BuildWorld {
     private SQLWorld row;
     private final Map<UUID, SQLWorldTrust> trusted = new HashMap<>();
-    // World Config
-    private YamlConfiguration worldConfig = null;
     // World Border
     private transient long mobCooldown = 0;
     private transient boolean keepInMemory;
@@ -362,29 +357,6 @@ public final class BuildWorld {
                          : null);
         row.setEnvironment(world.getEnvironment().name().toLowerCase());
         row.setGenerateStructures(world.canGenerateStructures());
-    }
-
-    public ConfigurationSection getWorldConfig() {
-        if (worldConfig == null) {
-            File dir = getWorldFolder();
-            dir.mkdirs();
-            File file = new File(dir, "config.yml");
-            worldConfig = YamlConfiguration.loadConfiguration(file);
-        }
-        return worldConfig;
-    }
-
-    public void reloadWorldConfig() {
-        worldConfig = null;
-    }
-
-    public void saveWorldConfig() {
-        if (worldConfig == null) return;
-        try {
-            worldConfig.save(new File(getWorldFolder(), "config.yml"));
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-        }
     }
 
     public void teleportToSpawn(Player player) {
