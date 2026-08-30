@@ -338,7 +338,7 @@ final class CreativeCommand extends AbstractCommand<CreativePlugin> {
         }
         buildWorld.getRow().setSeed(0L);
         buildWorld.getRow().setWorldType(WorldType.FLAT.name().toLowerCase());
-        buildWorld.getRow().setEnvironment(World.Environment.NORMAL.name().toLowerCase());
+        buildWorld.getRow().setEnvironment(dimension.environment.name().toLowerCase());
         buildWorld.getRow().setGenerateStructures(false);
         buildWorld.getRow().setGeneratorSettings("");
         buildWorld.getRow().setSpawnX(255.5);
