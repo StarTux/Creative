@@ -52,6 +52,7 @@ public final class BuildWorld {
     // World Border
     private transient long mobCooldown = 0;
     private transient boolean keepInMemory;
+    private static int tmpWorldIndex;
 
     public static final Comparator<BuildWorld> NAME_SORT = new Comparator<BuildWorld>() {
             @Override public int compare(BuildWorld a, BuildWorld b) {
@@ -518,14 +519,13 @@ public final class BuildWorld {
         if (!src.exists()) {
             throw new IllegalStateException("Source folder not found: " + src);
         }
+        // Find a unique path in the worlds folder.
         String tmpPath = null;
         File tmpDest = null;
-        for (int suffix = 0; suffix <= 999; suffix += 1) {
-            tmpPath = String.format("tmp_%03d_%s", suffix, getPath());
+        do {
+            tmpPath = String.format("tmp_%03d_%s", tmpWorldIndex++, getPath());
             tmpDest = new File(getWorldsFolder(), tmpPath);
-            if (tmpDest.exists()) continue;
-            break;
-        }
+        } while (tmpDest.exists());
         final File finalDest = tmpDest;
         if (finalDest.exists()) {
             throw new IllegalStateException("Cannot find folder: " + getPath());
