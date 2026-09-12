@@ -34,6 +34,7 @@ public final class Files {
             }
         } else {
             if (depth == 1 && List.of("uid.dat", "session.lock").contains(source.getName())) return;
+            if (source.getName().equals("metadata.dat")) return;
             try {
                 InputStream in = new FileInputStream(source);
                 OutputStream out = new FileOutputStream(target);
